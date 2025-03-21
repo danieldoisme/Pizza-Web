@@ -82,12 +82,11 @@ function signUpUser(req, res) {
       } else {
         res.render("signin");
       }
-    }
+    },
   );
 }
 
 // User Sign-in
-
 function renderSignInPage(req, res) {
   res.render("signin");
 }
@@ -106,7 +105,7 @@ function signInUser(req, res) {
         res.cookie("cookuname", user_name);
         res.redirect("/homepage");
       }
-    }
+    },
   );
 }
 
@@ -131,7 +130,7 @@ function renderHomePage(req, res) {
       } else {
         res.render("signin");
       }
-    }
+    },
   );
 }
 
@@ -153,7 +152,7 @@ function renderCart(req, res) {
       } else {
         res.render("signin");
       }
-    }
+    },
   );
 }
 
@@ -181,7 +180,7 @@ function getItemDetails(citems, size) {
         if (!error && results_item.length) {
           citemdetails.push(results_item[0]);
         }
-      }
+      },
     );
   });
   item_in_cart = size;
@@ -222,7 +221,7 @@ function checkout(req, res) {
                     console.log(error);
                     res.sendStatus(500);
                   }
-                }
+                },
               );
             }
           });
@@ -243,7 +242,7 @@ function checkout(req, res) {
                   console.log(error);
                   res.sendStatus(500);
                 }
-              }
+              },
             );
           }
         }
@@ -256,7 +255,7 @@ function checkout(req, res) {
       } else {
         res.render("signin");
       }
-    }
+    },
   );
 }
 
@@ -273,7 +272,7 @@ function renderConfirmationPage(req, res) {
       } else {
         res.render("signin");
       }
-    }
+    },
   );
 }
 
@@ -297,12 +296,12 @@ function renderMyOrdersPage(req, res) {
                 item_count: item_in_cart,
               });
             }
-          }
+          },
         );
       } else {
         res.render("signin");
       }
-    }
+    },
   );
 }
 
@@ -321,7 +320,7 @@ function renderSettingsPage(req, res) {
           item_count: item_in_cart,
         });
       }
-    }
+    },
   );
 }
 // Update Address
@@ -345,12 +344,12 @@ function updateAddress(req, res) {
                 item_count: item_in_cart,
               });
             }
-          }
+          },
         );
       } else {
         res.render("signin");
       }
-    }
+    },
   );
 }
 
@@ -375,12 +374,12 @@ function updateContact(req, res) {
                 item_count: item_in_cart,
               });
             }
-          }
+          },
         );
       } else {
         res.render("signin");
       }
-    }
+    },
   );
 }
 
@@ -406,17 +405,16 @@ function updatePassword(req, res) {
                 item_count: item_in_cart,
               });
             }
-          }
+          },
         );
       } else {
         res.render("signin");
       }
-    }
+    },
   );
 }
 
 // Admin Homepage
-
 function renderAdminHomepage(req, res) {
   const userId = req.cookies.cookuid;
   const userName = req.cookies.cookuname;
@@ -433,12 +431,11 @@ function renderAdminHomepage(req, res) {
       } else {
         res.render("admin_signin");
       }
-    }
+    },
   );
 }
 
 // Admin Sign-in
-
 function renderAdminSignInPage(req, res) {
   res.render("admin_signin");
 }
@@ -458,7 +455,7 @@ function adminSignIn(req, res) {
         res.cookie("cookuname", admin_name);
         res.render("adminHomepage");
       }
-    }
+    },
   );
 }
 
@@ -479,7 +476,7 @@ function renderAddFoodPage(req, res) {
       } else {
         res.render("admin_signin");
       }
-    }
+    },
   );
 }
 
@@ -522,7 +519,7 @@ function addFood(req, res) {
           } else {
             res.redirect("/admin_addFood");
           }
-        }
+        },
       );
     });
   } else {
@@ -547,12 +544,12 @@ function renderViewDispatchOrdersPage(req, res) {
               userid: userId,
               orders: results2,
             });
-          }
+          },
         );
       } else {
         res.render("admin_signin");
       }
-    }
+    },
   );
 }
 
@@ -586,17 +583,17 @@ function dispatchOrders(req, res) {
                     if (error) {
                       res.status(500).send("Something went wrong");
                     }
-                  }
+                  },
                 );
               } else {
                 res.status(500).send("Something went wrong");
               }
-            }
+            },
           );
         } else {
           res.status(500).send("Something went wrong");
         }
-      }
+      },
     );
   });
   connection.query(
@@ -606,11 +603,10 @@ function dispatchOrders(req, res) {
         username: req.cookies.cookuname,
         orders: results2_dis,
       });
-    }
+    },
   );
 }
 
-// Render Admin Change Price Page
 // Render Admin Change Price Page
 function renderChangePricePage(req, res) {
   const userId = req.cookies.cookuid;
@@ -631,7 +627,7 @@ function renderChangePricePage(req, res) {
       } else {
         res.render("signin");
       }
-    }
+    },
   );
 }
 
@@ -653,12 +649,12 @@ function changePrice(req, res) {
             } else {
               res.status(500).send("Something went wrong");
             }
-          }
+          },
         );
       } else {
         res.status(500).send("Something went wrong");
       }
-    }
+    },
   );
 }
 

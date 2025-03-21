@@ -136,7 +136,7 @@ $(document).ready(function ($) {
 jQuery(window).on("load", function () {
   $("body").removeClass("body-fixed");
 
-  //activating tab of filter
+  // activating tab of filter
   let targets = document.querySelectorAll(".filter");
   let activeTab = 0;
   let old = 0;
@@ -177,7 +177,7 @@ jQuery(window).on("load", function () {
           color: "#0d0d25",
           ease: "none",
         },
-        0
+        0,
       );
       animation.to(
         targets[activeTab],
@@ -185,7 +185,7 @@ jQuery(window).on("load", function () {
           color: "#fff",
           ease: "none",
         },
-        0
+        0,
       );
     }
   }
