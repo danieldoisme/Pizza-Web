@@ -1,5 +1,6 @@
 // Loading and Using Modules Required
 const express = require("express");
+const session = require("express-session");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const ejs = require("ejs");
@@ -9,6 +10,11 @@ const mysql = require("mysql");
 
 // Initialize Express App
 const app = express();
+
+// Import routes
+const indexRoutes = require("./routes/index.js");
+const userRoutes = require("./routes/users.js");
+const adminRoutes = require("./routes/admin.js");
 
 // Set View Engine and Middleware
 app.set("view engine", "ejs");
@@ -26,6 +32,20 @@ const connection = mysql.createConnection({
   database: "foodorderingwesitedb",
 });
 connection.connect();
+
+// Set up session
+app.use(
+  session({
+    secret: "somekey",
+    resave: false,
+    saveUninitialized: false,
+  }),
+);
+
+// Set up routes
+app.use("/", indexRoutes);
+app.use("/user", userRoutes);
+app.use("/admin", adminRoutes);
 
 /*****************************  User-End Portal ***************************/
 
