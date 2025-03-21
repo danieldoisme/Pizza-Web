@@ -28,7 +28,7 @@ app.use(fileUpload());
 const connection = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "root",
+  password: "doducthanh23@$",
   database: "foodorderingwesitedb",
 });
 connection.connect();
