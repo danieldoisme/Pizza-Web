@@ -25,13 +25,13 @@ DROP TABLE IF EXISTS `admin`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `admin` (
-  `admin_id` int NOT NULL AUTO_INCREMENT,
-  `admin_name` varchar(45) NOT NULL,
-  `admin_email` varchar(45) NOT NULL,
-  `admin_password` varchar(45) NOT NULL,
-  `admin_mobile` varchar(45) NOT NULL,
-  PRIMARY KEY (`admin_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+    `admin_id` INT NOT NULL AUTO_INCREMENT,
+    `admin_name` VARCHAR(45) NOT NULL,
+    `admin_email` VARCHAR(45) NOT NULL,
+    `admin_password` VARCHAR(45) NOT NULL,
+    `admin_mobile` VARCHAR(45) NOT NULL,
+    PRIMARY KEY (`admin_id`)
+)  ENGINE=INNODB AUTO_INCREMENT=2 DEFAULT CHARSET=UTF8MB4 COLLATE = UTF8MB4_0900_AI_CI;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -52,17 +52,17 @@ DROP TABLE IF EXISTS `menu`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `menu` (
-  `item_id` int NOT NULL AUTO_INCREMENT,
-  `item_name` varchar(45) NOT NULL,
-  `item_type` varchar(45) NOT NULL,
-  `item_category` varchar(45) NOT NULL,
-  `item_serving` varchar(45) NOT NULL,
-  `item_calories` int NOT NULL,
-  `item_price` int NOT NULL,
-  `item_rating` varchar(45) NOT NULL,
-  `item_img` varchar(255) NOT NULL,
-  PRIMARY KEY (`item_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+    `item_id` INT NOT NULL AUTO_INCREMENT,
+    `item_name` VARCHAR(45) NOT NULL,
+    `item_type` VARCHAR(45) NOT NULL,
+    `item_category` VARCHAR(45) NOT NULL,
+    `item_serving` VARCHAR(45) NOT NULL,
+    `item_calories` INT NOT NULL,
+    `item_price` INT NOT NULL,
+    `item_rating` VARCHAR(45) NOT NULL,
+    `item_img` VARCHAR(255) NOT NULL,
+    PRIMARY KEY (`item_id`)
+)  ENGINE=INNODB AUTO_INCREMENT=20 DEFAULT CHARSET=UTF8MB4 COLLATE = UTF8MB4_0900_AI_CI;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -83,14 +83,14 @@ DROP TABLE IF EXISTS `order_dispatch`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `order_dispatch` (
-  `order_id` varchar(500) NOT NULL,
-  `user_id` int NOT NULL,
-  `item_id` int NOT NULL,
-  `quantity` int NOT NULL,
-  `price` int NOT NULL,
-  `datetime` datetime NOT NULL,
-  PRIMARY KEY (`order_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+    `order_id` VARCHAR(500) NOT NULL,
+    `user_id` INT NOT NULL,
+    `item_id` INT NOT NULL,
+    `quantity` INT NOT NULL,
+    `price` INT NOT NULL,
+    `datetime` DATETIME NOT NULL,
+    PRIMARY KEY (`order_id`)
+)  ENGINE=INNODB DEFAULT CHARSET=UTF8MB4 COLLATE = UTF8MB4_0900_AI_CI;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -111,14 +111,14 @@ DROP TABLE IF EXISTS `orders`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `orders` (
-  `order_id` varchar(500) NOT NULL,
-  `user_id` int NOT NULL,
-  `item_id` int NOT NULL,
-  `quantity` int NOT NULL,
-  `price` int NOT NULL,
-  `datetime` datetime NOT NULL,
-  PRIMARY KEY (`order_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+    `order_id` VARCHAR(500) NOT NULL,
+    `user_id` INT NOT NULL,
+    `item_id` INT NOT NULL,
+    `quantity` INT NOT NULL,
+    `price` INT NOT NULL,
+    `datetime` DATETIME NOT NULL,
+    PRIMARY KEY (`order_id`)
+)  ENGINE=INNODB DEFAULT CHARSET=UTF8MB4 COLLATE = UTF8MB4_0900_AI_CI;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -139,14 +139,14 @@ DROP TABLE IF EXISTS `users`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `users` (
-  `user_id` int NOT NULL AUTO_INCREMENT,
-  `user_name` varchar(30) NOT NULL,
-  `user_address` varchar(255) NOT NULL,
-  `user_email` varchar(45) NOT NULL,
-  `user_password` varchar(1000) NOT NULL,
-  `user_mobileno` varchar(45) NOT NULL,
-  PRIMARY KEY (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+    `user_id` INT NOT NULL AUTO_INCREMENT,
+    `user_name` VARCHAR(30) NOT NULL,
+    `user_address` VARCHAR(255) NOT NULL,
+    `user_email` VARCHAR(45) NOT NULL,
+    `user_password` VARCHAR(1000) NOT NULL,
+    `user_mobileno` VARCHAR(45) NOT NULL,
+    PRIMARY KEY (`user_id`)
+)  ENGINE=INNODB AUTO_INCREMENT=3 DEFAULT CHARSET=UTF8MB4 COLLATE = UTF8MB4_0900_AI_CI;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --

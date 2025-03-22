@@ -1,5 +1,6 @@
 // Loading and Using Modules Required
 const express = require("express");
+const session = require("express-session");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const ejs = require("ejs");
@@ -9,6 +10,11 @@ const mysql = require("mysql");
 
 // Initialize Express App
 const app = express();
+
+// Import routes
+const indexRoutes = require("./routes/index.js");
+const userRoutes = require("./routes/users.js");
+const adminRoutes = require("./routes/admin.js");
 
 // Set View Engine and Middleware
 app.set("view engine", "ejs");
@@ -27,6 +33,20 @@ const connection = mysql.createConnection({
 });
 connection.connect();
 
+// Set up session
+app.use(
+  session({
+    secret: "somekey",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+
+// Set up routes
+app.use("/", indexRoutes);
+app.use("/user", userRoutes);
+app.use("/admin", adminRoutes);
+
 /*****************************  User-End Portal ***************************/
 
 // Routes for User Sign-up, Sign-in, Home Page, Cart, Checkout, Order Confirmation, My Orders, and Settings
@@ -40,23 +60,23 @@ app.get("/cart", renderCart);
 app.post("/cart", updateCart);
 app.post("/checkout", checkout);
 app.get("/confirmation", renderConfirmationPage);
-app.get("/myorders", renderMyOrdersPage);
+app.get("/orders", renderMyOrdersPage);
 app.get("/settings", renderSettingsPage);
 app.post("/address", updateAddress);
 app.post("/contact", updateContact);
 app.post("/password", updatePassword);
 
 /***************************************** Admin End Portal ********************************************/
-// Routes for Admin Sign-in, Admin Homepage, Adding Food, Viewing and Dispatching Orders, Changing Price, and Logout
-app.get("/admin_signin", renderAdminSignInPage);
-app.post("/admin_signin", adminSignIn);
-app.get("/adminHomepage", renderAdminHomepage);
-app.get("/admin_addFood", renderAddFoodPage);
-app.post("/admin_addFood", addFood);
-app.get("/admin_view_dispatch_orders", renderViewDispatchOrdersPage);
-app.post("/admin_view_dispatch_orders", dispatchOrders);
-app.get("/admin_change_price", renderChangePricePage);
-app.post("/admin_change_price", changePrice);
+// Routes for Admin Log-in, Admin Homepage, Adding Food, Viewing and Dispatching Orders, Changing Price, and Logout
+app.get("/admin/login", renderAdminLogInPage);
+app.post("/admin/login", adminLogIn);
+app.get("/admin/dashboard", renderAdminHomepage);
+app.get("/admin/addFood", renderAddFoodPage);
+app.post("/admin/addFood", addFood);
+app.get("/admin/orders", renderViewDispatchOrdersPage);
+app.post("/admin/orders", dispatchOrders);
+app.get("/admin/changePrice", renderChangePricePage);
+app.post("/admin/changePrice", changePrice);
 app.get("/logout", logout);
 
 /***************************** Route Handlers ***************************/
@@ -87,7 +107,6 @@ function signUpUser(req, res) {
 }
 
 // User Sign-in
-
 function renderSignInPage(req, res) {
   res.render("signin");
 }
@@ -291,7 +310,7 @@ function renderMyOrdersPage(req, res) {
           [userId],
           function (error, results) {
             if (!error) {
-              res.render("myorders", {
+              res.render("orders", {
                 userDetails: resultUser,
                 items: results,
                 item_count: item_in_cart,
@@ -416,7 +435,6 @@ function updatePassword(req, res) {
 }
 
 // Admin Homepage
-
 function renderAdminHomepage(req, res) {
   const userId = req.cookies.cookuid;
   const userName = req.cookies.cookuname;
@@ -425,25 +443,24 @@ function renderAdminHomepage(req, res) {
     [userId, userName],
     function (error, results) {
       if (!error && results.length) {
-        res.render("adminHomepage", {
+        res.render("admin/dashboard", {
           username: userName,
           userid: userId,
           items: results,
         });
       } else {
-        res.render("admin_signin");
+        res.render("admin/login");
       }
     }
   );
 }
 
-// Admin Sign-in
-
-function renderAdminSignInPage(req, res) {
-  res.render("admin_signin");
+// Admin Log-in
+function renderAdminLogInPage(req, res) {
+  res.render("admin/login");
 }
 
-function adminSignIn(req, res) {
+function adminLogIn(req, res) {
   const email = req.body.email;
   const password = req.body.password;
   connection.query(
@@ -451,12 +468,12 @@ function adminSignIn(req, res) {
     [email, password],
     function (error, results) {
       if (error || !results.length) {
-        res.render("/admin_signin");
+        res.render("/admin/login");
       } else {
         const { admin_id, admin_name } = results[0];
         res.cookie("cookuid", admin_id);
         res.cookie("cookuname", admin_name);
-        res.render("adminHomepage");
+        res.render("admin/dashboard");
       }
     }
   );
@@ -471,13 +488,13 @@ function renderAddFoodPage(req, res) {
     [userId, userName],
     function (error, results) {
       if (!error && results.length) {
-        res.render("admin_addFood", {
+        res.render("admin/addFood", {
           username: userName,
           userid: userId,
           items: results,
         });
       } else {
-        res.render("admin_signin");
+        res.render("admin/login");
       }
     }
   );
@@ -520,13 +537,13 @@ function addFood(req, res) {
           if (error) {
             console.log(error);
           } else {
-            res.redirect("/admin_addFood");
+            res.redirect("/admin/addFood");
           }
         }
       );
     });
   } else {
-    res.render("admin_addFood");
+    res.render("admin/addFood");
   }
 }
 
@@ -542,7 +559,7 @@ function renderViewDispatchOrdersPage(req, res) {
         connection.query(
           "SELECT * FROM orders ORDER BY datetime",
           function (error, results2) {
-            res.render("admin_view_dispatch_orders", {
+            res.render("admin/orders", {
               username: userName,
               userid: userId,
               orders: results2,
@@ -550,7 +567,7 @@ function renderViewDispatchOrdersPage(req, res) {
           }
         );
       } else {
-        res.render("admin_signin");
+        res.render("admin/login");
       }
     }
   );
@@ -602,7 +619,7 @@ function dispatchOrders(req, res) {
   connection.query(
     "SELECT * FROM orders ORDER BY datetime",
     function (error, results2_dis) {
-      res.render("admin_view_dispatch_orders", {
+      res.render("admin/orders", {
         username: req.cookies.cookuname,
         orders: results2_dis,
       });
@@ -610,7 +627,6 @@ function dispatchOrders(req, res) {
   );
 }
 
-// Render Admin Change Price Page
 // Render Admin Change Price Page
 function renderChangePricePage(req, res) {
   const userId = req.cookies.cookuid;
@@ -622,14 +638,14 @@ function renderChangePricePage(req, res) {
       if (!error && results.length) {
         connection.query("SELECT * FROM menu", function (error, results) {
           if (!error) {
-            res.render("admin_change_price", {
+            res.render("admin/changePrice", {
               username: userName,
               items: results,
             });
           }
         });
       } else {
-        res.render("signin");
+        res.render("admin/login");
       }
     }
   );
@@ -649,7 +665,7 @@ function changePrice(req, res) {
           [new_food_price, item_name],
           function (error, results2) {
             if (!error) {
-              res.render("adminHomepage");
+              res.render("admin/dashboard");
             } else {
               res.status(500).send("Something went wrong");
             }

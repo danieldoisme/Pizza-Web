@@ -34,7 +34,7 @@
 </head>
 
 <body class="body-fixed">
-    <!-- start of header  -->
+    <!-- header starts  -->
     <header class="site-header">
         <div class="container">
             <div class="row">
@@ -94,7 +94,6 @@
         <div id="js-scroll-content">
 
             <!-- My Cart starts  -->
-
             <section class="about-sec section" id="cart" style="background-image: url(/images/menu-bg.png);">
                 <div class="container">
                     <div class="row">
@@ -261,7 +260,7 @@
 
         function updateData(qty, i) {
 
-            // Updating Sub Price 
+            // Updating Sub Price
             const item_price = document.querySelectorAll(".item-price");
             const newPrice = parseInt(qty) * parseInt(item_price[i].innerHTML);
             //console.log(newPrice);
