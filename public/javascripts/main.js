@@ -2,6 +2,10 @@ function myFunction() {
   document.getElementById("myDropdown").classList.toggle("show");
 }
 
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 // Close the dropdown if the user clicks outside of it
 window.onclick = function (event) {
   if (!event.target.matches(".header-username")) {
@@ -109,7 +113,19 @@ $(document).ready(function ($) {
     jQuery(".main-navigation").toggleClass("toggled");
   });
 
-  jQuery(".header-menu ul li a").click(function () {
+  jQuery(".header-menu ul li a").click(function (e) {
+    e.preventDefault();
+    var target = $(this).attr("href");
+    if (target == "/") {
+      window.location.href = "/";
+      return;
+    }
+    $("html, body").animate(
+      {
+        scrollTop: $(target).offset().top,
+      },
+      200
+    );
     jQuery(".main-navigation").removeClass("toggled");
   });
 
@@ -177,7 +193,7 @@ jQuery(window).on("load", function () {
           color: "#0d0d25",
           ease: "none",
         },
-        0,
+        0
       );
       animation.to(
         targets[activeTab],
@@ -185,7 +201,7 @@ jQuery(window).on("load", function () {
           color: "#fff",
           ease: "none",
         },
-        0,
+        0
       );
     }
   }

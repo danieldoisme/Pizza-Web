@@ -1,14 +1,6 @@
-// var express = require('express');
-// var router = express.Router();
-
-// /* GET home page. */
-// router.get('/', function(req, res, next) {
-//   res.render('index', { title: 'Express' });
-// });
-
-// module.exports = router;
 const express = require("express");
 const router = express.Router();
+const adminRoutes = require("./admin"); // Import the admin routes
 
 // Home page
 router.get("/", (req, res) => {
@@ -40,5 +32,8 @@ router.get("/logout", (req, res) => {
   req.session.destroy();
   res.redirect("/");
 });
+
+// Mount admin routes under /admin prefix
+router.use("/admin", adminRoutes);
 
 module.exports = router;

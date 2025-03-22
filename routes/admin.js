@@ -1,17 +1,13 @@
 const express = require("express");
 const router = express.Router();
+const isAdmin = require("../middleware/isAdmin");
 
-// Admin authentication middleware
-function adminAuthMiddleware(req, res, next) {
-  if (!req.session.adminId) {
-    return res.redirect("/admin/login");
-  }
-  next();
-}
+// Apply admin middleware to all routes in this router
+router.use(isAdmin);
 
 // Admin login route
 router.get("/login", (req, res) => {
-  res.render("admin_signin");
+  res.render("admin/login");
 });
 
 router.post("/login", (req, res) => {
@@ -19,32 +15,44 @@ router.post("/login", (req, res) => {
   // If successful, set req.session.adminId and redirect to dashboard
 });
 
-// Admin dashboard - protected by middleware
-router.get("/dashboard", adminAuthMiddleware, (req, res) => {
-  res.render("adminHomepage", { username: req.session.adminName });
+// Admin dashboard
+router.get("/dashboard", (req, res) => {
+  res.render("admin/dashboard", { username: req.session.adminName });
 });
 
 // Add food route
-router.get("/food/add", adminAuthMiddleware, (req, res) => {
-  res.render("admin_addFood", { username: req.session.adminName });
+router.get("/food/add", (req, res) => {
+  res.render("admin/addFood", { username: req.session.adminName });
 });
 
 // Change food price route
-router.get("/food/price", adminAuthMiddleware, (req, res) => {
+router.get("/food/price", (req, res) => {
   // Get items from database
-  res.render("admin_change_price", {
+  res.render("admin/changePrice", {
     username: req.session.adminName,
     items: [],
   });
 });
 
 // Dispatch orders route
-router.get("/orders", adminAuthMiddleware, (req, res) => {
+router.get("/orders", (req, res) => {
   // Get orders from database
-  res.render("admin_view_dispatch_orders", {
+  res.render("admin/orders", {
     username: req.session.adminName,
     orders: [],
   });
 });
+
+// Admin dashboard
+router.get("/", (req, res) => {
+  res.redirect("/admin/dashboard");
+});
+
+// Products route
+router.get("/products", (req, res) => {
+  res.render("admin/products");
+});
+
+// Add all other admin routes here
 
 module.exports = router;
