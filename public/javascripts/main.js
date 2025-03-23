@@ -108,7 +108,7 @@ $(document).ready(function ($) {
             easing: "ease-in-out",
           },
           load: {
-            filter: ".all, .breakfast, .lunch, .dinner, .beverages, .desserts",
+            filter: ".all, .pizzas, .appetizers, .desserts, .beverages",
           },
         });
       },
