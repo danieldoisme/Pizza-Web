@@ -1,0 +1,52 @@
+<header class="site-header">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-2">
+        <div class="header-logo">
+          <a href="/homepage">
+            <img
+              src="/images/logo.svg"
+              style="max-width: 100%; height: auto"
+              alt="PizzazzPizza Logo"
+            />
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-10">
+        <div class="main-navigation">
+          <button class="menu-toggle"><span></span><span></span></button>
+          <div class="header-right">
+            <form action="#" class="header-search-form for-des">
+              <input
+                type="search"
+                class="form-input"
+                placeholder="Search Here..."
+              />
+              <button type="submit">
+                <i class="uil uil-search"></i>
+              </button>
+            </form>
+            <a onclick="openMyCart()" class="header-btn header-cart">
+              <i class="uil uil-shopping-bag"></i>
+              <span class="cart-number" id="cart-number-count">0</span>
+            </a>
+            <div class="dropdown">
+              <button
+                id="usernameDropdownBtn"
+                class="header-username"
+                style="color: #ff8243; padding: 4px 8px"
+              >
+                <b><i> <%= username %> </i></b>
+              </button>
+              <div id="myDropdown" class="dropdown-content">
+                <a href="/orders">My Orders</a>
+                <a href="/settings">Settings</a>
+                <a href="/logout">Sign Out</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
