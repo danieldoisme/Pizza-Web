@@ -1,6 +1,7 @@
 # Food Ordering Website
 
-TODO:
-- user homepage header shows cart, delivery status, user settings, search bar
-- after logged in, able to save session, and log out button
-- update photos
+## TODO
+
+- **Homepage Header:** Implement user homepage header with cart, delivery status, user settings, and search bar.
+- **Session Management:** Enable session saving after login and provide a logout button.
+- **Photos:** Update website photos.
