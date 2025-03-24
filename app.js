@@ -12,9 +12,9 @@ const mysql = require("mysql");
 const app = express();
 
 // Import routes
-// const indexRoutes = require("./routes/index.js");
-// const userRoutes = require("./routes/users.js");
-// const adminRoutes = require("./routes/admin.js");
+const indexRoutes = require("./routes/index.js");
+const userRoutes = require("./routes/users.js");
+const adminRoutes = require("./routes/admin.js");
 
 // Set View Engine and Middleware
 app.set("view engine", "ejs");
@@ -34,13 +34,13 @@ const connection = mysql.createConnection({
 connection.connect();
 
 // Set up session
-// app.use(
-//   session({
-//     secret: "somekey",
-//     resave: false,
-//     saveUninitialized: false,
-//   })
-// );
+app.use(
+  session({
+    secret: "somekey",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
 
 // Set up routes
 app.use("/", indexRoutes);

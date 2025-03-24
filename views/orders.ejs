@@ -1,179 +1,186 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Orders & Profile - PizzazzPizza</title>
     <!-- icons  -->
-    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+    <link
+      rel="stylesheet"
+      href="https://unicons.iconscout.com/release/v4.0.0/css/line.css"
+    />
     <!-- bootstrap  -->
-    <link rel="stylesheet" href="/stylesheets/bootstrap.min.css">
+    <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
     <!-- swiper slider  -->
-    <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css">
+    <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css" />
     <!-- fancy box  -->
-    <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css">
+    <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css" />
     <!-- custom css  -->
-    <link rel="stylesheet" href="/stylesheets/style.css">
+    <link rel="stylesheet" href="/stylesheets/style.css" />
     <style>
-        table,
-        th,
-        tr,
-        td {
-            border: 2px solid black;
-            padding: 8px 10px;
-            border-radius: 20px;
-        }
+      table,
+      th,
+      tr,
+      td {
+        border: 2px solid black;
+        padding: 8px 10px;
+        border-radius: 20px;
+      }
 
-        a {
-            color: white;
-        }
+      a {
+        color: white;
+      }
     </style>
-</head>
+  </head>
 
-<body class="body-fixed">
+  <body class="body-fixed">
     <header class="site-header">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-2">
-                    <div class="header-logo">
-                        <a href="/homepage">
-                            <img src="/images/logo.svg" style="max-width: 100%; height: auto" alt="PizzazzPizza Logo" />
-                        </a>
-                    </div>
-                </div>
-                <div class="col-lg-10">
-                    <div class="main-navigation">
-                        <button class="menu-toggle"><span></span><span></span></button>
-                        <div class="header-right">
-                            <form action="#" class="header-search-form for-des">
-                                <input type="search" class="form-input" placeholder="Search Here..." />
-                                <button type="submit">
-                                    <i class="uil uil-search"></i>
-                                </button>
-                            </form>
-                            <a onclick="openMyCart()" class="header-btn header-cart">
-                                <i class="uil uil-shopping-bag"></i>
-                                <span class="cart-number" id="cart-number-count">0</span>
-                            </a>
-                            <div class="dropdown">
-                                <button id="usernameDropdownBtn" class="header-username"
-                                    style="color: #ff8243; padding: 4px 8px">
-                                    <b><i>
-                                            <%= userDetails[0].user_name %>
-                                        </i></b>
-                                </button>
-                                <div id="myDropdown" class="dropdown-content">
-                                    <a href="/orders">My Orders</a>
-                                    <a href="/settings">Settings</a>
-                                    <a href="/logout">Sign Out</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-2">
+            <div class="header-logo">
+              <a href="/homepage">
+                <img
+                  src="/images/logo.svg"
+                  style="max-width: 100%; height: auto"
+                  alt="PizzazzPizza Logo"
+                />
+              </a>
             </div>
+          </div>
+          <div class="col-lg-10">
+            <div class="main-navigation">
+              <button class="menu-toggle"><span></span><span></span></button>
+              <div class="header-right">
+                <form action="#" class="header-search-form for-des">
+                  <input
+                    type="search"
+                    class="form-input"
+                    placeholder="Search Here..."
+                  />
+                  <button type="submit">
+                    <i class="uil uil-search"></i>
+                  </button>
+                </form>
+                <a onclick="openMyCart()" class="header-btn header-cart">
+                  <i class="uil uil-shopping-bag"></i>
+                  <span class="cart-number" id="cart-number-count">0</span>
+                </a>
+                <div class="dropdown">
+                  <button
+                    id="usernameDropdownBtn"
+                    class="header-username"
+                    style="color: #ff8243; padding: 4px 8px"
+                  >
+                    <b><i> <%= userDetails[0].user_name %> </i></b>
+                  </button>
+                  <div id="myDropdown" class="dropdown-content">
+                    <a href="/orders" style="text-decoration: none !important"
+                      >My Orders</a
+                    >
+                    <a href="/settings" style="text-decoration: none !important"
+                      >Settings</a
+                    >
+                    <a href="/logout" style="text-decoration: none !important"
+                      >Sign Out</a
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
     </header>
 
-
-
     <div id="viewport">
-        <div id="js-scroll-content">
-            <section class="section" id="orders" style="background-image: url(/images/menu-bg.png);">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-lg-12">
-                            <div class="sec-title text-center mb-5">
-                                <h4 class="h2-title">My Details</h4>
-                                <div class="sec-title-shape mb-4">
-                                    <img src="/images/title-shape.svg" alt="">
-                                </div>
-                                <div id="myDetails" style="margin-bottom: 30px;">
-                                    <table>
-                                        <thead>
-                                            <tr style="border: 0px;">
-                                                <th style="width: 25%;">Name</th>
-                                                <th style="width: 30%;">Email</th>
-                                                <th style="width: 20%;">Contact No.</th>
-                                                <th style="width: 35%;">Address</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <td>
-                                                <%= userDetails[0].user_name %>
-                                            </td>
-                                            <td>
-                                                <%= userDetails[0].user_email %>
-                                            </td>
-                                            <td>
-                                                <%= userDetails[0].user_mobileno %>
-                                            </td>
-                                            <td>
-                                                <%= userDetails[0].user_address %>
-                                            </td>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <h2 class="h2-title">
-                                    <%= userDetails[0].user_name %>'s Orders History
-                                </h2>
-                                <div class="sec-title-shape mb-4">
-                                    <img src="/images/title-shape.svg" alt="">
-                                </div>
-                                <% let count=0 %>
-                                    <table id="mycart">
-                                        <thead>
-                                            <tr>
-                                                <th style="width: 5%;">#</th>
-                                                <th style="width: 10%;">Product</th>
-                                                <th style="width: 25%;">Product Name</th>
-                                                <th style="width: 10%;">Price</th>
-                                                <th style="width: 5%;">Quantity</th>
-                                                <th style="width: 20%;">Total Price</th>
-                                                <th style="width: 15%;">Order ID</th>
-                                                <th style="width: 30%;">Date/Time</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <% for(let i=0;i<items.length;i++) { %>
-                                                <tr>
-                                                    <% count++ %>
-                                                        <td>
-                                                            <%= i+1 %>
-                                                        </td>
-                                                        <td><img src="/images/dish/<%= items[i].item_img %>" alt=""
-                                                                style="border-radius: 10%; border: 2px solid rgb(68, 66, 66) ; box-shadow: 4px 4px 8px black;">
-                                                        </td>
-                                                        <td>
-                                                            <%= items[i].item_name %>
-                                                        </td>
-                                                        <td><span>$ <%= items[i].price %></span></td>
-                                                        <td>
-                                                            <%= items[i].quantity %>
-                                                        </td>
-                                                        <td>$<%= items[i].price*items[i].quantity %>
-                                                        </td>
-                                                        <td>$<%= items[i].order_id %>
-                                                        </td>
-                                                        <td>
-                                                            <%= items[i].datetime %>
-                                                        </td>
-                                                </tr>
-                                                <% } %>
-                                        </tbody>
-                                    </table>
-
-                            </div>
-                        </div>
-                    </div>
+      <div id="js-scroll-content">
+        <section
+          class="section"
+          id="orders"
+          style="background-image: url(/images/menu-bg.png)"
+        >
+          <div class="container">
+            <div class="row">
+              <div class="col-lg-12">
+                <div class="sec-title text-center mb-5">
+                  <h4 class="h2-title">My Details</h4>
+                  <div class="sec-title-shape mb-4">
+                    <img src="/images/title-shape.svg" alt="" />
+                  </div>
+                  <div id="myDetails" style="margin-bottom: 30px">
+                    <table>
+                      <thead>
+                        <tr style="border: 0px">
+                          <th style="width: 25%">Name</th>
+                          <th style="width: 30%">Email</th>
+                          <th style="width: 20%">Contact No.</th>
+                          <th style="width: 35%">Address</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <td><%= userDetails[0].user_name %></td>
+                        <td><%= userDetails[0].user_email %></td>
+                        <td><%= userDetails[0].user_mobileno %></td>
+                        <td><%= userDetails[0].user_address %></td>
+                      </tbody>
+                    </table>
+                  </div>
+                  <h2 class="h2-title">
+                    <%= userDetails[0].user_name %>'s Orders History
+                  </h2>
+                  <div class="sec-title-shape mb-4">
+                    <img src="/images/title-shape.svg" alt="" />
+                  </div>
+                  <% let count=0 %>
+                  <table id="mycart">
+                    <thead>
+                      <tr>
+                        <th style="width: 5%">#</th>
+                        <th style="width: 10%">Product</th>
+                        <th style="width: 25%">Product Name</th>
+                        <th style="width: 10%">Price</th>
+                        <th style="width: 5%">Quantity</th>
+                        <th style="width: 20%">Total Price</th>
+                        <th style="width: 15%">Order ID</th>
+                        <th style="width: 30%">Date/Time</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% for(let i = 0; i < items.length; i++) { %>
+                      <tr>
+                        <% count++ %>
+                        <td><%= i+1 %></td>
+                        <td>
+                          <img
+                            src="/images/dish/<%= items[i].item_img %>"
+                            alt=""
+                            style="
+                              border-radius: 10%;
+                              border: 2px solid rgb(68, 66, 66);
+                              box-shadow: 4px 4px 8px black;
+                            "
+                          />
+                        </td>
+                        <td><%= items[i].item_name %></td>
+                        <td><span>$ <%= items[i].price %></span></td>
+                        <td><%= items[i].quantity %></td>
+                        <td>$<%= items[i].price*items[i].quantity %></td>
+                        <td>$<%= items[i].order_id %></td>
+                        <td><%= items[i].datetime %></td>
+                      </tr>
+                      <% } %>
+                    </tbody>
+                  </table>
                 </div>
-            </section>
+              </div>
+            </div>
+          </div>
+        </section>
 
-
-            <%- include('partials/footer') %>
-        </div>
+        <%- include('partials/footer') %>
+      </div>
     </div>
 
     <!-- jquery  -->
@@ -205,6 +212,5 @@
     <!-- custom js  -->
     <script src="/javascripts/main.js"></script>
     <script src="/javascripts/cart.js"></script>
-</body>
-
+  </body>
 </html>
