@@ -53,6 +53,4 @@ router.get("/products", (req, res) => {
   res.render("admin/products");
 });
 
-// Add all other admin routes here
-
 module.exports = router;

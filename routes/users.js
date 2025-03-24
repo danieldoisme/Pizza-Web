@@ -13,13 +13,13 @@ const router = express.Router();
 // User authentication middleware
 function userAuthMiddleware(req, res, next) {
   if (!req.session.userId) {
-    return res.redirect("/login");
+    return res.redirect("/signin");
   }
   next();
 }
 
 // User dashboard
-router.get("/dashboard", userAuthMiddleware, (req, res) => {
+router.get("/homepage", userAuthMiddleware, (req, res) => {
   // Get menu items from database
   res.render("homepage", { username: req.session.userName, items: [] });
 });
@@ -37,7 +37,7 @@ router.get("/cart", userAuthMiddleware, (req, res) => {
 // Orders route
 router.get("/orders", userAuthMiddleware, (req, res) => {
   // Get user's orders from database
-  res.render("myorders", {
+  res.render("orders", {
     username: req.session.userName,
     items: [],
     item_count: 0,
