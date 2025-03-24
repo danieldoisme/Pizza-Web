@@ -22,16 +22,19 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function addToCart(item_id) {
-  item_count++;
-  document.getElementById("cart-number-count").innerHTML = item_count;
-  const name = "btn" + item_id;
-  document.getElementById(name).disabled = true;
-  document.getElementById(name).innerHTML = "Added";
-  cart.push(item_id);
+  // Check if item is already in cart to prevent duplicates
+  if (!cart.includes(item_id)) {
+    item_count++;
+    document.getElementById("cart-number-count").innerHTML = item_count;
+    const name = "btn" + item_id;
+    document.getElementById(name).disabled = true;
+    document.getElementById(name).innerHTML = "Added";
+    cart.push(item_id);
 
-  // Save to localStorage
-  localStorage.setItem("item_count", item_count);
-  localStorage.setItem("cart", JSON.stringify(cart));
+    // Save to localStorage
+    localStorage.setItem("item_count", item_count);
+    localStorage.setItem("cart", JSON.stringify(cart));
+  }
 }
 
 function openMyCart() {

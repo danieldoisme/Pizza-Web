@@ -28,7 +28,7 @@ app.use(fileUpload());
 const connection = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "root",
+  password: "doducthanh23@$",
   database: "foodorderingwesitedb",
 });
 connection.connect();
@@ -178,13 +178,28 @@ function renderCart(req, res) {
 
 // Update Cart
 function updateCart(req, res) {
-  const cartItems = req.body.cart;
+  const cartItems = req.body.cart || [];
+  const cartItemCount = req.body.item_count || 0;
+
+  // Clear previous cart contents
+  citemdetails = [];
+
+  // Use Set to ensure uniqueness
   const uniqueItems = [...new Set(cartItems)];
+
+  // If there are no items in cart, reset and return
+  if (uniqueItems.length === 0) {
+    item_in_cart = 0;
+    return res.status(200).send({ success: true });
+  }
 
   // Function to fetch details of items in the cart
   getItemDetails(uniqueItems, uniqueItems.length);
 
-  // Update cart logic if necessary
+  // Set the item count based on client value
+  item_in_cart = cartItemCount;
+
+  return res.status(200).send({ success: true });
 }
 
 // Function to fetch details of items in the cart
@@ -192,6 +207,12 @@ let citems = [];
 let citemdetails = [];
 let item_in_cart = 0;
 function getItemDetails(citems, size) {
+  // Clear previous items
+  citemdetails = [];
+
+  // Use a counter to ensure we've processed all items
+  let processed = 0;
+
   citems.forEach((item) => {
     connection.query(
       "SELECT * FROM menu WHERE item_id = ?",
@@ -200,10 +221,15 @@ function getItemDetails(citems, size) {
         if (!error && results_item.length) {
           citemdetails.push(results_item[0]);
         }
+
+        processed++;
+        if (processed === citems.length) {
+          // All items processed
+          item_in_cart = size;
+        }
       }
     );
   });
-  item_in_cart = size;
 }
 
 // Checkout
