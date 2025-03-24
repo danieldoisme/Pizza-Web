@@ -157,10 +157,12 @@
                 </div>
                 <br />
                 <br />
+                <% if (count > 0) { %>
                 <input
                   type="submit"
                   value="Buy Now"
                   class="sec-btn"
+                  id="buyNowBtn"
                   style="
                     display: block;
                     margin: 0 auto;
@@ -169,6 +171,61 @@
                     background: orange;
                   "
                 />
+                <% } else { %>
+                <button
+                  type="button"
+                  disabled
+                  class="sec-btn"
+                  style="
+                    display: block;
+                    margin: 0 auto;
+                    width: 20%;
+                    color: white;
+                    background: #cccccc;
+                    cursor: not-allowed;
+                  "
+                >
+                  Add items to cart first
+                </button>
+                <% } %>
+                <script>
+                  document.addEventListener("DOMContentLoaded", function () {
+                    const checkoutForm = document.querySelector(
+                      'form[action="/checkout"]'
+                    );
+
+                    if (checkoutForm) {
+                      checkoutForm.addEventListener("submit", function (event) {
+                        // Prevent default form submission
+                        event.preventDefault();
+
+                        // Clear cart data first
+                        localStorage.setItem("cart", JSON.stringify([]));
+                        localStorage.setItem("item_count", "0");
+
+                        // Update the cart count display
+                        const cartCountDisplay =
+                          document.getElementById("cart-number-count");
+                        if (cartCountDisplay) {
+                          cartCountDisplay.innerHTML = "0";
+                        }
+
+                        // Update server cart
+                        fetch("http://localhost:3000/updateCart", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            cart: [],
+                            item_count: 0,
+                          }),
+                        }).then(() => {
+                          // Submit the form programmatically after cart is cleared
+                          checkoutForm.submit();
+                        });
+                      });
+                    }
+                  });
+                </script>
               </form>
             </div>
           </div>
