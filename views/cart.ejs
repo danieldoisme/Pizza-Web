@@ -60,15 +60,16 @@
                         <tr>
                           <th style="width: 5%">#</th>
                           <th style="width: 10%">Product</th>
-                          <th style="width: 50%">Product Name</th>
+                          <th style="width: 40%">Product Name</th>
                           <th style="width: 10%">Price</th>
                           <th style="width: 5%">Quantity</th>
                           <th style="width: 20%">Sub-Total</th>
+                          <th style="width: 10%">Action</th>
                         </tr>
                       </thead>
                       <tbody>
                         <% for (let i=0; i < items.length; i++) { %>
-                        <tr>
+                        <tr id="cart-row-<%= items[i].item_id %>">
                           <% count++ %>
                           <td><%= i + 1 %></td>
                           <td>
@@ -97,7 +98,7 @@
                               name="quantity"
                               id="quantity"
                               value="1"
-                              min="0"
+                              min="1"
                               onchange="updateData(this.value,'<%= i %>');"
                             />
                           </td>
@@ -106,6 +107,15 @@
                             <span class="price">
                               <%= items[i].item_price %>
                             </span>
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              class="btn btn-danger btn-sm"
+                              onclick="removeFromCart('<%= items[i].item_id %>', '<%= i %>')"
+                            >
+                              Remove
+                            </button>
                           </td>
                           <input
                             type="hidden"
@@ -193,6 +203,70 @@
           //console.log(total_price);
         }
         document.getElementById("total_price").innerHTML = "$ " + total_price;
+      }
+    </script>
+    <script>
+      function removeFromCart(itemId, index) {
+        // Get current cart from localStorage
+        let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+        let itemCount = parseInt(localStorage.getItem("item_count") || "0");
+
+        // Remove item from cart array
+        const itemIndex = cart.indexOf(itemId);
+        if (itemIndex > -1) {
+          cart.splice(itemIndex, 1);
+        }
+
+        // Update item count
+        itemCount = Math.max(0, itemCount - 1);
+
+        // Update localStorage
+        localStorage.setItem("cart", JSON.stringify(cart));
+        localStorage.setItem("item_count", itemCount);
+
+        // Update the cart count display
+        document.getElementById("cart-number-count").innerHTML = itemCount;
+
+        // Remove the row from the table
+        const row = document.getElementById(`cart-row-${itemId}`);
+        if (row) {
+          row.remove();
+        }
+
+        // Recalculate totals
+        updateTotals();
+
+        // Send update to server (optional)
+        updateServerCart(cart, itemCount);
+      }
+
+      function updateTotals() {
+        // Updating Total Quantity
+        const quantity = document.querySelectorAll(".quantity");
+        let total_qty = 0;
+        for (let j = 0; j < quantity.length; j++) {
+          total_qty += parseInt(quantity[j].value);
+        }
+        document.getElementById("total_quantity").innerHTML = total_qty;
+
+        // Updating Total Price
+        const price = document.querySelectorAll(".price");
+        let total_price = 0;
+        for (let j = 0; j < price.length; j++) {
+          total_price += parseInt(price[j].innerHTML);
+        }
+        document.getElementById("total_price").innerHTML = "$ " + total_price;
+      }
+
+      function updateServerCart(cart, itemCount) {
+        fetch("http://localhost:3000/updateCart", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cart: cart,
+            item_count: itemCount,
+          }),
+        });
       }
     </script>
     <script>

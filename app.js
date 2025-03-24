@@ -66,6 +66,23 @@ app.post("/address", updateAddress);
 app.post("/contact", updateContact);
 app.post("/password", updatePassword);
 
+app.post("/updateCart", function (req, res) {
+  const cart = req.body.cart || [];
+  const itemCount = req.body.item_count || 0;
+
+  // Update server-side cart state
+  citemdetails = [];
+
+  if (cart.length > 0) {
+    // Fetch items in cart
+    getItemDetails(cart, cart.length);
+  }
+
+  item_in_cart = itemCount;
+
+  return res.status(200).json({ success: true });
+});
+
 /***************************************** Admin End Portal ********************************************/
 // Routes for Admin Log-in, Admin Homepage, Adding Food, Viewing and Dispatching Orders, Changing Price, and Logout
 app.get("/admin/login", renderAdminLogInPage);
