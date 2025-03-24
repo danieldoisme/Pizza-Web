@@ -13,7 +13,6 @@ const app = express();
 
 // Import routes
 const indexRoutes = require("./routes/index.js");
-const userRoutes = require("./routes/users.js");
 const adminRoutes = require("./routes/admin.js");
 
 // Set View Engine and Middleware
@@ -50,7 +49,6 @@ app.use((req, res, next) => {
 
 // Set up routes
 app.use("/", indexRoutes);
-app.use("/user", userRoutes);
 app.use("/admin", adminRoutes);
 
 // Routes for User Sign-up, Sign-in, Home Page, Cart, Checkout, Order Confirmation, My Orders, and Settings
@@ -69,6 +67,7 @@ app.get("/settings", renderSettingsPage);
 app.post("/address", updateAddress);
 app.post("/contact", updateContact);
 app.post("/password", updatePassword);
+app.get("/logout", logout);
 
 app.post("/updateCart", function (req, res) {
   const cart = req.body.cart || [];
@@ -139,6 +138,12 @@ function signInUser(req, res) {
 function renderHomePage(req, res) {
   const userId = req.cookies.cookuid;
   const userName = req.cookies.cookuname;
+
+  // Early check for missing cookies - redirect immediately
+  if (!userId || !userName) {
+    return res.redirect("/signin");
+  }
+
   connection.query(
     "SELECT user_id, user_name FROM users WHERE user_id = ? AND user_name = ?",
     [userId, userName],
@@ -154,7 +159,8 @@ function renderHomePage(req, res) {
           }
         });
       } else {
-        res.render("signin");
+        // Change render to redirect for proper URL change
+        return res.redirect("/signin");
       }
     }
   );
@@ -441,6 +447,18 @@ function updatePassword(req, res) {
   const userName = req.cookies.cookuname;
   const oldPassword = req.body.old_password;
   const newPassword = req.body.new_password;
+  const confirmPassword = req.body.confirmPassword;
+
+  // First check if new password and confirm password match
+  if (newPassword !== confirmPassword) {
+    return res.render("settings", {
+      username: userName,
+      userid: userId,
+      item_count: item_in_cart,
+      error: "New password and confirm password do not match",
+    });
+  }
+
   connection.query(
     "SELECT user_id, user_name FROM users WHERE user_id = ? AND user_name = ? AND user_password = ?",
     [userId, userName, oldPassword],
@@ -451,16 +469,30 @@ function updatePassword(req, res) {
           [newPassword, userId],
           function (error, results) {
             if (!error) {
-              res.render("settings", {
+              return res.render("settings", {
                 username: userName,
                 userid: userId,
                 item_count: item_in_cart,
+                success: "Password updated successfully!",
+              });
+            } else {
+              return res.render("settings", {
+                username: userName,
+                userid: userId,
+                item_count: item_in_cart,
+                error: "Database error. Please try again.",
               });
             }
           }
         );
       } else {
-        res.render("signin");
+        // Don't redirect to signin, show error on current page
+        return res.render("settings", {
+          username: userName,
+          userid: userId,
+          item_count: item_in_cart,
+          error: "Current password is incorrect",
+        });
       }
     }
   );
@@ -712,8 +744,20 @@ function changePrice(req, res) {
 
 // Logout
 function logout(req, res) {
+  // Save the user type before clearing cookies
+  const adminId = req.cookies.cookuid;
+  const adminName = req.cookies.cookuname;
+
+  // Clear the authentication cookies
   res.clearCookie("cookuid");
   res.clearCookie("cookuname");
+
+  // Check if this was an admin user
+  if (req.originalUrl === "/admin/logout") {
+    return res.redirect("/admin/login");
+  }
+
+  // Default to user signin
   return res.redirect("/signin");
 }
 
