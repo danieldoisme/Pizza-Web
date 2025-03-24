@@ -33,21 +33,25 @@ const connection = mysql.createConnection({
 });
 connection.connect();
 
-// Set up session
-app.use(
-  session({
-    secret: "somekey",
-    resave: false,
-    saveUninitialized: false,
-  })
-);
+app.use((req, res, next) => {
+  // Admin handlers
+  res.locals.renderAdminLogInPage = renderAdminLogInPage;
+  res.locals.adminLogIn = adminLogIn;
+  res.locals.renderAdminHomepage = renderAdminHomepage;
+  res.locals.renderAddFoodPage = renderAddFoodPage;
+  res.locals.addFood = addFood;
+  res.locals.renderViewDispatchOrdersPage = renderViewDispatchOrdersPage;
+  res.locals.dispatchOrders = dispatchOrders;
+  res.locals.renderChangePricePage = renderChangePricePage;
+  res.locals.changePrice = changePrice;
+  res.locals.logout = logout;
+  next();
+});
 
 // Set up routes
 app.use("/", indexRoutes);
 app.use("/user", userRoutes);
 app.use("/admin", adminRoutes);
-
-/*****************************  User-End Portal ***************************/
 
 // Routes for User Sign-up, Sign-in, Home Page, Cart, Checkout, Order Confirmation, My Orders, and Settings
 app.get("/", renderIndexPage);
@@ -82,21 +86,6 @@ app.post("/updateCart", function (req, res) {
 
   return res.status(200).json({ success: true });
 });
-
-/***************************************** Admin End Portal ********************************************/
-// Routes for Admin Log-in, Admin Homepage, Adding Food, Viewing and Dispatching Orders, Changing Price, and Logout
-app.get("/admin/login", renderAdminLogInPage);
-app.post("/admin/login", adminLogIn);
-app.get("/admin/dashboard", renderAdminHomepage);
-app.get("/admin/addFood", renderAddFoodPage);
-app.post("/admin/addFood", addFood);
-app.get("/admin/orders", renderViewDispatchOrdersPage);
-app.post("/admin/orders", dispatchOrders);
-app.get("/admin/changePrice", renderChangePricePage);
-app.post("/admin/changePrice", changePrice);
-app.get("/logout", logout);
-
-/***************************** Route Handlers ***************************/
 
 // Index Page
 function renderIndexPage(req, res) {
@@ -482,7 +471,7 @@ function renderAdminHomepage(req, res) {
   const userId = req.cookies.cookuid;
   const userName = req.cookies.cookuname;
   connection.query(
-    "SELECT admin_id, admin_name FROM admin WHERE admin_email = ? and admin_name = ?",
+    "SELECT admin_id, admin_name FROM admin WHERE admin_id = ? AND admin_name = ?",
     [userId, userName],
     function (error, results) {
       if (!error && results.length) {
@@ -511,12 +500,12 @@ function adminLogIn(req, res) {
     [email, password],
     function (error, results) {
       if (error || !results.length) {
-        res.render("/admin/login");
+        res.render("admin/login");
       } else {
         const { admin_id, admin_name } = results[0];
         res.cookie("cookuid", admin_id);
         res.cookie("cookuname", admin_name);
-        res.render("admin/dashboard");
+        res.redirect("/admin/dashboard");
       }
     }
   );
@@ -723,7 +712,8 @@ function changePrice(req, res) {
 
 // Logout
 function logout(req, res) {
-  res.clearCookie();
+  res.clearCookie("cookuid");
+  res.clearCookie("cookuname");
   return res.redirect("/signin");
 }
 
