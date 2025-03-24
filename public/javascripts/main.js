@@ -1,24 +1,31 @@
-function myFunction() {
-  document.getElementById("myDropdown").classList.toggle("show");
-}
-
 function scrollToTop() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-// Close the dropdown if the user clicks outside of it
-window.onclick = function (event) {
-  if (!event.target.matches(".header-username")) {
-    var dropdowns = document.getElementsByClassName("dropdown-content");
-    var i;
-    for (i = 0; i < dropdowns.length; i++) {
-      var openDropdown = dropdowns[i];
-      if (openDropdown.classList.contains("show")) {
-        openDropdown.classList.remove("show");
+document.addEventListener("DOMContentLoaded", function () {
+  const dropdownBtn = document.getElementById("usernameDropdownBtn");
+  if (dropdownBtn) {
+    dropdownBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      document.getElementById("myDropdown").classList.toggle("show");
+    });
+  }
+
+  window.addEventListener("click", function (event) {
+    if (
+      !event.target.matches(".header-username") &&
+      !event.target.closest(".header-username")
+    ) {
+      const dropdowns = document.getElementsByClassName("dropdown-content");
+      for (let i = 0; i < dropdowns.length; i++) {
+        const openDropdown = dropdowns[i];
+        if (openDropdown.classList.contains("show")) {
+          openDropdown.classList.remove("show");
+        }
       }
     }
-  }
-};
+  });
+});
 
 $(document).ready(function ($) {
   "use strict";
@@ -101,7 +108,7 @@ $(document).ready(function ($) {
             easing: "ease-in-out",
           },
           load: {
-            filter: ".all, .breakfast, .lunch, .dinner, .beverages, .desserts",
+            filter: ".all, .pizzas, .appetizers, .desserts, .beverages",
           },
         });
       },
