@@ -1,18 +1,30 @@
-/**
- * Middleware to check if a user is authenticated as an admin
- * Redirects to admin login if not authenticated
- */
-module.exports = function isAdmin(req, res, next) {
-  // Skip authentication for the login route itself
-  if (req.path === "/login") {
-    return next();
-  }
+const mysql = require("mysql");
+const connection = mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  password: "doducthanh23@$",
+  database: "foodorderingwesitedb",
+});
 
-  // Check if admin is logged in (has valid adminId in session)
-  if (!req.session.adminId) {
+function isAdmin(req, res, next) {
+  const adminId = req.cookies.cookuid;
+  const adminName = req.cookies.cookuname;
+
+  if (!adminId || !adminName) {
     return res.redirect("/admin/login");
   }
 
-  // Admin is authenticated, proceed to the next middleware/route handler
-  next();
-};
+  connection.query(
+    "SELECT admin_id, admin_name FROM admin WHERE admin_id = ? AND admin_name = ?",
+    [adminId, adminName],
+    function (error, results) {
+      if (error || !results.length) {
+        return res.redirect("/admin/login");
+      }
+      // Admin is authenticated
+      next();
+    }
+  );
+}
+
+module.exports = isAdmin;

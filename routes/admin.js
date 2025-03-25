@@ -2,57 +2,58 @@ const express = require("express");
 const router = express.Router();
 const isAdmin = require("../middleware/isAdmin");
 
-// Apply admin middleware to all routes in this router
-router.use(isAdmin);
-
-// Admin login route
+// Login routes (no auth required)
 router.get("/login", (req, res) => {
-  res.render("admin/login");
+  res.locals.renderAdminLogInPage(req, res);
 });
 
 router.post("/login", (req, res) => {
-  // Admin login logic here
-  // If successful, set req.session.adminId and redirect to dashboard
+  res.locals.adminLogIn(req, res);
 });
 
-// Admin dashboard
+// Logout route (no auth required)
+router.get("/logout", (req, res) => {
+  res.locals.logout(req, res);
+});
+
+// Apply the isAdmin middleware to all protected admin routes
+router.use(isAdmin);
+
+// Protected admin routes
 router.get("/dashboard", (req, res) => {
-  res.render("admin/dashboard", { username: req.session.adminName });
+  res.locals.renderAdminHomepage(req, res);
 });
 
-// Add food route
-router.get("/food/add", (req, res) => {
-  res.render("admin/addFood", { username: req.session.adminName });
+router.get("/addFood", (req, res) => {
+  res.locals.renderAddFoodPage(req, res);
 });
 
-// Change food price route
-router.get("/food/price", (req, res) => {
-  // Get items from database
-  res.render("admin/changePrice", {
-    username: req.session.adminName,
-    items: [],
-  });
+router.post("/addFood", (req, res) => {
+  res.locals.addFood(req, res);
 });
 
-// Dispatch orders route
 router.get("/orders", (req, res) => {
-  // Get orders from database
-  res.render("admin/orders", {
-    username: req.session.adminName,
-    orders: [],
-  });
+  res.locals.renderViewDispatchOrdersPage(req, res);
 });
 
-// Admin dashboard
-router.get("/", (req, res) => {
-  res.redirect("/admin/dashboard");
+router.post("/orders", (req, res) => {
+  res.locals.dispatchOrders(req, res);
 });
 
-// Products route
-router.get("/products", (req, res) => {
-  res.render("admin/products");
+router.post("/dispatch_orders", (req, res) => {
+  res.locals.dispatchOrders(req, res);
 });
 
-// Add all other admin routes here
+router.get("/dispatch_orders", (req, res) => {
+  res.locals.renderViewDispatchOrdersPage(req, res);
+});
+
+router.get("/changePrice", (req, res) => {
+  res.locals.renderChangePricePage(req, res);
+});
+
+router.post("/changePrice", (req, res) => {
+  res.locals.changePrice(req, res);
+});
 
 module.exports = router;
