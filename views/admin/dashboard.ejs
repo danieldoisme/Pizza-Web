@@ -21,36 +21,7 @@
   </head>
 
   <body class="body-fixed">
-    <header class="site-header">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-2">
-            <div class="header-logo">
-              <a href="/admin/dashboard">
-                <img
-                  src="/images/logo.svg"
-                  style="max-width: 100%; height: auto"
-                  alt="PizzazzPizza Logo"
-                />
-              </a>
-            </div>
-          </div>
-          <div class="col-lg-10">
-            <div class="main-navigation">
-              <div class="header-right">
-                <button
-                  onclick="window.location.href='/admin/logout'"
-                  class="sec-btn"
-                  style="color: white; background: orange"
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
+    <%- include('../partials/adminNav') %>
 
     <div id="viewport">
       <div id="js-scroll-content">
@@ -63,7 +34,13 @@
             <div class="row">
               <div class="col-lg-12">
                 <div class="sec-title text-center mb-5">
-                  <h2 class="h2-title">Admin Portal</h2>
+                  <h2
+                    class="h2-title"
+                    style="color: #ff8243; margin-bottom: 20px"
+                  >
+                    Admin Portal
+                  </h2>
+                  <h2 class="h2-title">Welcome, <%= username %></h2>
                   <div class="sec-title-shape mb-4">
                     <img src="/images/title-shape.svg" alt="" />
                   </div>

@@ -40,6 +40,14 @@ router.post("/orders", (req, res) => {
   res.locals.dispatchOrders(req, res);
 });
 
+router.post("/dispatch_orders", (req, res) => {
+  res.locals.dispatchOrders(req, res);
+});
+
+router.get("/dispatch_orders", (req, res) => {
+  res.locals.renderViewDispatchOrdersPage(req, res);
+});
+
 router.get("/changePrice", (req, res) => {
   res.locals.renderChangePricePage(req, res);
 });

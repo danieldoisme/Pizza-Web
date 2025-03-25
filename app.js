@@ -639,56 +639,106 @@ function renderViewDispatchOrdersPage(req, res) {
 
 // Dispatch Orders
 function dispatchOrders(req, res) {
-  totalOrder = req.body.order_id_s;
+  const totalOrder = req.body.order_id_s;
+  if (!totalOrder || totalOrder.length === 0) {
+    return res.render("admin/orders", {
+      username: req.cookies.cookuname,
+      orders: [],
+      error: "No orders selected for dispatch",
+    });
+  }
+
   const unique = [...new Set(totalOrder)];
-  unique.forEach((orderId) => {
-    connection.query(
-      "SELECT * FROM orders WHERE order_id = ?",
-      [orderId],
-      function (error, resultsItem) {
-        if (!error && resultsItem.length) {
-          const currDate = new Date();
-          connection.query(
-            "INSERT INTO order_dispatch (order_id, user_id, item_id, quantity, price, datetime) VALUES (?, ?, ?, ?, ?, ?)",
-            [
-              resultsItem[0].order_id,
-              resultsItem[0].user_id,
-              resultsItem[0].item_id,
-              resultsItem[0].quantity,
-              resultsItem[0].price,
-              currDate,
-            ],
-            function (error, results) {
-              if (!error) {
+  const promises = [];
+
+  // Begin transaction
+  connection.beginTransaction(function (err) {
+    if (err) {
+      console.error("Transaction error:", err);
+      return res.status(500).send("Database transaction error");
+    }
+
+    // Process each order in the transaction
+    unique.forEach((orderId) => {
+      const promise = new Promise((resolve, reject) => {
+        connection.query(
+          "SELECT * FROM orders WHERE order_id = ?",
+          [orderId],
+          function (error, resultsItem) {
+            if (error || !resultsItem.length) {
+              return reject(error || new Error("Order not found"));
+            }
+
+            const order = resultsItem[0];
+            const currDate = new Date();
+
+            connection.query(
+              "INSERT INTO order_dispatch (order_id, user_id, item_id, quantity, price, datetime) VALUES (?, ?, ?, ?, ?, ?)",
+              [
+                order.order_id,
+                order.user_id,
+                order.item_id,
+                order.quantity,
+                order.price,
+                currDate,
+              ],
+              function (error) {
+                if (error) return reject(error);
+
                 connection.query(
                   "DELETE FROM orders WHERE order_id = ?",
-                  [resultsItem[0].order_id],
-                  function (error, results2) {
-                    if (error) {
-                      res.status(500).send("Something went wrong");
-                    }
+                  [order.order_id],
+                  function (error) {
+                    if (error) return reject(error);
+                    resolve();
                   }
                 );
-              } else {
-                res.status(500).send("Something went wrong");
               }
+            );
+          }
+        );
+      });
+      promises.push(promise);
+    });
+
+    // Wait for all operations to complete
+    Promise.all(promises)
+      .then(() => {
+        // Commit the transaction
+        connection.commit(function (err) {
+          if (err) {
+            return connection.rollback(function () {
+              console.error("Commit error:", err);
+              res.status(500).send("Failed to commit transaction");
+            });
+          }
+
+          // Only after successful commit, fetch updated orders and render page
+          connection.query(
+            "SELECT * FROM orders ORDER BY datetime",
+            function (error, results) {
+              if (error) {
+                console.error("Query error after commit:", error);
+                return res.status(500).send("Error fetching updated orders");
+              }
+
+              res.render("admin/orders", {
+                username: req.cookies.cookuname,
+                orders: results,
+                success: "Orders dispatched successfully",
+              });
             }
           );
-        } else {
-          res.status(500).send("Something went wrong");
-        }
-      }
-    );
-  });
-  connection.query(
-    "SELECT * FROM orders ORDER BY datetime",
-    function (error, results2_dis) {
-      res.render("admin/orders", {
-        username: req.cookies.cookuname,
-        orders: results2_dis,
+        });
+      })
+      .catch((error) => {
+        // Rollback the transaction on any error
+        connection.rollback(function () {
+          console.error("Operation error:", error);
+          res.status(500).send("Error dispatching orders: " + error.message);
+        });
       });
-    }
-  );
+  });
 }
 
 // Render Admin Change Price Page
@@ -719,25 +769,48 @@ function renderChangePricePage(req, res) {
 function changePrice(req, res) {
   const item_name = req.body.item_name;
   const new_food_price = req.body.NewFoodPrice;
+
+  // Validate inputs
+  if (item_name === "None") {
+    return res.status(400).send("Please select a valid food item");
+  }
+
+  // Convert and validate price as integer
+  const price = parseInt(new_food_price, 10);
+
+  // Check if input is a valid integer
+  if (isNaN(price) || price < 0 || price.toString() !== new_food_price.trim()) {
+    return res.status(400).send("Please enter a valid positive integer price");
+  }
+
   connection.query(
     "SELECT item_name FROM menu WHERE item_name = ?",
     [item_name],
     function (error, results1) {
-      if (!error && results1.length) {
-        connection.query(
-          "UPDATE menu SET item_price = ? WHERE item_name = ?",
-          [new_food_price, item_name],
-          function (error, results2) {
-            if (!error) {
-              res.render("admin/dashboard");
-            } else {
-              res.status(500).send("Something went wrong");
-            }
-          }
-        );
-      } else {
-        res.status(500).send("Something went wrong");
+      if (error) {
+        console.error("Database error checking item:", error);
+        return res.status(500).send("Database error checking item");
       }
+
+      if (!results1.length) {
+        return res.status(404).send("Food item not found");
+      }
+
+      connection.query(
+        "UPDATE menu SET item_price = ? WHERE item_name = ?",
+        [price, item_name],
+        function (error, results2) {
+          if (error) {
+            console.error("Database error updating price:", error);
+            return res.status(500).send("Error updating price");
+          }
+
+          // Redirect with success message
+          return res.redirect(
+            "/admin/dashboard?message=Price updated successfully"
+          );
+        }
+      );
     }
   );
 }
