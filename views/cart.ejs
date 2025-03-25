@@ -211,7 +211,7 @@
                         }
 
                         // Update server cart
-                        fetch("http://localhost:3000/updateCart", {
+                        fetch("/updateCart", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({
@@ -316,7 +316,7 @@
       }
 
       function updateServerCart(cart, itemCount) {
-        fetch("http://localhost:3000/updateCart", {
+        fetch("/updateCart", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -355,9 +355,6 @@
     <script src="/javascripts/ScrollTrigger.min.js"></script>
     <!-- scroll to plugin  -->
     <script src="/javascripts/ScrollToPlugin.min.js"></script>
-    <!-- rellax  -->
-    <script src="assets/js/rellax.min.js"></script>
-    <script src="assets/js/rellax-custom.js"></script>
     <!-- smooth scroll  -->
     <script src="/javascripts/smooth-scroll.js"></script>
     <!-- custom js  -->
