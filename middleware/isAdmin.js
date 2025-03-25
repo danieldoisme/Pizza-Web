@@ -2,8 +2,8 @@ const mysql = require("mysql");
 const connection = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "doducthanh23@$",
-  database: "foodorderingwesitedb",
+  password: "root",
+  database: "pizzazzpizza",
 });
 
 function isAdmin(req, res, next) {
