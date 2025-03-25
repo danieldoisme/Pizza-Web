@@ -1,6 +1,6 @@
 # PizzazzPizza
 
-A traditional Italian-inspired pizza restaurant brought to the web. PizzazzPizza combines authentic recipes passed down through generations with modern online ordering convenience. Born from Nonna Emilia's passion for food and family in the heart of the Italian countryside, each pizza tells a story of tradition, quality ingredients, and culinary craftsmanship.
+A traditional Italian-inspired pizza restaurant brought to the web.
 
 ## Features
 
