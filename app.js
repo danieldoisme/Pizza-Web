@@ -60,7 +60,7 @@ app.post("/signin", signInUser);
 app.get("/homepage", renderHomePage);
 app.get("/cart", renderCart);
 app.post("/cart", updateCart);
-app.post("/checkout", checkout);
+// app.post("/checkout", checkout);
 app.get("/confirmation", renderConfirmationPage);
 app.get("/orders", renderMyOrdersPage);
 app.get("/settings", renderSettingsPage);
@@ -68,6 +68,8 @@ app.post("/address", updateAddress);
 app.post("/contact", updateContact);
 app.post("/password", updatePassword);
 app.get("/logout", logout);
+app.post("/checkout", renderCheckoutPage);
+app.post("/checkout/process-payment", processPayment);
 
 app.post("/updateCart", function (req, res) {
   const cart = req.body.cart || [];
@@ -317,6 +319,144 @@ function checkout(req, res) {
   );
 }
 
+// Render Checkout Page
+function renderCheckoutPage(req, res) {
+  const userId = req.cookies.cookuid;
+  const userName = req.cookies.cookuname;
+
+  console.log("Checkout - Auth Check:", { userId, userName });
+
+  // Early check for missing cookies - redirect immediately
+  if (!userId || !userName) {
+    console.log("Checkout - Missing auth cookies, redirecting to signin");
+    return res.redirect("/signin");
+  }
+
+  connection.query(
+    "SELECT user_id, user_name, user_address AS address, user_mobileno AS contact FROM users WHERE user_id = ? AND user_name = ?",
+    [userId, userName],
+    function (error, results) {
+      if (error) {
+        console.log("Checkout - DB Error:", error);
+        return res.redirect("/signin"); // CHANGED from render to redirect
+      }
+
+      if (!results || results.length === 0) {
+        console.log("Checkout - User not found in DB");
+        return res.redirect("/signin"); // CHANGED from render to redirect
+      }
+
+      // Render checkout page with user details and cart items
+      res.render("checkout", {
+        username: userName,
+        userid: userId,
+        user: results[0],
+        items: citemdetails,
+        item_count: item_in_cart,
+      });
+    }
+  );
+}
+
+// Process Payment
+function processPayment(req, res) {
+  const userId = req.cookies.cookuid;
+  const userName = req.cookies.cookuname;
+  const paymentMethod = req.body.paymentMethod;
+  const address = req.body.address || req.body.newDeliveryAddress;
+  const paymentId = req.body.paymentId || null; // For PayPal transactions
+
+  console.log("Processing payment:", { paymentMethod, paymentId });
+
+  // Check if authentication is valid
+  if (!userId || !userName) {
+    if (paymentMethod === "PayPal") {
+      return res
+        .status(401)
+        .json({ success: false, message: "Authentication required" });
+    } else {
+      return res.redirect("/signin");
+    }
+  }
+
+  // Save order with payment method info
+  const { itemid, quantity, subprice } = req.body;
+  const currDate = new Date();
+
+  // Process order creation
+  if (
+    Array.isArray(itemid) &&
+    Array.isArray(quantity) &&
+    Array.isArray(subprice)
+  ) {
+    const promises = [];
+
+    itemid.forEach((item, index) => {
+      if (quantity[index] != 0) {
+        const promise = new Promise((resolve, reject) => {
+          connection.query(
+            "INSERT INTO orders (order_id, user_id, item_id, quantity, price, datetime, payment_method, payment_id, delivery_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+              uuidv4(),
+              userId,
+              item,
+              quantity[index],
+              subprice[index] * quantity[index],
+              currDate,
+              paymentMethod,
+              paymentId,
+              address,
+            ],
+            function (error) {
+              if (error) {
+                reject(error);
+              } else {
+                resolve();
+              }
+            }
+          );
+        });
+        promises.push(promise);
+      }
+    });
+
+    Promise.all(promises)
+      .then(() => {
+        // Clear cart
+        citems = [];
+        citemdetails = [];
+        item_in_cart = 0;
+        getItemDetails(citems, 0);
+
+        // Return appropriate response based on payment method
+        if (paymentMethod === "PayPal") {
+          return res.status(200).json({ success: true });
+        } else {
+          return res.redirect("/confirmation");
+        }
+      })
+      .catch((error) => {
+        console.error("Error processing order:", error);
+        if (paymentMethod === "PayPal") {
+          return res
+            .status(500)
+            .json({ success: false, message: "Error processing order" });
+        } else {
+          return res.status(500).send("Error processing order");
+        }
+      });
+  } else {
+    // Handle invalid input
+    if (paymentMethod === "PayPal") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid order data" });
+    } else {
+      return res.redirect("/cart");
+    }
+  }
+}
+
 // Render Confirmation Page
 function renderConfirmationPage(req, res) {
   const userId = req.cookies.cookuid;
@@ -333,6 +473,17 @@ function renderConfirmationPage(req, res) {
     }
   );
 }
+
+app.get("/confirmation", function (req, res) {
+  const userId = req.cookies.cookuid;
+  const userName = req.cookies.cookuname;
+
+  if (userId && userName) {
+    res.render("confirmation", { username: userName, userid: userId });
+  } else {
+    res.redirect("/signin");
+  }
+});
 
 // Render My Orders Page
 function renderMyOrdersPage(req, res) {
