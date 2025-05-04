@@ -33,6 +33,9 @@ const connection = mysql.createConnection({
 connection.connect();
 
 app.use((req, res, next) => {
+  // Attach renderIndexPage for use in indexRoutes
+  res.locals.renderIndexPage = renderIndexPage;
+
   // Admin handlers
   res.locals.renderAdminLogInPage = renderAdminLogInPage;
   res.locals.adminLogIn = adminLogIn;
@@ -52,7 +55,6 @@ app.use("/", indexRoutes);
 app.use("/admin", adminRoutes);
 
 // Routes for User Sign-up, Sign-in, Home Page, Cart, Checkout, Order Confirmation, My Orders, and Settings
-app.get("/", renderIndexPage);
 app.get("/signup", renderSignUpPage);
 app.post("/signup", signUpUser);
 app.get("/signin", renderSignInPage);
@@ -88,9 +90,33 @@ app.post("/updateCart", function (req, res) {
   return res.status(200).json({ success: true });
 });
 
-// Index Page
+// Render Index Page
 function renderIndexPage(req, res) {
-  res.render("index");
+  // Get authentication info from cookies
+  const userId = req.cookies.cookuid;
+  const userName = req.cookies.cookuname;
+  const userType = req.cookies.usertype; // This is the new cookie we added
+
+  console.log("=============== INDEX PAGE ==============");
+  console.log("Cookies received:", req.cookies);
+  console.log("Auth cookies:", { userId, userName, userType });
+  console.log("Cookie header:", req.headers.cookie);
+  console.log("=========================================");
+
+  // Simplified authentication check using the usertype cookie
+  if (userId && userName && userType) {
+    const isAdmin = userType === "admin";
+
+    res.render("index", {
+      userid: userId,
+      username: userName,
+      isAdmin: isAdmin,
+    });
+  } else {
+    // No valid cookies found, render without auth info
+    console.log("No valid auth cookies found");
+    res.render("index", {});
+  }
 }
 
 // User Sign-up
@@ -128,8 +154,30 @@ function signInUser(req, res) {
         res.render("signin");
       } else {
         const { user_id, user_name } = results[0];
-        res.cookie("cookuid", user_id);
-        res.cookie("cookuname", user_name);
+
+        // Set cookies with explicit options that ensure they're sent with all requests
+        res.cookie("cookuid", user_id, {
+          maxAge: 24 * 60 * 60 * 1000, // 24 hours
+          httpOnly: true,
+          path: "/", // CRITICAL: This ensures the cookie is sent with all requests
+          sameSite: "lax",
+        });
+
+        res.cookie("cookuname", user_name, {
+          maxAge: 24 * 60 * 60 * 1000, // 24 hours
+          httpOnly: true,
+          path: "/", // CRITICAL: This ensures the cookie is sent with all requests
+          sameSite: "lax",
+        });
+
+        // Add a user type cookie to simplify identification
+        res.cookie("usertype", "user", {
+          maxAge: 24 * 60 * 60 * 1000,
+          httpOnly: true,
+          path: "/",
+          sameSite: "lax",
+        });
+
         res.redirect("/homepage");
       }
     }
@@ -686,8 +734,30 @@ function adminLogIn(req, res) {
         res.render("admin/login");
       } else {
         const { admin_id, admin_name } = results[0];
-        res.cookie("cookuid", admin_id);
-        res.cookie("cookuname", admin_name);
+
+        // Set cookies with explicit options
+        res.cookie("cookuid", admin_id, {
+          maxAge: 24 * 60 * 60 * 1000, // 24 hours
+          httpOnly: true,
+          path: "/", // CRITICAL: This ensures the cookie is sent with all requests
+          sameSite: "lax",
+        });
+
+        res.cookie("cookuname", admin_name, {
+          maxAge: 24 * 60 * 60 * 1000, // 24 hours
+          httpOnly: true,
+          path: "/", // CRITICAL: This ensures the cookie is sent with all requests
+          sameSite: "lax",
+        });
+
+        // Add a user type cookie to simplify identification
+        res.cookie("usertype", "admin", {
+          maxAge: 24 * 60 * 60 * 1000,
+          httpOnly: true,
+          path: "/",
+          sameSite: "lax",
+        });
+
         res.redirect("/admin/dashboard");
       }
     }
