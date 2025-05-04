@@ -46,7 +46,7 @@
         >
           <div class="container">
             <div class="row">
-              <form action="/checkout" method="post">
+              <form action="/checkout" method="POST">
                 <div class="col-lg-12">
                   <div class="sec-title text-center mb-5">
                     <h2 class="h2-title">My Cart</h2>
@@ -67,11 +67,14 @@
                           <th style="width: 10%">Action</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody id="cart-body">
                         <% for (let i=0; i < items.length; i++) { %>
-                        <tr id="cart-row-<%= items[i].item_id %>">
+                        <tr
+                          id="cart-row-<%= items[i].item_id %>"
+                          data-row-index="<%= i %>"
+                        >
                           <% count++ %>
-                          <td><%= i + 1 %></td>
+                          <td class="row-number"><%= i + 1 %></td>
                           <td>
                             <img
                               src="/images/dish/<%= items[i].item_img %>"
@@ -119,12 +122,13 @@
                           </td>
                           <input
                             type="hidden"
-                            name="itemid"
+                            name="itemid[]"
                             value="<%= items[i].item_id %>"
                           />
+                          <input type="hidden" name="quantity[]" value="1" />
                           <input
                             type="hidden"
-                            name="subprice"
+                            name="subprice[]"
                             value="<%= items[i].item_price %>"
                           />
                           <% total_price +=items[i].item_price %>
@@ -158,9 +162,8 @@
                 <br />
                 <br />
                 <% if (count > 0) { %>
-                <input
+                <button
                   type="submit"
-                  value="Buy Now"
                   class="sec-btn"
                   id="buyNowBtn"
                   style="
@@ -170,7 +173,9 @@
                     color: white;
                     background: orange;
                   "
-                />
+                >
+                  Buy Now
+                </button>
                 <% } else { %>
                 <button
                   type="button"
@@ -196,32 +201,8 @@
 
                     if (checkoutForm) {
                       checkoutForm.addEventListener("submit", function (event) {
-                        // Prevent default form submission
-                        event.preventDefault();
-
-                        // Clear cart data first
-                        localStorage.setItem("cart", JSON.stringify([]));
-                        localStorage.setItem("item_count", "0");
-
-                        // Update the cart count display
-                        const cartCountDisplay =
-                          document.getElementById("cart-number-count");
-                        if (cartCountDisplay) {
-                          cartCountDisplay.innerHTML = "0";
-                        }
-
-                        // Update server cart
-                        fetch("/updateCart", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            cart: [],
-                            item_count: 0,
-                          }),
-                        }).then(() => {
-                          // Submit the form programmatically after cart is cleared
-                          checkoutForm.submit();
-                        });
+                        // We want the form to just submit normally now
+                        // Don't prevent default or clear cart
                       });
                     }
                   });
@@ -290,11 +271,36 @@
           row.remove();
         }
 
+        // Update row numbers
+        updateRowNumbers();
+
         // Recalculate totals
         updateTotals();
 
         // Send update to server (optional)
         updateServerCart(cart, itemCount);
+      }
+
+      function updateRowNumbers() {
+        // Get all remaining rows
+        const rows = document.querySelectorAll("#cart-tbody tr");
+
+        // Update row numbers
+        rows.forEach((row, index) => {
+          const rowNumberCell = row.querySelector(".row-number");
+          if (rowNumberCell) {
+            rowNumberCell.textContent = index + 1;
+          }
+          // Update data attribute for future reference
+          row.setAttribute("data-row-index", index);
+        });
+
+        // Check if cart is empty and update UI accordingly
+        if (rows.length === 0) {
+          // If no items left, reload the page to show "Add items to cart first" button
+          // alternatively you could manipulate the DOM to show/hide buttons
+          location.reload();
+        }
       }
 
       function updateTotals() {

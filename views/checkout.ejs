@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout - PizzazzPizza</title>
+  <!-- icons  -->
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
+  <!-- bootstrap  -->
+  <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
+  <!-- swiper slider  -->
+  <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css" />
+  <!-- fancy box  -->
+  <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css" />
+  <!-- custom css  -->
+  <link rel="stylesheet" href="/stylesheets/style.css" />
+  <script src="https://www.paypal.com/sdk/js?client-id=AQcmhMz3aSeDL5V6zrSn1BiKmTHriSiCLCOLkZgf-jKv4Tbe4Ajjnntdis7duz7yOG8-bslEoaCWh7rR&currency=USD"></script>
+</head>
+
+<body class="body-fixed">
+  <%- include('partials/userNav') %>
+
+  <div id="viewport">
+    <div id="js-scroll-content">
+      <section class="section" id="congratulations" style="background-image: url(/images/menu-bg.png)">
+        <div class="container">
+          <div class="row">
+            <div class="col-12 mb-4">
+              <h2 class="section-heading">Checkout</h2>
+              <p>Please select your preferred payment method and review your order before confirming.</p>
+            </div>
+          </div>
+
+          <div class="row">
+            <!-- COD Option (2/3 width) -->
+            <div class="col-lg-8">
+              <div class="card mb-4">
+                <div class="card-header">
+                  <h3>Cash on Delivery</h3>
+                </div>
+                <div class="card-body">
+                  <form id="cod-form" action="/checkout/process-payment" method="POST">
+                    <input type="hidden" name="paymentMethod" value="COD">
+
+                    <% if (items && items.length > 0) { %>
+                    <% items.forEach(function(item, index) { %>
+                    <input type="hidden" name="itemid[]" value="<%= item.item_id %>">
+                    <input type="hidden" name="quantity[]" value="1"> <!-- Default quantity, adjust as needed -->
+                    <input type="hidden" name="subprice[]" value="<%= item.item_price %>">
+                    <% }); %>
+                    <% } %>
+
+                    <div class="form-group mb-4">
+                      <h4>Delivery Address</h4>
+
+                      <% if (user && user.address) { %>
+                      <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="addressOption" id="existingAddress" value="existing" checked>
+                        <label class="form-check-label" for="existingAddress">
+                          Use my existing address
+                        </label>
+                        <div class="existing-address mt-2">
+                          <p class="mb-0"><%= user.address %></p>
+                          <input type="hidden" name="address" id="userExistingAddress" value="<%= user.address %>">
+                        </div>
+                      </div>
+                      <% } %>
+
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" name="addressOption" id="newAddress" value="new" <%= !user || !user.address ? 'checked' : '' %>>
+                        <label class="form-check-label" for="newAddress">
+                          Use a different address
+                        </label>
+                      </div>
+
+                      <div id="newAddressForm" class="mt-3" <%= user && user.address ? 'style="display:none;"' : '' %>>
+                        <div class="mb-3">
+                          <label for="deliveryAddress" class="form-label">Delivery Address</label>
+                          <textarea class="form-control" id="deliveryAddress" name="newDeliveryAddress" rows="3" placeholder="Enter your delivery address"></textarea>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="form-group mb-4">
+                      <h4>Order Summary</h4>
+                      <div class="table-responsive">
+                        <table class="table">
+                          <thead>
+                            <tr>
+                              <th>Item</th>
+                              <th>Price</th>
+                              <th>Quantity</th>
+                              <th>Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <% let totalAmount = 0; %>
+                            <% if (items && items.length > 0) { %>
+                            <% items.forEach(function(item) { %>
+                            <tr>
+                              <td><%= item.item_name %></td>
+                              <td>$<%= item.item_price %></td>
+                              <td>1</td> <!-- Default quantity, adjust as needed -->
+                              <td>$<%= item.item_price %></td>
+                              <% totalAmount += parseInt(item.item_price); %>
+                            </tr>
+                            <% }); %>
+                            <% } else { %>
+                            <tr>
+                              <td colspan="4" class="text-center">Your cart is empty</td>
+                            </tr>
+                            <% } %>
+                          </tbody>
+                          <tfoot>
+                            <tr>
+                              <th colspan="3">Total Amount</th>
+                              <th>$<%= totalAmount %></th>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                      <button type="submit" class="btn btn-primary btn-lg" <%= items && items.length > 0 ? '' : 'disabled' %>>
+                        Confirm Order (Cash on Delivery)
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Online Payment Options (1/3 width) -->
+            <div class="col-lg-4">
+              <div class="card">
+                <div class="card-header">
+                  <h3>Online Payment</h3>
+                </div>
+                <div class="card-body">
+                  <p>Complete your purchase securely with PayPal or credit/debit card.</p>
+
+                  <div class="paypal-button-container" id="paypal-button-container">
+                    <!-- PayPal buttons will be inserted here -->
+                  </div>
+
+                  <div class="mt-3">
+                    <p class="small text-muted">
+                      By clicking on PayPal or Card payment options, you'll be redirected to secure payment processing.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <%- include('partials/footer') %>
+    </div>
+  </div>
+
+  <!-- jquery  -->
+  <script src="/javascripts/jquery-3.5.1.min.js"></script>
+  <!-- bootstrap -->
+  <script src="/javascripts/bootstrap.min.js"></script>
+  <script src="/javascripts/popper.min.js"></script>
+  <!-- fontawesome  -->
+  <script src="/javascripts/font-awesome.min.js"></script>
+  <!-- swiper slider  -->
+  <script src="/javascripts/swiper-bundle.min.js"></script>
+  <!-- mixitup -- filter  -->
+  <script src="/javascripts/jquery.mixitup.min.js"></script>
+  <!-- fancy box  -->
+  <script src="/javascripts/query.fancybox.min.js"></script>
+  <!-- parallax  -->
+  <script src="/javascripts/parallax.min.js"></script>
+  <!-- gsap  -->
+  <script src="/javascripts/gsap.min.js"></script>
+  <!-- scroll trigger  -->
+  <script src="/javascripts/ScrollTrigger.min.js"></script>
+  <!-- scroll to plugin  -->
+  <script src="/javascripts/ScrollToPlugin.min.js"></script>
+  <!-- smooth scroll  -->
+  <script src="/javascripts/smooth-scroll.js"></script>
+  <!-- custom js  -->
+  <script src="/javascripts/main.js"></script>
+  <script src="/javascripts/cart.js"></script>
+  <script>
+    var cartTotal = '<%= (items && items.length > 0) ? items.reduce((total, item) => total + parseInt(item.item_price), 0) : 0 %>';
+
+    const calculateTotal = () => {
+      return cartTotal;
+    };
+
+    // Single DOMContentLoaded event handler for all initialization
+    document.addEventListener('DOMContentLoaded', function() {
+      // Address selection toggle functionality
+      const existingAddressRadio = document.getElementById('existingAddress');
+      const newAddressRadio = document.getElementById('newAddress');
+      const newAddressForm = document.getElementById('newAddressForm');
+      const userExistingAddress = document.getElementById('userExistingAddress');
+      const deliveryAddress = document.getElementById('deliveryAddress');
+      const codForm = document.getElementById('cod-form');
+
+      // Setup address toggle functionality
+      if (existingAddressRadio && newAddressRadio && newAddressForm) {
+        existingAddressRadio.addEventListener('change', function() {
+          if (this.checked) {
+            newAddressForm.style.display = 'none';
+          }
+        });
+
+        newAddressRadio.addEventListener('change', function() {
+          if (this.checked) {
+            newAddressForm.style.display = 'block';
+          }
+        });
+
+        // Update form before submission
+        if (codForm) {
+          codForm.addEventListener('submit', function(e) {
+            if (newAddressRadio.checked && deliveryAddress.value.trim() === '') {
+              e.preventDefault();
+              alert('Please enter a delivery address');
+              return false;
+            }
+
+            if (newAddressRadio.checked) {
+              userExistingAddress.value = deliveryAddress.value;
+            }
+          });
+        }
+      }
+
+      // Initialize PayPal button
+      if (document.getElementById('paypal-button-container')) {
+        paypal.Buttons({
+          // Set up the transaction
+          createOrder: function(data, actions) {
+            const total = calculateTotal();
+            if (total <= 0) {
+              alert('Your cart is empty.');
+              return;
+            }
+
+            return actions.order.create({
+              purchase_units: [{
+                amount: {
+                  value: total.toString()
+                }
+              }]
+            });
+          },
+
+          // Handle the successful payment
+          onApprove: function(data, actions) {
+            return actions.order.capture().then(function(orderData) {
+              // Get current address selection
+              const addressOption = document.querySelector('input[name="addressOption"]:checked');
+
+              if (!addressOption) {
+                alert('Please select an address option.');
+                return;
+              }
+
+              let selectedAddress;
+              if (addressOption.value === 'existing') {
+                selectedAddress = document.getElementById('userExistingAddress').value;
+              } else {
+                selectedAddress = document.getElementById('deliveryAddress').value;
+                if (!selectedAddress || selectedAddress.trim() === '') {
+                  alert('Please enter a delivery address');
+                  return;
+                }
+              }
+
+              // Create FormData object
+              const formData = new FormData();
+              formData.append('paymentMethod', 'PayPal');
+              formData.append('paymentId', orderData.id);
+              formData.append('address', selectedAddress);
+
+              // Add items, quantities, and prices
+              '<% if (items && items.length > 0) { %>'
+              '<% items.forEach(function(item) { %>'
+              formData.append('itemid[]', '<%= item.item_id %>');
+              formData.append('quantity[]', '1');
+              formData.append('subprice[]', '<%= item.item_price %>');
+              '<% }); %>'
+              '<% } %>'
+
+              // Display loading indicator or disable buttons here
+              document.body.style.cursor = 'wait';
+
+              // Submit form data to the server
+              fetch('/checkout/process-payment', {
+                  method: 'POST',
+                  body: formData
+                })
+                .then(response => {
+                  document.body.style.cursor = 'default';
+                  if (response.redirected) {
+                    window.location.href = response.url;
+                  } else {
+                    return response.json();
+                  }
+                })
+                .then(data => {
+                  if (data && !data.success) {
+                    alert('Payment processing error: ' + (data.message || 'Unknown error'));
+                  } else {
+                    // Redirect to confirmation page if not already redirected
+                    window.location.href = '/confirmation';
+                  }
+                })
+                .catch(error => {
+                  document.body.style.cursor = 'default';
+                  console.error('Error:', error);
+                  alert('An error occurred during payment processing. Please try again.');
+                });
+            });
+          },
+
+          // Handle errors or cancellations
+          onError: function(err) {
+            console.error('PayPal Error:', err);
+            alert('There was an error with the PayPal payment. Please try again or use another payment method.');
+          },
+
+          onCancel: function(data) {
+            console.log('Payment cancelled');
+            // Optional: Show a message that payment was cancelled
+          }
+        }).render('#paypal-button-container');
+      }
+    });
+  </script>
+</body>
+
+</html>

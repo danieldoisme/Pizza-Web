@@ -3,7 +3,9 @@ const router = express.Router();
 
 // Homepage
 router.get("/", (req, res) => {
-  res.render("index");
+  // Call the renderIndexPage function from app.js (attached via middleware)
+  // This function handles checking auth cookies and passing data to the template
+  res.locals.renderIndexPage(req, res);
 });
 
 module.exports = router;

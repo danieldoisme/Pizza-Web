@@ -1,406 +1,351 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PizzazzPizza</title>
-    <!-- icons  -->
-    <link
-      rel="stylesheet"
-      href="https://unicons.iconscout.com/release/v4.0.0/css/line.css"
-    />
-    <!-- bootstrap  -->
-    <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
-    <!-- swiper slider  -->
-    <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css" />
-    <!-- fancy box  -->
-    <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css" />
-    <!-- custom css  -->
-    <link rel="stylesheet" href="/stylesheets/style.css" />
-  </head>
 
-  <body class="body-fixed">
-    <%- include('partials/header') %>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PizzazzPizza</title>
+  <!-- icons  -->
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
+  <!-- bootstrap  -->
+  <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
+  <!-- swiper slider  -->
+  <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css" />
+  <!-- fancy box  -->
+  <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css" />
+  <!-- custom css  -->
+  <link rel="stylesheet" href="/stylesheets/style.css" />
+</head>
 
-    <div id="viewport">
-      <div id="js-scroll-content">
-        <!--Main Banner starts-->
-        <section
-          class="main-banner"
-          id="home"
-          style="background-image: url(/images/menu-bg.png)"
-        >
-          <div class="js-parallax-scene">
-            <div class="banner-shape-1 w-100" data-depth="0.30">
-              <img src="/images/pizza-slice.png" alt="" />
-            </div>
-            <div class="banner-shape-2 w-100" data-depth="0.25">
-              <img src="/images/pizza.png" alt="" />
-            </div>
+<body class="body-fixed">
+  <%- include('partials/header') %>
+
+  <div id="viewport">
+    <div id="js-scroll-content">
+      <!--Main Banner starts-->
+      <section class="main-banner" id="home" style="background-image: url(/images/menu-bg.png)">
+        <div class="js-parallax-scene">
+          <div class="banner-shape-1 w-100" data-depth="0.30">
+            <img src="/images/pizza-slice.png" alt="" />
           </div>
-          <div class="sec-wp">
-            <div class="container">
-              <div class="row">
-                <div class="col-lg-6">
-                  <div class="banner-text">
-                    <h1 class="h1-title">
-                      Welcome to our restaurant
-                      <span>PizzazzPizza</span>
-                    </h1>
-                    <p>
-                      Indulge in the perfect slice. Experience the art of
-                      pizza-making with fresh ingredients, bold flavors, and a
-                      passion for perfection. Your next favorite pizza is just a
-                      click away.
-                    </p>
-                    <div class="banner-btn mt-4">
-                      <a href="/signin" class="sec-btn">Order Now</a>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-lg-6">
-                  <div class="banner-img-wp">
-                    <div
-                      class="banner-img"
-                      style="
-                        background-image: url(/images/main-b.jpg);
-                        background-size: contain;
-                      "
-                    ></div>
-                  </div>
-                  <div class="banner-img-text mt-4 m-auto">
-                    <h5 class="h5-title">Meat Lover Pizza</h5>
-                    <p>
-                      A carnivore's dream! Loaded with pepperoni, sausage,
-                      bacon, and ham for a hearty and flavorful experience.
-                    </p>
+          <div class="banner-shape-2 w-100" data-depth="0.25">
+            <img src="/images/pizza.png" alt="" />
+          </div>
+        </div>
+        <div class="sec-wp">
+          <div class="container">
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="banner-text">
+                  <h1 class="h1-title">
+                    Welcome to our restaurant
+                    <span>PizzazzPizza</span>
+                  </h1>
+                  <p>
+                    Indulge in the perfect slice. Experience the art of
+                    pizza-making with fresh ingredients, bold flavors, and a
+                    passion for perfection. Your next favorite pizza is just a
+                    click away.
+                  </p>
+                  <div class="banner-btn mt-4">
+                    <% if (typeof userid !== 'undefined' && userid) { %>
+                    <% if (typeof isAdmin !== 'undefined' && isAdmin) { %>
+                    <a href="/admin/dashboard" class="sec-btn">Order Now</a>
+                    <% } else { %>
+                    <a href="/homepage" class="sec-btn">Order Now</a>
+                    <% } %>
+                    <% } else { %>
+                    <a href="/signin" class="sec-btn">Order Now</a>
+                    <% } %>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
-        <!-- Main Banner ends-->
-
-        <!-- About Section starts-->
-        <section
-          class="about-sec section"
-          id="about"
-          style="background-image: url(/images/menu-bg.png)"
-        >
-          <div class="container">
-            <div class="row">
-              <div class="col-lg-12">
-                <div class="sec-title text-center mb-5">
-                  <p class="sec-sub-title mb-3">About Us</p>
-                  <h2 class="h2-title">
-                    Discover our <span>restaurant story</span>
-                  </h2>
-                  <div class="sec-title-shape mb-4">
-                    <img src="/images/title-shape.svg" alt="" />
-                  </div>
-                  <p
-                    style="text-align: center; margin: 0 auto; max-width: 600px"
-                  >
-                    In the heart of the Italian countryside, nestled among
-                    rolling hills and sun-drenched vineyards, lies PizzazzPizza.
-                    Our story began with Nonna Emilia, whose love for family and
-                    food was as boundless as the Tuscan sky. She dreamt of a
-                    place where laughter echoed as loudly as the sizzling
-                    pizzas, where every meal felt like a warm embrace. Using
-                    recipes passed down through generations, and the freshest
-                    local ingredients, Nonna Emilia created a haven. Today, we
-                    continue her legacy, crafting each pizza with the same love
-                    and passion. From our family to yours, benvenuti a
-                    PizzazzPizza, where every slice tells a story.
+              <div class="col-lg-6">
+                <div class="banner-img-wp">
+                  <div class="banner-img" style="
+                        background-image: url(/images/main-b.jpg);
+                        background-size: contain;
+                      "></div>
+                </div>
+                <div class="banner-img-text mt-4 m-auto">
+                  <h5 class="h5-title">Meat Lover Pizza</h5>
+                  <p>
+                    A carnivore's dream! Loaded with pepperoni, sausage,
+                    bacon, and ham for a hearty and flavorful experience.
                   </p>
                 </div>
               </div>
             </div>
           </div>
-        </section>
-        <!-- About Section Ends-->
+        </div>
+      </section>
+      <!-- Main Banner ends-->
 
-        <!-- Our Team Section Starts-->
-        <section
-          class="our-team section"
-          id="team"
-          style="background-image: url(/images/menu-bg.png)"
-        >
-          <div class="sec-wp">
-            <div class="container">
-              <div class="row">
-                <div class="col-lg-12">
-                  <div class="sec-title text-center mb-5">
-                    <p class="sec-sub-title mb-3">Our Chefs</p>
-                    <h2 class="h2-title">Meet Our Chefs</h2>
-                    <div class="sec-title-shape mb-4">
-                      <img src="/images/title-shape.svg" alt="" />
-                    </div>
-                  </div>
+      <!-- About Section starts-->
+      <section class="about-sec section" id="about" style="background-image: url(/images/menu-bg.png)">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-12">
+              <div class="sec-title text-center mb-5">
+                <p class="sec-sub-title mb-3">About Us</p>
+                <h2 class="h2-title">
+                  Discover our <span>restaurant story</span>
+                </h2>
+                <div class="sec-title-shape mb-4">
+                  <img src="/images/title-shape.svg" alt="" />
                 </div>
-              </div>
-              <div class="row team-slider">
-                <div class="swiper-wrapper">
-                  <div class="col-lg-4 swiper-slide">
-                    <div class="team-box text-center">
-                      <div
-                        style="background-image: url(/images/chef/c1.jpg)"
-                        class="team-img back-img"
-                      ></div>
-                      <h3 class="h3-title">Luca Moretti</h3>
-                      <div class="social-icon">
-                        <ul>
-                          <li>
-                            <a href="#"><i class="uil uil-facebook-f"></i></a>
-                          </li>
-                          <li>
-                            <a href="#"><i class="uil uil-instagram"></i></a>
-                          </li>
-                          <li>
-                            <a href="#"><i class="uil uil-youtube"></i></a>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-lg-4 swiper-slide">
-                    <div class="team-box text-center">
-                      <div
-                        style="background-image: url(/images/chef/c2.jpg)"
-                        class="team-img back-img"
-                      ></div>
-                      <h3 class="h3-title">Matteo Rossi</h3>
-                      <div class="social-icon">
-                        <ul>
-                          <li>
-                            <a href="#"><i class="uil uil-facebook-f"></i></a>
-                          </li>
-                          <li>
-                            <a href="#"><i class="uil uil-instagram"></i></a>
-                          </li>
-                          <li>
-                            <a href="#"><i class="uil uil-youtube"></i></a>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-lg-4 swiper-slide">
-                    <div class="team-box text-center">
-                      <div
-                        style="background-image: url(/images/chef/c3.jpg)"
-                        class="team-img back-img"
-                      ></div>
-                      <h3 class="h3-title">Alessandro Ricci</h3>
-                      <div class="social-icon">
-                        <ul>
-                          <li>
-                            <a href="#"><i class="uil uil-facebook-f"></i></a>
-                          </li>
-                          <li>
-                            <a href="#"><i class="uil uil-instagram"></i></a>
-                          </li>
-                          <li>
-                            <a href="#"><i class="uil uil-youtube"></i></a>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-lg-4 swiper-slide">
-                    <div class="team-box text-center">
-                      <div
-                        style="background-image: url(/images/chef/c4.jpg)"
-                        class="team-img back-img"
-                      ></div>
-                      <h3 class="h3-title">Giovanni Bianchi</h3>
-                      <div class="social-icon">
-                        <ul>
-                          <li>
-                            <a href="#"><i class="uil uil-facebook-f"></i></a>
-                          </li>
-                          <li>
-                            <a href="#"><i class="uil uil-instagram"></i></a>
-                          </li>
-                          <li>
-                            <a href="#"><i class="uil uil-youtube"></i></a>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-lg-4 swiper-slide">
-                    <div class="team-box text-center">
-                      <div
-                        style="background-image: url(/images/chef/c5.jpg)"
-                        class="team-img back-img"
-                      ></div>
-                      <h3 class="h3-title">Marco Bellini</h3>
-                      <div class="social-icon">
-                        <ul>
-                          <li>
-                            <a href="#"><i class="uil uil-facebook-f"></i></a>
-                          </li>
-                          <li>
-                            <a href="#"><i class="uil uil-instagram"></i></a>
-                          </li>
-                          <li>
-                            <a href="#"><i class="uil uil-youtube"></i></a>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="swiper-button-wp">
-                  <div class="swiper-button-prev swiper-button"></div>
-                  <div class="swiper-button-next swiper-button"></div>
-                </div>
-                <div class="swiper-pagination"></div>
+                <p style="text-align: center; margin: 0 auto; max-width: 600px">
+                  In the heart of the Italian countryside, nestled among
+                  rolling hills and sun-drenched vineyards, lies PizzazzPizza.
+                  Our story began with Nonna Emilia, whose love for family and
+                  food was as boundless as the Tuscan sky. She dreamt of a
+                  place where laughter echoed as loudly as the sizzling
+                  pizzas, where every meal felt like a warm embrace. Using
+                  recipes passed down through generations, and the freshest
+                  local ingredients, Nonna Emilia created a haven. Today, we
+                  continue her legacy, crafting each pizza with the same love
+                  and passion. From our family to yours, benvenuti a
+                  PizzazzPizza, where every slice tells a story.
+                </p>
               </div>
             </div>
           </div>
-        </section>
-        <!-- Our Chefs Section Ends-->
+        </div>
+      </section>
+      <!-- About Section Ends-->
 
-        <!--Testimonials Section Starts-->
-        <section
-          class="testimonials section bg-light"
-          id="testimonials"
-          style="background-image: url(/images/menu-bg.png)"
-        >
-          <div class="sec-wp">
-            <div class="container">
-              <div class="row">
-                <div class="col-lg-12">
-                  <div class="sec-title text-center mb-5">
-                    <p class="sec-sub-title mb-3">what they say</p>
-                    <h2 class="h2-title">
-                      what our customers <span>say about us</span>
-                    </h2>
-                    <div class="sec-title-shape mb-4">
-                      <img src="/images/title-shape.svg" alt="" />
+      <!-- Our Team Section Starts-->
+      <section class="our-team section" id="team" style="background-image: url(/images/menu-bg.png)">
+        <div class="sec-wp">
+          <div class="container">
+            <div class="row">
+              <div class="col-lg-12">
+                <div class="sec-title text-center mb-5">
+                  <p class="sec-sub-title mb-3">Our Chefs</p>
+                  <h2 class="h2-title">Meet Our Chefs</h2>
+                  <div class="sec-title-shape mb-4">
+                    <img src="/images/title-shape.svg" alt="" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row team-slider">
+              <div class="swiper-wrapper">
+                <div class="col-lg-4 swiper-slide">
+                  <div class="team-box text-center">
+                    <div style="background-image: url(/images/chef/c1.jpg)" class="team-img back-img"></div>
+                    <h3 class="h3-title">Luca Moretti</h3>
+                    <div class="social-icon">
+                      <ul>
+                        <li>
+                          <a href="#"><i class="uil uil-facebook-f"></i></a>
+                        </li>
+                        <li>
+                          <a href="#"><i class="uil uil-instagram"></i></a>
+                        </li>
+                        <li>
+                          <a href="#"><i class="uil uil-youtube"></i></a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-4 swiper-slide">
+                  <div class="team-box text-center">
+                    <div style="background-image: url(/images/chef/c2.jpg)" class="team-img back-img"></div>
+                    <h3 class="h3-title">Matteo Rossi</h3>
+                    <div class="social-icon">
+                      <ul>
+                        <li>
+                          <a href="#"><i class="uil uil-facebook-f"></i></a>
+                        </li>
+                        <li>
+                          <a href="#"><i class="uil uil-instagram"></i></a>
+                        </li>
+                        <li>
+                          <a href="#"><i class="uil uil-youtube"></i></a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-4 swiper-slide">
+                  <div class="team-box text-center">
+                    <div style="background-image: url(/images/chef/c3.jpg)" class="team-img back-img"></div>
+                    <h3 class="h3-title">Alessandro Ricci</h3>
+                    <div class="social-icon">
+                      <ul>
+                        <li>
+                          <a href="#"><i class="uil uil-facebook-f"></i></a>
+                        </li>
+                        <li>
+                          <a href="#"><i class="uil uil-instagram"></i></a>
+                        </li>
+                        <li>
+                          <a href="#"><i class="uil uil-youtube"></i></a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-4 swiper-slide">
+                  <div class="team-box text-center">
+                    <div style="background-image: url(/images/chef/c4.jpg)" class="team-img back-img"></div>
+                    <h3 class="h3-title">Giovanni Bianchi</h3>
+                    <div class="social-icon">
+                      <ul>
+                        <li>
+                          <a href="#"><i class="uil uil-facebook-f"></i></a>
+                        </li>
+                        <li>
+                          <a href="#"><i class="uil uil-instagram"></i></a>
+                        </li>
+                        <li>
+                          <a href="#"><i class="uil uil-youtube"></i></a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-4 swiper-slide">
+                  <div class="team-box text-center">
+                    <div style="background-image: url(/images/chef/c5.jpg)" class="team-img back-img"></div>
+                    <h3 class="h3-title">Marco Bellini</h3>
+                    <div class="social-icon">
+                      <ul>
+                        <li>
+                          <a href="#"><i class="uil uil-facebook-f"></i></a>
+                        </li>
+                        <li>
+                          <a href="#"><i class="uil uil-instagram"></i></a>
+                        </li>
+                        <li>
+                          <a href="#"><i class="uil uil-youtube"></i></a>
+                        </li>
+                      </ul>
                     </div>
                   </div>
                 </div>
               </div>
-              <div class="row">
-                <div class="col-lg-5">
-                  <div class="testimonials-img">
-                    <img src="/images/testimonial-img.png" alt="" />
+              <div class="swiper-button-wp">
+                <div class="swiper-button-prev swiper-button"></div>
+                <div class="swiper-button-next swiper-button"></div>
+              </div>
+              <div class="swiper-pagination"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Our Chefs Section Ends-->
+
+      <!--Testimonials Section Starts-->
+      <section class="testimonials section bg-light" id="testimonials" style="background-image: url(/images/menu-bg.png)">
+        <div class="sec-wp">
+          <div class="container">
+            <div class="row">
+              <div class="col-lg-12">
+                <div class="sec-title text-center mb-5">
+                  <p class="sec-sub-title mb-3">what they say</p>
+                  <h2 class="h2-title">
+                    what our customers <span>say about us</span>
+                  </h2>
+                  <div class="sec-title-shape mb-4">
+                    <img src="/images/title-shape.svg" alt="" />
                   </div>
                 </div>
-                <div class="col-lg-7">
-                  <div class="row">
-                    <div class="col-sm-6">
-                      <div class="testimonials-box">
-                        <div class="testimonial-box-top">
-                          <div
-                            class="testimonials-box-img back-img"
-                            style="
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-lg-5">
+                <div class="testimonials-img">
+                  <img src="/images/testimonial-img.png" alt="" />
+                </div>
+              </div>
+              <div class="col-lg-7">
+                <div class="row">
+                  <div class="col-sm-6">
+                    <div class="testimonials-box">
+                      <div class="testimonial-box-top">
+                        <div class="testimonials-box-img back-img" style="
                               background-image: url(/images/testimonials/t1.jpg);
-                            "
-                          ></div>
-                          <div class="star-rating-wp">
-                            <div class="star-rating">
-                              <span
-                                class="star-rating__fill"
-                                style="width: 85%"
-                              ></span>
-                            </div>
+                            "></div>
+                        <div class="star-rating-wp">
+                          <div class="star-rating">
+                            <span class="star-rating__fill" style="width: 85%"></span>
                           </div>
                         </div>
-                        <div class="testimonials-box-text">
-                          <h3 class="h3-title">Lorenzo Conti</h3>
-                          <p>
-                            Truly a culinary revelation. The dough is a
-                            testament to artisanal craftsmanship, airy yet
-                            robust.
-                          </p>
-                        </div>
+                      </div>
+                      <div class="testimonials-box-text">
+                        <h3 class="h3-title">Lorenzo Conti</h3>
+                        <p>
+                          Truly a culinary revelation. The dough is a
+                          testament to artisanal craftsmanship, airy yet
+                          robust.
+                        </p>
                       </div>
                     </div>
-                    <div class="col-sm-6">
-                      <div class="testimonials-box">
-                        <div class="testimonial-box-top">
-                          <div
-                            class="testimonials-box-img back-img"
-                            style="
+                  </div>
+                  <div class="col-sm-6">
+                    <div class="testimonials-box">
+                      <div class="testimonial-box-top">
+                        <div class="testimonials-box-img back-img" style="
                               background-image: url(/images/testimonials/t2.jpg);
-                            "
-                          ></div>
-                          <div class="star-rating-wp">
-                            <div class="star-rating">
-                              <span
-                                class="star-rating__fill"
-                                style="width: 80%"
-                              ></span>
-                            </div>
+                            "></div>
+                        <div class="star-rating-wp">
+                          <div class="star-rating">
+                            <span class="star-rating__fill" style="width: 80%"></span>
                           </div>
                         </div>
-                        <div class="testimonials-box-text">
-                          <h3 class="h3-title">Leon Müller</h3>
-                          <p>
-                            A culinary experience, where taste transcends the
-                            ordinary.
-                          </p>
-                        </div>
+                      </div>
+                      <div class="testimonials-box-text">
+                        <h3 class="h3-title">Leon Müller</h3>
+                        <p>
+                          A culinary experience, where taste transcends the
+                          ordinary.
+                        </p>
                       </div>
                     </div>
-                    <div class="col-sm-6">
-                      <div class="testimonials-box">
-                        <div class="testimonial-box-top">
-                          <div
-                            class="testimonials-box-img back-img"
-                            style="
+                  </div>
+                  <div class="col-sm-6">
+                    <div class="testimonials-box">
+                      <div class="testimonial-box-top">
+                        <div class="testimonials-box-img back-img" style="
                               background-image: url(/images/testimonials/t3.jpg);
-                            "
-                          ></div>
-                          <div class="star-rating-wp">
-                            <div class="star-rating">
-                              <span
-                                class="star-rating__fill"
-                                style="width: 89%"
-                              ></span>
-                            </div>
+                            "></div>
+                        <div class="star-rating-wp">
+                          <div class="star-rating">
+                            <span class="star-rating__fill" style="width: 89%"></span>
                           </div>
-                        </div>
-                        <div class="testimonials-box-text">
-                          <h3 class="h3-title">Carlos Martínez</h3>
-                          <p>
-                            A symphony of flavors; each bite, a testament to
-                            culinary artistry.
-                          </p>
                         </div>
                       </div>
+                      <div class="testimonials-box-text">
+                        <h3 class="h3-title">Carlos Martínez</h3>
+                        <p>
+                          A symphony of flavors; each bite, a testament to
+                          culinary artistry.
+                        </p>
+                      </div>
                     </div>
-                    <div class="col-sm-6">
-                      <div class="testimonials-box">
-                        <div class="testimonial-box-top">
-                          <div
-                            class="testimonials-box-img back-img"
-                            style="
+                  </div>
+                  <div class="col-sm-6">
+                    <div class="testimonials-box">
+                      <div class="testimonial-box-top">
+                        <div class="testimonials-box-img back-img" style="
                               background-image: url(/images/testimonials/t4.jpg);
-                            "
-                          ></div>
-                          <div class="star-rating-wp">
-                            <div class="star-rating">
-                              <span
-                                class="star-rating__fill"
-                                style="width: 100%"
-                              ></span>
-                            </div>
+                            "></div>
+                        <div class="star-rating-wp">
+                          <div class="star-rating">
+                            <span class="star-rating__fill" style="width: 100%"></span>
                           </div>
                         </div>
-                        <div class="testimonials-box-text">
-                          <h3 class="h3-title">Emil Johansson</h3>
-                          <p>
-                            A gastronomic venture worth undertaking; its nuanced
-                            flavors linger.
-                          </p>
-                        </div>
+                      </div>
+                      <div class="testimonials-box-text">
+                        <h3 class="h3-title">Emil Johansson</h3>
+                        <p>
+                          A gastronomic venture worth undertaking; its nuanced
+                          flavors linger.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -408,39 +353,41 @@
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <%- include('partials/footer') %>
-      </div>
+      <%- include('partials/footer') %>
     </div>
+  </div>
 
-    <!-- jquery  -->
-    <script src="/javascripts/jquery-3.5.1.min.js"></script>
-    <!-- bootstrap -->
-    <script src="/javascripts/bootstrap.min.js"></script>
-    <script src="/javascripts/popper.min.js"></script>
-    <!-- fontawesome  -->
-    <script src="/javascripts/font-awesome.min.js"></script>
-    <!-- swiper slider  -->
-    <script src="/javascripts/swiper-bundle.min.js"></script>
-    <!-- mixitup -- filter  -->
-    <script src="/javascripts/jquery.mixitup.min.js"></script>
-    <!-- fancy box  -->
-    <script src="/javascripts/query.fancybox.min.js"></script>
-    <!-- parallax  -->
-    <script src="/javascripts/parallax.min.js"></script>
-    <!-- gsap  -->
-    <script src="/javascripts/gsap.min.js"></script>
-    <!-- scroll trigger  -->
-    <script src="/javascripts/ScrollTrigger.min.js"></script>
-    <!-- scroll to plugin  -->
-    <script src="/javascripts/ScrollToPlugin.min.js"></script>
-    <!-- smooth scroll  -->
-    <script src="/javascripts/smooth-scroll.js"></script>
-    <script>
-      var scroll = new SmoothScroll('a[href*="#"]');
-    </script>
-    <!-- custom js  -->
-    <script src="/javascripts/main.js"></script>
-  </body>
+  <!-- jquery  -->
+  <script src="/javascripts/jquery-3.5.1.min.js"></script>
+  <!-- bootstrap -->
+  <script src="/javascripts/bootstrap.min.js"></script>
+  <script src="/javascripts/popper.min.js"></script>
+  <!-- fontawesome  -->
+  <script src="/javascripts/font-awesome.min.js"></script>
+  <!-- swiper slider  -->
+  <script src="/javascripts/swiper-bundle.min.js"></script>
+  <!-- mixitup -- filter  -->
+  <script src="/javascripts/jquery.mixitup.min.js"></script>
+  <!-- fancy box  -->
+  <script src="/javascripts/query.fancybox.min.js"></script>
+  <!-- parallax  -->
+  <script src="/javascripts/parallax.min.js"></script>
+  <!-- gsap  -->
+  <script src="/javascripts/gsap.min.js"></script>
+  <!-- scroll trigger  -->
+  <script src="/javascripts/ScrollTrigger.min.js"></script>
+  <!-- scroll to plugin  -->
+  <script src="/javascripts/ScrollToPlugin.min.js"></script>
+  <!-- smooth scroll  -->
+  <script src="/javascripts/smooth-scroll.js"></script>
+  <script>
+    var scroll = new SmoothScroll('a[href*="#"]');
+  </script>
+  <!-- custom js  -->
+  <script src="/javascripts/main.js"></script>
+</body>
+
 </html>
