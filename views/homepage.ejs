@@ -24,7 +24,7 @@
     <%- include('partials/userNav') %>
 
     <section
-      style="background-image: url(assets/images/menu-bg.png)"
+      style="background-image: url(images/menu-bg.png)"
       class="our-menu section bg-light repeat-img"
       id="menu"
     >
@@ -50,10 +50,7 @@
                 <div class="menu-tab text-center">
                   <ul class="filters">
                     <div class="filter-active"></div>
-                    <li
-                      class="filter"
-                      data-filter=".all, .pizzas, .appetizers, .desserts, .beverages"
-                    >
+                    <li class="filter" data-filter="all">
                       <img src="/images/menu-1.svg" alt="" />
                       All
                     </li>
@@ -80,14 +77,13 @@
           </div>
           <div class="menu-list-row">
             <div
-              class="row g-xxl-5 bydefault_show"
+              class="row g-xxl-5"
               id="menu-dish"
               style="background-image: url(/images/menu-bg.png)"
             >
               <% for (let i = 0; i < items.length; i++) { %>
               <div
-                class="col-lg-4 col-sm-6 dish-box-wp <%= items[i].item_category %>"
-                data-cat="pizzas"
+                class="col-lg-4 col-sm-6 dish-box-wp <%= items[i].item_category.toLowerCase() %>"
               >
                 <div class="dish-box text-center">
                   <div class="dist-img">

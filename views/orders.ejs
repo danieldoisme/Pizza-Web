@@ -51,7 +51,9 @@
           </div>
           <div class="col-lg-10">
             <div class="main-navigation">
-              <button class="menu-toggle"><span></span><span></span></button>
+              <button class="menu-toggle user-nav-toggle">
+                <span></span><span></span>
+              </button>
               <div class="header-right">
                 <form action="#" class="header-search-form for-des">
                   <input
@@ -134,64 +136,123 @@
                     <img src="/images/title-shape.svg" alt="" />
                   </div>
 
-                  <%# Check for errors passed from the server %>
-                  <% if (typeof error !== 'undefined' && error) { %>
-                    <p style="color: red; font-weight: bold;"><%= error %></p>
-                  <%# Check if there are any orders %>
-                  <% } else if (orders.length === 0) { %>
-                    <p>You haven't placed any orders yet.</p>
-                  <%# Loop through each order %>
-                  <% } else { %>
-                    <% orders.forEach(function(order, orderIndex) { %>
-                      <div class="order-group" style="margin-bottom: 30px; border: 1px solid #ccc; padding: 15px; border-radius: 8px; background-color: rgba(255, 255, 255, 0.1);">
-                        <h4 style="color: #ff8243;">Order #<%= order.order_id %></h4>
-                        <p><strong>Date:</strong> <%= new Date(order.order_datetime).toLocaleString() %></p>
-                        <p><strong>Status:</strong> <%= order.order_status %></p>
-                        <p><strong>Total Amount:</strong> $<%= order.total_amount.toFixed(2) %></p>
-                        <p><strong>Delivery Address:</strong> <%= order.delivery_address %></p>
-                        <p><strong>Payment Method:</strong> <%= order.payment_method %></p>
-                        <% if (order.payment_id) { %>
-                          <p><strong>Payment ID:</strong> <%= order.payment_id %></p>
-                        <% } %>
+                  <%# Check for errors passed from the server %> <% if (typeof
+                  error !== 'undefined' && error) { %>
+                  <p style="color: red; font-weight: bold"><%= error %></p>
+                  <%# Check if there are any orders %> <% } else if
+                  (orders.length === 0) { %>
+                  <p>You haven't placed any orders yet.</p>
+                  <%# Loop through each order %> <% } else { %> <%
+                  orders.forEach(function(order, orderIndex) { %>
+                  <div
+                    class="order-group"
+                    style="
+                      margin-bottom: 30px;
+                      border: 1px solid #ccc;
+                      padding: 15px;
+                      border-radius: 8px;
+                      background-color: rgba(255, 255, 255, 0.1);
+                    "
+                  >
+                    <h4 style="color: #ff8243">Order #<%= order.order_id %></h4>
+                    <p>
+                      <strong>Date:</strong> <%= new
+                      Date(order.order_datetime).toLocaleString() %>
+                    </p>
+                    <p><strong>Status:</strong> <%= order.order_status %></p>
+                    <p>
+                      <strong>Total Amount:</strong> $<%=
+                      order.total_amount.toFixed(2) %>
+                    </p>
+                    <p>
+                      <strong>Delivery Address:</strong> <%=
+                      order.delivery_address %>
+                    </p>
+                    <p>
+                      <strong>Payment Method:</strong> <%= order.payment_method
+                      %>
+                    </p>
+                    <% if (order.payment_id) { %>
+                    <p><strong>Payment ID:</strong> <%= order.payment_id %></p>
+                    <% } %>
 
-                        <h5 style="margin-top: 15px; color: #ff8243;">Items in this order:</h5>
-                        <%# Check if the order has items %>
-                        <% if (order.items && order.items.length > 0) { %>
-                          <table class="order-items-table" style="width: 100%; margin-top: 10px; border-collapse: collapse;">
-                            <thead>
-                              <tr style="background-color: rgba(0,0,0,0.2);">
-                                <th style="width: 15%; padding: 8px; text-align: left;">Product</th>
-                                <th style="width: 35%; padding: 8px; text-align: left;">Name</th>
-                                <th style="width: 15%; padding: 8px; text-align: right;">Price/Item</th>
-                                <th style="width: 10%; padding: 8px; text-align: center;">Quantity</th>
-                                <th style="width: 25%; padding: 8px; text-align: right;">Subtotal</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <%# Loop through items within the current order %>
-                              <% order.items.forEach(function(item, itemIndex) { %>
-                                <tr style="border-bottom: 1px solid #eee;">
-                                  <td style="padding: 8px;">
-                                    <img
-                                      src="/images/dish/<%= item.item_img %>"
-                                      alt="<%= item.item_name %>"
-                                      style="width: 60px; height: auto; border-radius: 5px; border: 1px solid #ddd;"
-                                    />
-                                  </td>
-                                  <td style="padding: 8px;"><%= item.item_name %></td>
-                                  <td style="padding: 8px; text-align: right;">$<%= item.price_per_item.toFixed(2) %></td>
-                                  <td style="padding: 8px; text-align: center;"><%= item.quantity %></td>
-                                  <td style="padding: 8px; text-align: right;">$<%= item.subtotal.toFixed(2) %></td>
-                                </tr>
-                              <% }); %>
-                            </tbody>
-                          </table>
-                        <% } else { %>
-                          <p>No item details available for this order.</p>
-                        <% } %>
-                      </div>
-                    <% }); %>
-                  <% } %>
+                    <h5 style="margin-top: 15px; color: #ff8243">
+                      Items in this order:
+                    </h5>
+                    <%# Check if the order has items %> <% if (order.items &&
+                    order.items.length > 0) { %>
+                    <table
+                      class="order-items-table"
+                      style="
+                        width: 100%;
+                        margin-top: 10px;
+                        border-collapse: collapse;
+                      "
+                    >
+                      <thead>
+                        <tr>
+                          <th
+                            style="width: 15%; padding: 8px; text-align: center"
+                          >
+                            Product
+                          </th>
+                          <th
+                            style="width: 35%; padding: 8px; text-align: center"
+                          >
+                            Name
+                          </th>
+                          <th
+                            style="width: 15%; padding: 8px; text-align: center"
+                          >
+                            Price/Item
+                          </th>
+                          <th
+                            style="width: 10%; padding: 8px; text-align: center"
+                          >
+                            Quantity
+                          </th>
+                          <th
+                            style="width: 25%; padding: 8px; text-align: center"
+                          >
+                            Subtotal
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <%# Loop through items within the current order %> <%
+                        order.items.forEach(function(item, itemIndex) { %>
+                        <tr style="border-bottom: 1px solid #eee">
+                          <td style="padding: 8px">
+                            <img
+                              src="/images/dish/<%= item.item_img %>"
+                              alt="<%= item.item_name %>"
+                              style="
+                                width: 60px;
+                                height: auto;
+                                border-radius: 5px;
+                                border: 1px solid #ddd;
+                              "
+                            />
+                          </td>
+                          <td style="padding: 8px"><%= item.item_name %></td>
+                          <td style="padding: 8px; text-align: center">
+                            $<%= item.price_per_item.toFixed(2) %>
+                          </td>
+                          <td style="padding: 8px; text-align: center">
+                            <%= item.quantity %>
+                          </td>
+                          <td style="padding: 8px; text-align: center">
+                            $<%= item.subtotal.toFixed(2) %>
+                          </td>
+                        </tr>
+                        <% }); %>
+                      </tbody>
+                    </table>
+                    <% } else { %>
+                    <p>No item details available for this order.</p>
+                    <% } %>
+                  </div>
+                  <% }); %> <% } %>
                 </div>
               </div>
             </div>
