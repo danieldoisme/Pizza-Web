@@ -294,84 +294,13 @@ function getItemDetails(citems, size) {
   });
 }
 
-// Checkout
-function checkout(req, res) {
-  const userId = req.cookies.cookuid;
-  const userName = req.cookies.cookuname;
-  connection.query(
-    "SELECT user_id, user_name FROM users WHERE user_id = ? AND user_name = ?",
-    [userId, userName],
-    function (error, results) {
-      if (!error && results.length) {
-        const { itemid, quantity, subprice } = req.body;
-        const userid = userId;
-        const currDate = new Date();
-
-        if (
-          Array.isArray(itemid) &&
-          Array.isArray(quantity) &&
-          Array.isArray(subprice)
-        ) {
-          itemid.forEach((item, index) => {
-            if (quantity[index] != 0) {
-              connection.query(
-                "INSERT INTO orders (order_id, user_id, item_id, quantity, price, datetime) VALUES (?, ?, ?, ?, ?, ?)",
-                [
-                  uuidv4(),
-                  userid,
-                  item,
-                  quantity[index],
-                  subprice[index] * quantity[index],
-                  currDate,
-                ],
-                function (error, results, fields) {
-                  if (error) {
-                    console.log(error);
-                    res.sendStatus(500);
-                  }
-                }
-              );
-            }
-          });
-        } else {
-          if (quantity != 0) {
-            connection.query(
-              "INSERT INTO orders (order_id, user_id, item_id, quantity, price, datetime) VALUES (?, ?, ?, ?, ?, ?)",
-              [
-                uuidv4(),
-                userid,
-                itemid,
-                quantity,
-                subprice * quantity,
-                currDate,
-              ],
-              function (error, results, fields) {
-                if (error) {
-                  console.log(error);
-                  res.sendStatus(500);
-                }
-              }
-            );
-          }
-        }
-
-        citems = [];
-        citemdetails = [];
-        item_in_cart = 0;
-        getItemDetails(citems, 0);
-        res.render("confirmation", { username: userName, userid: userId });
-      } else {
-        res.render("signin");
-      }
-    }
-  );
-}
-
 // Render Checkout Page
 function renderCheckoutPage(req, res) {
   const userId = req.cookies.cookuid;
   const userName = req.cookies.cookuname;
+  const { itemid, quantity, subprice } = req.body; // Get submitted cart data
 
+  console.log("Checkout - Received Body:", req.body);
   console.log("Checkout - Auth Check:", { userId, userName });
 
   // Early check for missing cookies - redirect immediately
@@ -380,27 +309,89 @@ function renderCheckoutPage(req, res) {
     return res.redirect("/signin");
   }
 
+  // Validate submitted data
+  if (
+    !itemid ||
+    !quantity ||
+    !subprice ||
+    !Array.isArray(itemid) ||
+    !Array.isArray(quantity) ||
+    !Array.isArray(subprice) ||
+    itemid.length !== quantity.length ||
+    itemid.length !== subprice.length
+  ) {
+    console.log("Checkout - Invalid or missing cart data in body");
+    // Redirect back to cart if data is invalid
+    return res.redirect("/cart");
+  }
+
   connection.query(
     "SELECT user_id, user_name, user_address AS address, user_mobileno AS contact FROM users WHERE user_id = ? AND user_name = ?",
     [userId, userName],
-    function (error, results) {
+    function (error, userResults) {
       if (error) {
-        console.log("Checkout - DB Error:", error);
-        return res.redirect("/signin"); // CHANGED from render to redirect
+        console.log("Checkout - DB Error (User Query):", error);
+        return res.redirect("/signin");
       }
 
-      if (!results || results.length === 0) {
+      if (!userResults || userResults.length === 0) {
         console.log("Checkout - User not found in DB");
-        return res.redirect("/signin"); // CHANGED from render to redirect
+        return res.redirect("/signin");
       }
 
-      // Render checkout page with user details and cart items
-      res.render("checkout", {
-        username: userName,
-        userid: userId,
-        user: results[0],
-        items: citemdetails,
-        item_count: item_in_cart,
+      // Fetch item details based on submitted item IDs
+      const placeHolders = itemid.map(() => "?").join(",");
+      const query = `SELECT item_id, item_name, item_price FROM menu WHERE item_id IN (${placeHolders})`;
+
+      connection.query(query, itemid, (err, itemDetailsResults) => {
+        if (err) {
+          console.log("Checkout - DB Error (Item Query):", err);
+          return res.redirect("/cart");
+        }
+
+        // Map database results for easy lookup
+        const itemDetailsMap = new Map();
+        itemDetailsResults.forEach((item) => {
+          itemDetailsMap.set(item.item_id.toString(), item);
+        });
+
+        // Construct the items array for the checkout page, including quantity and calculated subtotal
+        const checkoutItems = itemid
+          .map((id, index) => {
+            const details = itemDetailsMap.get(id.toString());
+            const qty = parseInt(quantity[index], 10);
+            if (details && !isNaN(qty) && qty > 0) {
+              return {
+                item_id: id,
+                item_name: details.item_name,
+                item_price: details.item_price, // Price per single item
+                quantity: qty,
+                subtotal: details.item_price * qty, // Use calculated subtotal based on quantity
+              };
+            }
+            return null; // Filter out invalid items/quantities later
+          })
+          .filter((item) => item !== null); // Remove null entries
+
+        if (checkoutItems.length === 0) {
+          console.log("Checkout - No valid items to checkout");
+          return res.redirect("/cart"); // Redirect if no valid items remain
+        }
+
+        // Calculate total item count for display (sum of quantities)
+        const totalItemCount = checkoutItems.reduce(
+          (sum, item) => sum + item.quantity,
+          0
+        );
+
+        // Render checkout page with user details and the structured cart items
+        res.render("checkout", {
+          username: userName,
+          userid: userId,
+          user: userResults[0],
+          items: checkoutItems, // Pass the structured items with quantity and subtotal
+          item_count: totalItemCount, // Pass the total quantity of items
+        });
       });
     }
   );
@@ -413,96 +404,228 @@ function processPayment(req, res) {
   const paymentMethod = req.body.paymentMethod;
   const address = req.body.address || req.body.newDeliveryAddress;
   const paymentId = req.body.paymentId || null; // For PayPal transactions
+  const { itemid, quantity, subprice } = req.body; // Arrays from the form
 
-  console.log("Processing payment:", { paymentMethod, paymentId });
+  console.log("Processing payment:", { paymentMethod, paymentId, address });
+  console.log("Payment Body:", req.body);
 
   // Check if authentication is valid
   if (!userId || !userName) {
-    if (paymentMethod === "PayPal") {
-      return res
-        .status(401)
-        .json({ success: false, message: "Authentication required" });
+    console.log("Payment Processing - Not authenticated");
+    // Return JSON for both PayPal and COD if not authenticated during processing
+    return res
+      .status(401)
+      .json({ success: false, message: "Authentication required" });
+  }
+
+  // Validate address
+  if (!address || address.trim() === "") {
+    console.log("Payment Processing - Missing address");
+    // Return JSON for both PayPal and COD if address is missing
+    return res
+      .status(400)
+      .json({ success: false, message: "Delivery address is required" });
+  }
+
+  // Basic validation of received arrays
+  if (
+    !itemid ||
+    !quantity ||
+    !subprice ||
+    !Array.isArray(itemid) ||
+    !Array.isArray(quantity) ||
+    !Array.isArray(subprice) ||
+    itemid.length !== quantity.length ||
+    itemid.length !== subprice.length ||
+    itemid.length === 0
+  ) {
+    console.log("Payment Processing - Invalid item data arrays");
+    // Return JSON for both PayPal and COD if data is invalid
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid order data" });
+  }
+
+  // Calculate total amount for the order and validate items
+  let totalAmount = 0;
+  const validItems = []; // Store items with valid data
+
+  for (let i = 0; i < itemid.length; i++) {
+    const qty = parseInt(quantity[i], 10);
+    // Subprice from client is already qty * price, we use it for totalAmount calculation
+    // but will fetch the actual price per item later for order_items table.
+    const clientSubtotal = parseFloat(subprice[i]);
+    if (
+      !isNaN(qty) &&
+      qty > 0 &&
+      !isNaN(clientSubtotal) &&
+      clientSubtotal > 0
+    ) {
+      totalAmount += clientSubtotal;
+      validItems.push({
+        id: itemid[i],
+        qty: qty,
+        // We don't store clientSubtotal here, will calculate based on fetched price
+      });
     } else {
-      return res.redirect("/signin");
+      console.warn(
+        `Skipping invalid item data at index ${i}: qty=${quantity[i]}, subprice=${subprice[i]}`
+      );
     }
   }
 
-  // Save order with payment method info
-  const { itemid, quantity, subprice } = req.body;
+  if (validItems.length === 0) {
+    console.log("Payment Processing - No valid items to process");
+    // Return JSON for both PayPal and COD if no valid items
+    return res
+      .status(400)
+      .json({ success: false, message: "No valid items in order" });
+  }
+
   const currDate = new Date();
 
-  // Process order creation
-  if (
-    Array.isArray(itemid) &&
-    Array.isArray(quantity) &&
-    Array.isArray(subprice)
-  ) {
-    const promises = [];
+  // Start Database Transaction
+  connection.beginTransaction((err) => {
+    if (err) {
+      console.error("Transaction Begin Error:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Database error starting transaction",
+      });
+    }
 
-    itemid.forEach((item, index) => {
-      if (quantity[index] != 0) {
-        const promise = new Promise((resolve, reject) => {
+    // 1. Insert into orders table
+    const orderQuery =
+      "INSERT INTO orders (user_id, order_datetime, total_amount, payment_method, payment_id, delivery_address, order_status) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    const orderValues = [
+      userId,
+      currDate,
+      totalAmount, // Use the sum calculated from client-side subtotals
+      paymentMethod,
+      paymentId,
+      address,
+      "Pending", // Default status
+    ];
+
+    connection.query(orderQuery, orderValues, (error, orderResult) => {
+      if (error) {
+        console.error("Error inserting into orders table:", error);
+        return connection.rollback(() => {
+          res
+            .status(500)
+            .json({ success: false, message: "Error saving order header" });
+        });
+      }
+
+      const newOrderId = orderResult.insertId;
+      console.log(`Order created with ID: ${newOrderId}`);
+
+      // 2. Prepare to insert into order_items table
+      const itemPromises = validItems.map((item) => {
+        return new Promise((resolve, reject) => {
+          // Fetch the current price from the menu for accuracy and storage
           connection.query(
-            "INSERT INTO orders (order_id, user_id, item_id, quantity, price, datetime, payment_method, payment_id, delivery_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [
-              uuidv4(),
-              userId,
-              item,
-              quantity[index],
-              subprice[index] * quantity[index],
-              currDate,
-              paymentMethod,
-              paymentId,
-              address,
-            ],
-            function (error) {
-              if (error) {
-                reject(error);
-              } else {
-                resolve();
+            "SELECT item_price FROM menu WHERE item_id = ?",
+            [item.id],
+            (priceError, priceResult) => {
+              if (priceError || priceResult.length === 0) {
+                console.error(
+                  `Error fetching price for item ${item.id}:`,
+                  priceError || "Item not found"
+                );
+                // Reject the promise to trigger rollback
+                return reject(
+                  new Error(`Could not verify price for item ID ${item.id}`)
+                );
               }
+
+              const pricePerItem = priceResult[0].item_price;
+              // Calculate the subtotal based on fetched price and quantity
+              const calculatedSubtotal = item.qty * pricePerItem;
+
+              const itemQuery =
+                "INSERT INTO order_items (order_id, item_id, quantity, price_per_item, subtotal) VALUES (?, ?, ?, ?, ?)";
+              const itemValues = [
+                newOrderId,
+                item.id,
+                item.qty,
+                pricePerItem, // Store the price per item at time of order
+                calculatedSubtotal, // Store the calculated subtotal
+              ];
+
+              connection.query(itemQuery, itemValues, (itemError) => {
+                if (itemError) {
+                  console.error(
+                    `Error inserting order item ${item.id} for order ${newOrderId}:`,
+                    itemError
+                  );
+                  // Reject the promise to trigger rollback
+                  return reject(itemError);
+                }
+                // Resolve the promise for this item
+                resolve();
+              });
             }
           );
         });
-        promises.push(promise);
-      }
-    });
-
-    Promise.all(promises)
-      .then(() => {
-        // Clear cart
-        citems = [];
-        citemdetails = [];
-        item_in_cart = 0;
-        getItemDetails(citems, 0);
-
-        // Return appropriate response based on payment method
-        if (paymentMethod === "PayPal") {
-          return res.status(200).json({ success: true });
-        } else {
-          return res.redirect("/confirmation");
-        }
-      })
-      .catch((error) => {
-        console.error("Error processing order:", error);
-        if (paymentMethod === "PayPal") {
-          return res
-            .status(500)
-            .json({ success: false, message: "Error processing order" });
-        } else {
-          return res.status(500).send("Error processing order");
-        }
       });
-  } else {
-    // Handle invalid input
-    if (paymentMethod === "PayPal") {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid order data" });
-    } else {
-      return res.redirect("/cart");
-    }
-  }
+
+      // Execute all item insertions concurrently within the transaction
+      Promise.all(itemPromises)
+        .then(() => {
+          // All items inserted successfully, now commit the transaction
+          connection.commit((commitError) => {
+            if (commitError) {
+              console.error("Transaction Commit Error:", commitError);
+              // Rollback if commit fails
+              return connection.rollback(() => {
+                res.status(500).json({
+                  success: false,
+                  message: "Error finalizing order commit",
+                });
+              });
+            }
+
+            console.log(
+              `Order ${newOrderId} processed and committed successfully.`
+            );
+            // Clear cart (assuming global cart state is still relevant, though ideally it shouldn't be)
+            // Consider sending a message to the client to clear its local cart state instead
+            citems = [];
+            citemdetails = [];
+            item_in_cart = 0;
+
+            // Respond based on payment method AFTER successful commit
+            if (paymentMethod === "PayPal") {
+              console.log("PayPal payment successful, returning JSON");
+              return res
+                .status(200)
+                .json({ success: true, redirectUrl: "/confirmation" });
+            } else {
+              console.log(
+                "COD payment successful, redirecting to confirmation"
+              );
+              // Redirect only after successful commit for COD
+              return res.redirect("/confirmation");
+            }
+          });
+        })
+        .catch((itemInsertError) => {
+          // Rollback if any item insertion promise was rejected
+          console.error(
+            "Error inserting one or more order items:",
+            itemInsertError
+          );
+          return connection.rollback(() => {
+            // Send a generic error message
+            res.status(500).json({
+              success: false,
+              message: "Error saving order details. Order cancelled.",
+            });
+          });
+        });
+    });
+  });
 }
 
 // Render Confirmation Page
@@ -537,27 +660,119 @@ app.get("/confirmation", function (req, res) {
 function renderMyOrdersPage(req, res) {
   const userId = req.cookies.cookuid;
   const userName = req.cookies.cookuname;
+
+  // Check authentication
+  if (!userId || !userName) {
+    console.log("My Orders - Not authenticated, redirecting to signin");
+    return res.redirect("/signin");
+  }
+
+  // 1. Fetch user details
   connection.query(
     "SELECT user_id, user_name, user_address, user_email, user_mobileno FROM users WHERE user_id = ? AND user_name = ?",
     [userId, userName],
-    function (error, resultUser) {
-      if (!error && resultUser.length) {
-        connection.query(
-          "SELECT order_dispatch.order_id, order_dispatch.user_id, order_dispatch.quantity, order_dispatch.price, order_dispatch.datetime, menu.item_id, menu.item_name, menu.item_img FROM order_dispatch, menu WHERE order_dispatch.user_id = ? AND menu.item_id = order_dispatch.item_id ORDER BY order_dispatch.datetime DESC",
-          [userId],
-          function (error, results) {
-            if (!error) {
-              res.render("orders", {
-                userDetails: resultUser,
-                items: results,
-                item_count: item_in_cart,
-              });
-            }
-          }
+    function (error, userResults) {
+      if (error || userResults.length === 0) {
+        console.error(
+          "My Orders - Error fetching user or user not found:",
+          error
         );
-      } else {
-        res.render("signin");
+        // If user details can't be fetched, redirect to signin
+        return res.redirect("/signin");
       }
+
+      const userDetails = userResults[0];
+
+      // 2. Fetch the user's orders
+      const ordersQuery =
+        "SELECT * FROM orders WHERE user_id = ? ORDER BY order_datetime DESC";
+      connection.query(ordersQuery, [userId], (orderError, orders) => {
+        if (orderError) {
+          console.error("My Orders - Error fetching orders:", orderError);
+          // Render the page with an error message or empty orders list
+          return res.render("orders", {
+            username: userName,
+            userid: userId,
+            userDetails: userDetails,
+            orders: [], // Pass empty array on error
+            item_count: item_in_cart, // Assuming item_in_cart is still relevant for nav
+            error: "Could not load your orders.",
+          });
+        }
+
+        if (orders.length === 0) {
+          // No orders found, render the page with an empty list
+          return res.render("orders", {
+            username: userName,
+            userid: userId,
+            userDetails: userDetails,
+            orders: [],
+            item_count: item_in_cart,
+          });
+        }
+
+        // 3. Fetch items for each order
+        const orderItemPromises = orders.map((order) => {
+          return new Promise((resolve, reject) => {
+            const itemsQuery = `
+              SELECT
+                oi.quantity,
+                oi.price_per_item,
+                oi.subtotal,
+                m.item_name,
+                m.item_img
+              FROM order_items oi
+              JOIN menu m ON oi.item_id = m.item_id
+              WHERE oi.order_id = ?
+            `;
+            connection.query(
+              itemsQuery,
+              [order.order_id],
+              (itemError, items) => {
+                if (itemError) {
+                  console.error(
+                    `My Orders - Error fetching items for order ${order.order_id}:`,
+                    itemError
+                  );
+                  // Reject if items for an order can't be fetched
+                  return reject(itemError);
+                }
+                // Attach the fetched items to the order object
+                order.items = items;
+                resolve(order); // Resolve with the order object now containing items
+              }
+            );
+          });
+        });
+
+        // 4. Wait for all item queries to complete
+        Promise.all(orderItemPromises)
+          .then((ordersWithItems) => {
+            // All orders now have their items attached
+            res.render("orders", {
+              username: userName,
+              userid: userId,
+              userDetails: userDetails,
+              orders: ordersWithItems, // Pass the complete structure
+              item_count: item_in_cart,
+            });
+          })
+          .catch((fetchItemsError) => {
+            console.error(
+              "My Orders - Error processing order items:",
+              fetchItemsError
+            );
+            // Render with an error if any item query failed
+            res.render("orders", {
+              username: userName,
+              userid: userId,
+              userDetails: userDetails,
+              orders: [], // Pass empty array on error
+              item_count: item_in_cart,
+              error: "Could not load details for all orders.",
+            });
+          });
+      });
     }
   );
 }
@@ -834,128 +1049,231 @@ function addFood(req, res) {
 
 // Render Admin View and Dispatch Orders Page
 function renderViewDispatchOrdersPage(req, res) {
-  const userId = req.cookies.cookuid;
-  const userName = req.cookies.cookuname;
+  const adminId = req.cookies.cookuid;
+  const adminName = req.cookies.cookuname;
+
+  // Check admin authentication
   connection.query(
-    "SELECT admin_id, admin_name FROM admin WHERE admin_id = ? and admin_name = ?",
-    [userId, userName],
-    function (error, results) {
-      if (!error && results.length) {
-        connection.query(
-          "SELECT * FROM orders ORDER BY datetime",
-          function (error, results2) {
-            res.render("admin/orders", {
-              username: userName,
-              userid: userId,
-              orders: results2,
-            });
-          }
-        );
-      } else {
-        res.render("admin/login");
+    "SELECT admin_id FROM admin WHERE admin_id = ? AND admin_name = ?",
+    [adminId, adminName],
+    function (authError, authResults) {
+      if (authError || authResults.length === 0) {
+        console.error("Admin Orders - Auth failed:", authError);
+        return res.redirect("/admin/login");
       }
+
+      // Fetch orders that are 'Pending' or 'Processing', joining with users table
+      const ordersQuery = `
+        SELECT
+          o.order_id,
+          o.user_id,
+          u.user_name,
+          o.order_datetime,
+          o.total_amount,
+          o.delivery_address,
+          o.payment_method,
+          o.order_status
+        FROM orders o
+        JOIN users u ON o.user_id = u.user_id
+        WHERE o.order_status IN ('Pending', 'Processing')
+        ORDER BY o.order_datetime ASC
+      `;
+
+      connection.query(ordersQuery, (orderError, orders) => {
+        if (orderError) {
+          console.error("Admin Orders - Error fetching orders:", orderError);
+          return res.render("admin/orders", {
+            username: adminName,
+            userid: adminId,
+            orders: [],
+            error: "Could not load orders.",
+          });
+        }
+
+        if (orders.length === 0) {
+          // No pending/processing orders found
+          return res.render("admin/orders", {
+            username: adminName,
+            userid: adminId,
+            orders: [],
+          });
+        }
+
+        // Fetch items for each order
+        const orderItemPromises = orders.map((order) => {
+          return new Promise((resolve, reject) => {
+            const itemsQuery = `
+              SELECT
+                oi.quantity,
+                oi.price_per_item,
+                oi.subtotal,
+                m.item_name
+              FROM order_items oi
+              JOIN menu m ON oi.item_id = m.item_id
+              WHERE oi.order_id = ?
+            `;
+            connection.query(
+              itemsQuery,
+              [order.order_id],
+              (itemError, items) => {
+                if (itemError) {
+                  console.error(
+                    `Admin Orders - Error fetching items for order ${order.order_id}:`,
+                    itemError
+                  );
+                  return reject(itemError); // Propagate error
+                }
+                order.items = items; // Attach items to the order object
+                resolve(order);
+              }
+            );
+          });
+        });
+
+        // Wait for all item queries to complete
+        Promise.all(orderItemPromises)
+          .then((ordersWithItems) => {
+            res.render("admin/orders", {
+              username: adminName,
+              userid: adminId,
+              orders: ordersWithItems, // Pass orders with nested items
+            });
+          })
+          .catch((fetchItemsError) => {
+            console.error(
+              "Admin Orders - Error processing order items:",
+              fetchItemsError
+            );
+            res.render("admin/orders", {
+              username: adminName,
+              userid: adminId,
+              orders: [], // Pass empty array on error
+              error: "Could not load details for all orders.",
+            });
+          });
+      });
     }
   );
 }
 
 // Dispatch Orders
 function dispatchOrders(req, res) {
-  const totalOrder = req.body.order_id_s;
-  if (!totalOrder || totalOrder.length === 0) {
-    return res.render("admin/orders", {
-      username: req.cookies.cookuname,
-      orders: [],
-      error: "No orders selected for dispatch",
-    });
+  const adminId = req.cookies.cookuid; // Get admin ID for logging
+  const adminName = req.cookies.cookuname;
+  let orderIdsToDispatch = req.body.order_id_s; // Can be a single string or an array
+
+  // Ensure orderIdsToDispatch is an array
+  if (!Array.isArray(orderIdsToDispatch)) {
+    orderIdsToDispatch = orderIdsToDispatch ? [orderIdsToDispatch] : [];
   }
 
-  const unique = [...new Set(totalOrder)];
-  const promises = [];
+  // Validate that orders were selected
+  if (!orderIdsToDispatch || orderIdsToDispatch.length === 0) {
+    console.log("Dispatch Orders - No orders selected");
+    // Re-render the page with an error message
+    // Need to fetch orders again to display the page correctly
+    return renderViewDispatchOrdersPage(req, res); // Re-use the render function
+    // Or redirect with a query parameter: return res.redirect('/admin/orders?error=No orders selected');
+  }
+
+  // Ensure unique order IDs
+  const uniqueOrderIds = [...new Set(orderIdsToDispatch)];
+  const currDate = new Date();
 
   // Begin transaction
-  connection.beginTransaction(function (err) {
+  connection.beginTransaction((err) => {
     if (err) {
-      console.error("Transaction error:", err);
+      console.error("Dispatch Orders - Transaction Begin Error:", err);
+      // Consider rendering the page with an error
       return res.status(500).send("Database transaction error");
     }
 
-    // Process each order in the transaction
-    unique.forEach((orderId) => {
-      const promise = new Promise((resolve, reject) => {
+    const dispatchPromises = uniqueOrderIds.map((orderId) => {
+      return new Promise((resolve, reject) => {
+        // 1. Update order status
         connection.query(
-          "SELECT * FROM orders WHERE order_id = ?",
+          "UPDATE orders SET order_status = 'Dispatched' WHERE order_id = ? AND order_status IN ('Pending', 'Processing')",
           [orderId],
-          function (error, resultsItem) {
-            if (error || !resultsItem.length) {
-              return reject(error || new Error("Order not found"));
+          (updateError, updateResult) => {
+            if (updateError) {
+              console.error(
+                `Dispatch Orders - Error updating status for order ${orderId}:`,
+                updateError
+              );
+              return reject(updateError);
             }
 
-            const order = resultsItem[0];
-            const currDate = new Date();
+            // Check if the order was actually updated (it might have been already dispatched or didn't exist)
+            if (updateResult.affectedRows === 0) {
+              console.warn(
+                `Dispatch Orders - Order ${orderId} not found or not in a dispatchable state.`
+              );
+              // Resolve even if not updated, to not block other dispatches,
+              // but maybe log this or handle differently depending on requirements.
+              // If strictness is required, could reject here.
+              return resolve();
+            }
 
+            // 2. Insert into dispatch log
             connection.query(
-              "INSERT INTO order_dispatch (order_id, user_id, item_id, quantity, price, datetime) VALUES (?, ?, ?, ?, ?, ?)",
-              [
-                order.order_id,
-                order.user_id,
-                order.item_id,
-                order.quantity,
-                order.price,
-                currDate,
-              ],
-              function (error) {
-                if (error) return reject(error);
-
-                connection.query(
-                  "DELETE FROM orders WHERE order_id = ?",
-                  [order.order_id],
-                  function (error) {
-                    if (error) return reject(error);
-                    resolve();
+              "INSERT INTO order_dispatch (order_id, dispatch_datetime, dispatched_by_admin_id) VALUES (?, ?, ?)",
+              [orderId, currDate, adminId],
+              (insertError) => {
+                if (insertError) {
+                  // Handle potential duplicate entry if an order is somehow dispatched twice
+                  if (insertError.code === "ER_DUP_ENTRY") {
+                    console.warn(
+                      `Dispatch Orders - Order ${orderId} already marked as dispatched in log.`
+                    );
+                    // Resolve, as the goal (dispatch recorded) is met.
+                    return resolve();
                   }
+                  console.error(
+                    `Dispatch Orders - Error inserting into dispatch log for order ${orderId}:`,
+                    insertError
+                  );
+                  return reject(insertError);
+                }
+                console.log(
+                  `Dispatch Orders - Order ${orderId} marked as dispatched.`
                 );
+                resolve();
               }
             );
           }
         );
       });
-      promises.push(promise);
     });
 
     // Wait for all operations to complete
-    Promise.all(promises)
+    Promise.all(dispatchPromises)
       .then(() => {
-        // Commit the transaction
-        connection.commit(function (err) {
-          if (err) {
-            return connection.rollback(function () {
-              console.error("Commit error:", err);
-              res.status(500).send("Failed to commit transaction");
+        // All updates and inserts successful, commit the transaction
+        connection.commit((commitError) => {
+          if (commitError) {
+            console.error(
+              "Dispatch Orders - Transaction Commit Error:",
+              commitError
+            );
+            return connection.rollback(() => {
+              // Render page with error
+              res.status(500).send("Failed to commit dispatch transaction");
             });
           }
 
-          // Only after successful commit, fetch updated orders and render page
-          connection.query(
-            "SELECT * FROM orders ORDER BY datetime",
-            function (error, results) {
-              if (error) {
-                console.error("Query error after commit:", error);
-                return res.status(500).send("Error fetching updated orders");
-              }
-
-              res.render("admin/orders", {
-                username: req.cookies.cookuname,
-                orders: results,
-                success: "Orders dispatched successfully",
-              });
-            }
-          );
+          console.log("Dispatch Orders - Transaction committed successfully.");
+          // Redirect back to the orders page with a success message
+          res.redirect("/admin/orders?success=Orders dispatched successfully");
         });
       })
       .catch((error) => {
-        // Rollback the transaction on any error
-        connection.rollback(function () {
-          console.error("Operation error:", error);
+        // An error occurred during one of the updates or inserts, rollback
+        console.error(
+          "Dispatch Orders - Error during dispatch operations:",
+          error
+        );
+        connection.rollback(() => {
+          // Render page with error
           res.status(500).send("Error dispatching orders: " + error.message);
         });
       });

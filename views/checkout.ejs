@@ -47,8 +47,8 @@
                     <% if (items && items.length > 0) { %>
                     <% items.forEach(function(item, index) { %>
                     <input type="hidden" name="itemid[]" value="<%= item.item_id %>">
-                    <input type="hidden" name="quantity[]" value="1"> <!-- Default quantity, adjust as needed -->
-                    <input type="hidden" name="subprice[]" value="<%= item.item_price %>">
+                    <input type="hidden" name="quantity[]" value="<%= item.quantity %>"> <!-- Use quantity from item object -->
+                    <input type="hidden" name="subprice[]" value="<%= item.subtotal %>"> <!-- Use subtotal from item object -->
                     <% }); %>
                     <% } %>
 
@@ -102,9 +102,9 @@
                             <tr>
                               <td><%= item.item_name %></td>
                               <td>$<%= item.item_price %></td>
-                              <td>1</td> <!-- Default quantity, adjust as needed -->
-                              <td>$<%= item.item_price %></td>
-                              <% totalAmount += parseInt(item.item_price); %>
+                              <td><%= item.quantity %></td> <!-- Use quantity from item object -->
+                              <td>$<%= item.subtotal %></td> <!-- Use subtotal from item object -->
+                              <% totalAmount += item.subtotal; %> <!-- Sum up subtotals -->
                             </tr>
                             <% }); %>
                             <% } else { %>
@@ -189,10 +189,12 @@
   <script src="/javascripts/main.js"></script>
   <script src="/javascripts/cart.js"></script>
   <script>
-    var cartTotal = '<%= (items && items.length > 0) ? items.reduce((total, item) => total + parseInt(item.item_price), 0) : 0 %>';
-
+    // Calculate total amount based on the items passed from the server
+    const checkoutItems = '<%- JSON.stringify(items || []) %>';
     const calculateTotal = () => {
-      return cartTotal;
+      // Ensure checkoutItems is an array before reducing
+      if (!Array.isArray(checkoutItems)) return 0;
+      return checkoutItems.reduce((total, item) => total + (item.subtotal || 0), 0);
     };
 
     // Single DOMContentLoaded event handler for all initialization
@@ -249,7 +251,7 @@
             return actions.order.create({
               purchase_units: [{
                 amount: {
-                  value: total.toString()
+                  value: total.toString() // Use the calculated total
                 }
               }]
             });
@@ -283,14 +285,12 @@
               formData.append('paymentId', orderData.id);
               formData.append('address', selectedAddress);
 
-              // Add items, quantities, and prices
-              '<% if (items && items.length > 0) { %>'
-              '<% items.forEach(function(item) { %>'
-              formData.append('itemid[]', '<%= item.item_id %>');
-              formData.append('quantity[]', '1');
-              formData.append('subprice[]', '<%= item.item_price %>');
-              '<% }); %>'
-              '<% } %>'
+              // Add items, quantities, and prices from the checkoutItems array
+              checkoutItems.forEach(item => {
+                formData.append('itemid[]', item.item_id);
+                formData.append('quantity[]', item.quantity);
+                formData.append('subprice[]', item.subtotal);
+              });
 
               // Display loading indicator or disable buttons here
               document.body.style.cursor = 'wait';

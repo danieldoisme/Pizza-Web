@@ -98,8 +98,8 @@
                               type="number"
                               style="text-align: center"
                               class="quantity form-input"
-                              name="quantity"
-                              id="quantity"
+                              name="quantity_display_<%= i %>"
+                              id="quantity_display_<%= i %>"
                               value="1"
                               min="1"
                               onchange="updateData(this.value,'<%= i %>');"
@@ -125,10 +125,16 @@
                             name="itemid[]"
                             value="<%= items[i].item_id %>"
                           />
-                          <input type="hidden" name="quantity[]" value="1" />
+                          <input
+                            type="hidden"
+                            name="quantity[]"
+                            id="quantity_hidden_<%= i %>"
+                            value="1"
+                          />
                           <input
                             type="hidden"
                             name="subprice[]"
+                            id="subprice_hidden_<%= i %>"
                             value="<%= items[i].item_price %>"
                           />
                           <% total_price +=items[i].item_price %>
@@ -218,27 +224,30 @@
 
     <script>
       function updateData(qty, i) {
-        // Updating Sub Price
+        // Updating Sub Price Display
         const item_price = document.querySelectorAll(".item-price");
         const newPrice = parseInt(qty) * parseInt(item_price[i].innerHTML);
-        //console.log(newPrice);
         document.querySelectorAll(".price")[i].innerHTML = newPrice;
 
-        // Updating Total Quantity
+        // Update hidden subprice input
+        document.getElementById(`subprice_hidden_${i}`).value = newPrice;
+
+        // Update hidden quantity input
+        document.getElementById(`quantity_hidden_${i}`).value = qty;
+
+        // Updating Total Quantity Display
         const quantity = document.querySelectorAll(".quantity");
         let total_qty = parseInt(0);
         for (let j = 0; j < quantity.length; j++) {
           total_qty += parseInt(quantity[j].value);
-          //console.log(quantity[j].value);
         }
         document.getElementById("total_quantity").innerHTML = total_qty;
 
-        // Updating Total Price
+        // Updating Total Price Display
         const price = document.querySelectorAll(".price");
         let total_price = parseInt(0);
         for (let j = 0; j < price.length; j++) {
           total_price += parseInt(price[j].innerHTML);
-          //console.log(total_price);
         }
         document.getElementById("total_price").innerHTML = "$ " + total_price;
       }
