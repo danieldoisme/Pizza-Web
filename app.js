@@ -402,42 +402,76 @@ function processPayment(req, res) {
   const userId = req.cookies.cookuid;
   const userName = req.cookies.cookuname;
   const paymentMethod = req.body.paymentMethod;
-  const address = req.body.address || req.body.newDeliveryAddress;
-  const paymentId = req.body.paymentId || null; // For PayPal transactions
-  const { itemid, quantity, subprice } = req.body; // Arrays from the form
 
-  console.log("Processing payment:", { paymentMethod, paymentId, address });
+  // --- START: Determine Delivery Address ---
+  const paypalAddress = req.body.paypalShippingAddress; // Address potentially provided by PayPal
+  const formAddress = req.body.address || req.body.newDeliveryAddress; // Address from COD form or PayPal fallback
+  let deliveryAddress = ""; // Initialize
+
+  if (
+    paymentMethod === "PayPal" &&
+    paypalAddress &&
+    paypalAddress.trim() !== ""
+  ) {
+    // Priority 1: Use PayPal address if available for PayPal payments
+    console.log("Using shipping address provided by PayPal.");
+    deliveryAddress = paypalAddress.trim();
+  } else if (formAddress && formAddress.trim() !== "") {
+    // Priority 2: Use address from form (for COD, or as PayPal fallback)
+    console.log("Using shipping address from form.");
+    deliveryAddress = formAddress.trim();
+  }
+  // --- END: Determine Delivery Address ---
+
+  const paymentId = req.body.paymentId || null; // For PayPal transactions
+  const itemid = req.body["itemid[]"];
+  const quantity = req.body["quantity[]"];
+  const subprice = req.body["subprice[]"];
+
+  console.log("Processing payment:", {
+    paymentMethod,
+    paymentId,
+    deliveryAddress,
+  }); // Log the final address being used
   console.log("Payment Body:", req.body);
 
   // Check if authentication is valid
   if (!userId || !userName) {
     console.log("Payment Processing - Not authenticated");
-    // Return JSON for both PayPal and COD if not authenticated during processing
     return res
       .status(401)
       .json({ success: false, message: "Authentication required" });
   }
 
-  // Validate address
-  if (!address || address.trim() === "") {
+  // Ensure item data are arrays (handle single item case)
+  const itemIds = Array.isArray(itemid) ? itemid : itemid ? [itemid] : [];
+  const quantities = Array.isArray(quantity)
+    ? quantity
+    : quantity
+    ? [quantity]
+    : [];
+  const subprices = Array.isArray(subprice)
+    ? subprice
+    : subprice
+    ? [subprice]
+    : [];
+
+  // Validate address - ensure we have one either from PayPal or the form
+  if (!deliveryAddress || deliveryAddress.trim() === "") {
     console.log("Payment Processing - Missing address");
-    // Return JSON for both PayPal and COD if address is missing
     return res
       .status(400)
       .json({ success: false, message: "Delivery address is required" });
   }
 
-  // Basic validation of received arrays
+  // Basic validation of received arrays (use the ensured array versions)
   if (
-    !itemid ||
-    !quantity ||
-    !subprice ||
-    !Array.isArray(itemid) ||
-    !Array.isArray(quantity) ||
-    !Array.isArray(subprice) ||
-    itemid.length !== quantity.length ||
-    itemid.length !== subprice.length ||
-    itemid.length === 0
+    !itemIds ||
+    !quantities ||
+    !subprices ||
+    itemIds.length !== quantities.length ||
+    itemIds.length !== subprices.length ||
+    itemIds.length === 0
   ) {
     console.log("Payment Processing - Invalid item data arrays");
     // Return JSON for both PayPal and COD if data is invalid
@@ -450,11 +484,12 @@ function processPayment(req, res) {
   let totalAmount = 0;
   const validItems = []; // Store items with valid data
 
-  for (let i = 0; i < itemid.length; i++) {
-    const qty = parseInt(quantity[i], 10);
+  // Use the ensured array versions for iteration
+  for (let i = 0; i < itemIds.length; i++) {
+    const qty = parseInt(quantities[i], 10);
     // Subprice from client is already qty * price, we use it for totalAmount calculation
     // but will fetch the actual price per item later for order_items table.
-    const clientSubtotal = parseFloat(subprice[i]);
+    const clientSubtotal = parseFloat(subprices[i]);
     if (
       !isNaN(qty) &&
       qty > 0 &&
@@ -463,23 +498,15 @@ function processPayment(req, res) {
     ) {
       totalAmount += clientSubtotal;
       validItems.push({
-        id: itemid[i],
+        id: itemIds[i], // Use itemIds array
         qty: qty,
         // We don't store clientSubtotal here, will calculate based on fetched price
       });
     } else {
       console.warn(
-        `Skipping invalid item data at index ${i}: qty=${quantity[i]}, subprice=${subprice[i]}`
+        `Skipping invalid item data at index ${i}: qty=${quantities[i]}, subprice=${subprices[i]}` // Use quantities/subprices arrays
       );
     }
-  }
-
-  if (validItems.length === 0) {
-    console.log("Payment Processing - No valid items to process");
-    // Return JSON for both PayPal and COD if no valid items
-    return res
-      .status(400)
-      .json({ success: false, message: "No valid items in order" });
   }
 
   const currDate = new Date();
@@ -503,7 +530,7 @@ function processPayment(req, res) {
       totalAmount, // Use the sum calculated from client-side subtotals
       paymentMethod,
       paymentId,
-      address,
+      deliveryAddress, // Use the determined delivery address
       "Pending", // Default status
     ];
 

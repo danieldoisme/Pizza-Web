@@ -756,7 +756,6 @@ p {
   min-width: 120px;
   min-height: 58px;
   background: #f3f3f5;
-  box-shadow: 9px 9px 12px #b2b2b3, -9px -9px 12px #ffffff;
   display: inline-flex;
   justify-content: center;
   align-items: center;
@@ -782,6 +781,19 @@ p {
   color: #f16620;
   font-weight: 600;
 }
+
+/* Orange button style */
+.sec-btn-orange {
+  background: orange; /* Orange background */
+  color: white; /* White text */
+}
+
+.sec-btn-orange:hover {
+  background: darkorange; /* Darker orange on hover */
+  color: white;
+  box-shadow: inset 4px 4px 8px #c48000, inset -4px -4px 8px #ffae00; /* Inset shadow on hover */
+}
+
 /* About Section Ends */
 
 .section {
@@ -1037,8 +1049,100 @@ p {
 
 .dish-add-btn:hover {
   background: linear-gradient(145deg, #e3a92b, #ffc933);
+  box-shadow: inset 6px 6px 9px #cccccc, inset -3px -3px 6px #ffffff;
 }
 /* Menu Card Design Ends*/
+
+/* Checkout Page Styles Start */
+.checkout-section .h2-title {
+  font-size: 38px; /* Slightly smaller for checkout context */
+  line-height: 48px;
+}
+
+.checkout-card {
+  border-radius: 20px; /* Consistent rounding */
+  background: linear-gradient(145deg, #ececec, #ffffff);
+  box-shadow: 20px 20px 40px #d4d4d4, -20px -20px 40px #ffffff; /* Consistent shadow */
+  padding: 30px;
+  margin-bottom: 30px;
+}
+
+.checkout-card-header {
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.checkout-card-header .h3-title {
+  font-size: 24px; /* Adjust heading size */
+  margin-bottom: 0;
+}
+
+.checkout-card-body .h4-title {
+  font-size: 20px; /* Adjust heading size */
+  margin-bottom: 15px;
+  color: #ff8243; /* Use accent color */
+}
+
+.checkout-card .form-check-label {
+  font-size: 16px;
+  margin-left: 5px;
+}
+
+.checkout-card .existing-address {
+  padding: 10px 15px;
+  background-color: #f8f8f8;
+  border-radius: 10px;
+  box-shadow: inset 4px 4px 6px #dadada, inset -4px -4px 6px #ffffff;
+  margin-top: 10px;
+}
+
+.checkout-card .form-input {
+  /* Ensure textarea matches input style */
+  min-height: 80px; /* Adjust height for textarea */
+}
+
+.checkout-table-wrapper {
+  border-radius: 10px;
+  overflow: hidden; /* Ensures border-radius applies to table */
+  box-shadow: inset 6px 6px 8px #dadada, inset -6px -6px 8px #ffffff;
+  margin-bottom: 25px;
+}
+
+.checkout-table {
+  background-color: #f8f8f8; /* Light background for table */
+  margin-bottom: 0; /* Remove default margin */
+}
+
+.checkout-table th,
+.checkout-table td {
+  padding: 12px 15px;
+  vertical-align: middle;
+  border-top: 1px solid #e8e8e8; /* Lighter border */
+}
+
+.checkout-table thead th {
+  background-color: #f3f3f5; /* Slightly different header background */
+  color: #0d0d25;
+  font-weight: 600;
+  border-top: none;
+  border-bottom: 2px solid #e8e8e8;
+}
+
+.checkout-table tfoot th {
+  font-weight: 700;
+  color: #0d0d25;
+}
+
+.checkout-table tfoot tr:first-child th {
+  border-top: 2px solid #e8e8e8;
+}
+
+.paypal-button-container {
+  text-align: center; /* Center PayPal button */
+}
+
+/* Checkout Page Styles End */
 
 .xxl-title {
   text-transform: capitalize;

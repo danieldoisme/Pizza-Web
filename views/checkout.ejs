@@ -24,132 +24,137 @@
 
   <div id="viewport">
     <div id="js-scroll-content">
-      <section class="section" id="congratulations" style="background-image: url(/images/menu-bg.png)">
-        <div class="container">
-          <div class="row">
-            <div class="col-12 mb-4">
-              <h2 class="section-heading">Checkout</h2>
-              <p>Please select your preferred payment method and review your order before confirming.</p>
-            </div>
-          </div>
-
-          <div class="row">
-            <!-- COD Option (2/3 width) -->
-            <div class="col-lg-8">
-              <div class="card mb-4">
-                <div class="card-header">
-                  <h3>Cash on Delivery</h3>
-                </div>
-                <div class="card-body">
-                  <form id="cod-form" action="/checkout/process-payment" method="POST">
-                    <input type="hidden" name="paymentMethod" value="COD">
-
-                    <% if (items && items.length > 0) { %>
-                    <% items.forEach(function(item, index) { %>
-                    <input type="hidden" name="itemid[]" value="<%= item.item_id %>">
-                    <input type="hidden" name="quantity[]" value="<%= item.quantity %>"> <!-- Use quantity from item object -->
-                    <input type="hidden" name="subprice[]" value="<%= item.subtotal %>"> <!-- Use subtotal from item object -->
-                    <% }); %>
-                    <% } %>
-
-                    <div class="form-group mb-4">
-                      <h4>Delivery Address</h4>
-
-                      <% if (user && user.address) { %>
-                      <div class="form-check mb-3">
-                        <input class="form-check-input" type="radio" name="addressOption" id="existingAddress" value="existing" checked>
-                        <label class="form-check-label" for="existingAddress">
-                          Use my existing address
-                        </label>
-                        <div class="existing-address mt-2">
-                          <p class="mb-0"><%= user.address %></p>
-                          <input type="hidden" name="address" id="userExistingAddress" value="<%= user.address %>">
-                        </div>
-                      </div>
-                      <% } %>
-
-                      <div class="form-check">
-                        <input class="form-check-input" type="radio" name="addressOption" id="newAddress" value="new" <%= !user || !user.address ? 'checked' : '' %>>
-                        <label class="form-check-label" for="newAddress">
-                          Use a different address
-                        </label>
-                      </div>
-
-                      <div id="newAddressForm" class="mt-3" <%= user && user.address ? 'style="display:none;"' : '' %>>
-                        <div class="mb-3">
-                          <label for="deliveryAddress" class="form-label">Delivery Address</label>
-                          <textarea class="form-control" id="deliveryAddress" name="newDeliveryAddress" rows="3" placeholder="Enter your delivery address"></textarea>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="form-group mb-4">
-                      <h4>Order Summary</h4>
-                      <div class="table-responsive">
-                        <table class="table">
-                          <thead>
-                            <tr>
-                              <th>Item</th>
-                              <th>Price</th>
-                              <th>Quantity</th>
-                              <th>Total</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <% let totalAmount = 0; %>
-                            <% if (items && items.length > 0) { %>
-                            <% items.forEach(function(item) { %>
-                            <tr>
-                              <td><%= item.item_name %></td>
-                              <td>$<%= item.item_price %></td>
-                              <td><%= item.quantity %></td> <!-- Use quantity from item object -->
-                              <td>$<%= item.subtotal %></td> <!-- Use subtotal from item object -->
-                              <% totalAmount += item.subtotal; %> <!-- Sum up subtotals -->
-                            </tr>
-                            <% }); %>
-                            <% } else { %>
-                            <tr>
-                              <td colspan="4" class="text-center">Your cart is empty</td>
-                            </tr>
-                            <% } %>
-                          </tbody>
-                          <tfoot>
-                            <tr>
-                              <th colspan="3">Total Amount</th>
-                              <th>$<%= totalAmount %></th>
-                            </tr>
-                          </tfoot>
-                        </table>
-                      </div>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                      <button type="submit" class="btn btn-primary btn-lg" <%= items && items.length > 0 ? '' : 'disabled' %>>
-                        Confirm Order (Cash on Delivery)
-                      </button>
-                    </div>
-                  </form>
+      <section class="section checkout-section" style="background-image: url(/images/menu-bg.png)">
+        <div class="sec-wp">
+          <div class="container">
+            <div class="row">
+              <div class="col-12 text-center mb-5">
+                <p class="sec-sub-title mb-3">Checkout</p>
+                <h2 class="h2-title">Review Your Order</h2>
+                <div class="sec-title-shape mb-4">
+                  <img src="/images/title-shape.svg" alt="" />
                 </div>
               </div>
             </div>
 
-            <!-- Online Payment Options (1/3 width) -->
-            <div class="col-lg-4">
-              <div class="card">
-                <div class="card-header">
-                  <h3>Online Payment</h3>
-                </div>
-                <div class="card-body">
-                  <p>Complete your purchase securely with PayPal or credit/debit card.</p>
-
-                  <div class="paypal-button-container" id="paypal-button-container">
-                    <!-- PayPal buttons will be inserted here -->
+            <div class="row justify-content-center">
+              <!-- COD Option -->
+              <div class="col-lg-7 mb-4">
+                <div class="checkout-card">
+                  <div class="checkout-card-header">
+                    <h3 class="h3-title">Cash on Delivery</h3>
                   </div>
+                  <div class="checkout-card-body">
+                    <form id="cod-form" action="/checkout/process-payment" method="POST">
+                      <input type="hidden" name="paymentMethod" value="COD">
 
-                  <div class="mt-3">
-                    <p class="small text-muted">
-                      By clicking on PayPal or Card payment options, you'll be redirected to secure payment processing.
-                    </p>
+                      <% if (items && items.length > 0) { %>
+                      <% items.forEach(function(item, index) { %>
+                      <input type="hidden" name="itemid[]" value="<%= item.item_id %>">
+                      <input type="hidden" name="quantity[]" value="<%= item.quantity %>">
+                      <input type="hidden" name="subprice[]" value="<%= item.subtotal %>">
+                      <% }); %>
+                      <% } %>
+
+                      <div class="form-group mb-4">
+                        <h4 class="h4-title">Delivery Address</h4>
+
+                        <% if (user && user.address) { %>
+                        <div class="form-check mb-3">
+                          <input class="form-check-input" type="radio" name="addressOption" id="existingAddress" value="existing" checked>
+                          <label class="form-check-label" for="existingAddress">
+                            Use my existing address
+                          </label>
+                          <div class="existing-address mt-2">
+                            <p class="mb-0"><%= user.address %></p>
+                            <input type="hidden" name="address" id="userExistingAddress" value="<%= user.address %>">
+                          </div>
+                        </div>
+                        <% } %>
+
+                        <div class="form-check">
+                          <input class="form-check-input" type="radio" name="addressOption" id="newAddress" value="new" <%= !user || !user.address ? 'checked' : '' %>>
+                          <label class="form-check-label" for="newAddress">
+                            Use a different address
+                          </label>
+                        </div>
+
+                        <div id="newAddressForm" class="mt-3">
+                          <div class="mb-3">
+                            <label for="deliveryAddress" class="form-label">New Delivery Address</label>
+                            <textarea class="form-control form-input" id="deliveryAddress" name="newDeliveryAddress" rows="3" placeholder="Enter your delivery address"></textarea>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="form-group mb-4">
+                        <h4 class="h4-title">Order Summary</h4>
+                        <div class="table-responsive checkout-table-wrapper">
+                          <table class="table checkout-table">
+                            <thead>
+                              <tr>
+                                <th>Item</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <% let totalAmount = 0; %>
+                              <% if (items && items.length > 0) { %>
+                              <% items.forEach(function(item) { %>
+                              <tr>
+                                <td><%= item.item_name %></td>
+                                <td>$<%= item.item_price %></td>
+                                <td><%= item.quantity %></td>
+                                <td>$<%= item.subtotal %></td>
+                                <% totalAmount += item.subtotal; %>
+                              </tr>
+                              <% }); %>
+                              <% } else { %>
+                              <tr>
+                                <td colspan="4" class="text-center">Your cart is empty</td>
+                              </tr>
+                              <% } %>
+                            </tbody>
+                            <tfoot>
+                              <tr>
+                                <th colspan="3">Total Amount</th>
+                                <th>$<%= totalAmount %></th>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      </div>
+
+                      <div class="text-center">
+                        <button type="submit" class="sec-btn sec-btn-orange" <%= items && items.length > 0 ? '' : 'disabled' %>>
+                          Confirm Order (Cash on Delivery)
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Online Payment Options -->
+              <div class="col-lg-4">
+                <div class="checkout-card">
+                  <div class="checkout-card-header">
+                    <h3 class="h3-title">Online Payment</h3>
+                  </div>
+                  <div class="checkout-card-body">
+                    <p>Complete your purchase securely with PayPal.</p>
+
+                    <div class="paypal-button-container mb-3" id="paypal-button-container">
+                      <!-- PayPal buttons will be inserted here -->
+                    </div>
+
+                    <div class="mt-2">
+                      <p class="small text-muted">
+                        By clicking the PayPal button, you'll be redirected to secure payment processing.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -199,7 +204,6 @@
 
     // Single DOMContentLoaded event handler for all initialization
     document.addEventListener('DOMContentLoaded', function() {
-      // Address selection toggle functionality
       const existingAddressRadio = document.getElementById('existingAddress');
       const newAddressRadio = document.getElementById('newAddress');
       const newAddressForm = document.getElementById('newAddressForm');
@@ -207,134 +211,205 @@
       const deliveryAddress = document.getElementById('deliveryAddress');
       const codForm = document.getElementById('cod-form');
 
-      // Setup address toggle functionality
-      if (existingAddressRadio && newAddressRadio && newAddressForm) {
-        existingAddressRadio.addEventListener('change', function() {
-          if (this.checked) {
+      // Function to update address form visibility
+      function updateAddressFormVisibility() {
+        // Check if elements exist before accessing properties
+        if (newAddressForm && newAddressRadio) {
+          if (newAddressRadio.checked) {
+            newAddressForm.style.display = 'block';
+          } else {
             newAddressForm.style.display = 'none';
           }
-        });
+        }
+      }
 
-        newAddressRadio.addEventListener('change', function() {
-          if (this.checked) {
-            newAddressForm.style.display = 'block';
-          }
-        });
+      // Setup address toggle functionality
+      if (newAddressForm && (existingAddressRadio || newAddressRadio)) { // Ensure form and at least one radio exist
+        // Set initial visibility based on checked state on page load
+        updateAddressFormVisibility();
 
-        // Update form before submission
-        if (codForm) {
+        // Add event listeners if radios exist
+        if (existingAddressRadio) {
+          existingAddressRadio.addEventListener('change', updateAddressFormVisibility);
+        }
+        if (newAddressRadio) {
+          newAddressRadio.addEventListener('change', updateAddressFormVisibility);
+        }
+
+        // Update form before submission logic (ensure elements exist)
+        if (codForm && newAddressRadio && deliveryAddress && userExistingAddress) {
           codForm.addEventListener('submit', function(e) {
             if (newAddressRadio.checked && deliveryAddress.value.trim() === '') {
               e.preventDefault();
               alert('Please enter a delivery address');
-              return false;
+              return false; // Stop submission
             }
 
+            // Update the hidden field only if 'new address' is checked and filled
             if (newAddressRadio.checked) {
               userExistingAddress.value = deliveryAddress.value;
             }
           });
+        } else {
+          console.warn("COD form submission logic cannot be fully initialized - elements missing.");
         }
+      } else {
+        console.warn("Address toggle functionality cannot be initialized - elements missing.");
       }
 
       // Initialize PayPal button
-      if (document.getElementById('paypal-button-container')) {
-        paypal.Buttons({
-          // Set up the transaction
-          createOrder: function(data, actions) {
-            const total = calculateTotal();
-            if (total <= 0) {
-              alert('Your cart is empty.');
-              return;
-            }
+      const paypalContainer = document.getElementById('paypal-button-container');
+      if (paypalContainer) {
+        // Check if paypal SDK is loaded
+        if (typeof paypal !== 'undefined') {
+          paypal.Buttons({
+            // Set up the transaction
+            createOrder: function(data, actions) {
+              // Recalculate total inside createOrder as items might change dynamically (though not in this static view)
+              const currentItems = JSON.parse('<%- JSON.stringify(items || []) %>');
+              const total = currentItems.reduce((sum, item) => sum + (item.subtotal || 0), 0);
 
-            return actions.order.create({
-              purchase_units: [{
-                amount: {
-                  value: total.toString() // Use the calculated total
-                }
-              }]
-            });
-          },
-
-          // Handle the successful payment
-          onApprove: function(data, actions) {
-            return actions.order.capture().then(function(orderData) {
-              // Get current address selection
-              const addressOption = document.querySelector('input[name="addressOption"]:checked');
-
-              if (!addressOption) {
-                alert('Please select an address option.');
-                return;
+              if (total <= 0) {
+                alert('Your cart is empty or has no value.');
+                // Disable button or return a rejected promise
+                return Promise.reject(new Error('Cart is empty'));
               }
 
-              let selectedAddress;
-              if (addressOption.value === 'existing') {
-                selectedAddress = document.getElementById('userExistingAddress').value;
-              } else {
-                selectedAddress = document.getElementById('deliveryAddress').value;
-                if (!selectedAddress || selectedAddress.trim() === '') {
-                  alert('Please enter a delivery address');
-                  return;
-                }
-              }
+              console.log("Creating PayPal order with amount:", total);
 
-              // Create FormData object
-              const formData = new FormData();
-              formData.append('paymentMethod', 'PayPal');
-              formData.append('paymentId', orderData.id);
-              formData.append('address', selectedAddress);
-
-              // Add items, quantities, and prices from the checkoutItems array
-              checkoutItems.forEach(item => {
-                formData.append('itemid[]', item.item_id);
-                formData.append('quantity[]', item.quantity);
-                formData.append('subprice[]', item.subtotal);
+              return actions.order.create({
+                purchase_units: [{
+                  amount: {
+                    value: total.toFixed(2) // Use calculated total, ensure 2 decimal places
+                  }
+                }]
               });
+            },
 
-              // Display loading indicator or disable buttons here
-              document.body.style.cursor = 'wait';
+            // Handle the successful payment
+            onApprove: function(data, actions) {
+              return actions.order.capture().then(function(orderData) {
+                console.log('PayPal Capture result:', orderData);
 
-              // Submit form data to the server
-              fetch('/checkout/process-payment', {
-                  method: 'POST',
-                  body: formData
-                })
-                .then(response => {
-                  document.body.style.cursor = 'default';
-                  if (response.redirected) {
-                    window.location.href = response.url;
-                  } else {
-                    return response.json();
-                  }
-                })
-                .then(data => {
-                  if (data && !data.success) {
-                    alert('Payment processing error: ' + (data.message || 'Unknown error'));
-                  } else {
-                    // Redirect to confirmation page if not already redirected
-                    window.location.href = '/confirmation';
-                  }
-                })
-                .catch(error => {
-                  document.body.style.cursor = 'default';
-                  console.error('Error:', error);
-                  alert('An error occurred during payment processing. Please try again.');
+                // Create FormData object
+                const formData = new FormData();
+                formData.append('paymentMethod', 'PayPal');
+                formData.append('paymentId', orderData.id); // PayPal Order ID
+                formData.append('status', orderData.status); // e.g., 'COMPLETED'
+
+                // --- START: Extract and add PayPal shipping address ---
+                let paypalShippingAddress = null;
+                if (orderData.purchase_units && orderData.purchase_units[0] && orderData.purchase_units[0].shipping) {
+                  const shipping = orderData.purchase_units[0].shipping;
+                  const address = shipping.address;
+                  // Construct a single address string (adjust format as needed)
+                  const addressParts = [
+                    shipping.name ? shipping.name.full_name : '', // Include recipient name if available
+                    address.address_line_1,
+                    address.address_line_2,
+                    address.admin_area_2, // City
+                    address.admin_area_1, // State/Region
+                    address.postal_code,
+                    address.country_code
+                  ];
+                  paypalShippingAddress = addressParts.filter(part => part).join(', '); // Filter out empty parts and join
+                  console.log("PayPal provided shipping address:", paypalShippingAddress);
+                  formData.append('paypalShippingAddress', paypalShippingAddress);
+                } else {
+                   // If no address from PayPal, check the address selected/entered on the page
+                   const selectedAddressOption = document.querySelector('input[name="addressOption"]:checked');
+                   let pageAddress = '';
+                   if (selectedAddressOption && selectedAddressOption.value === 'existing') {
+                     const existingAddrInput = document.getElementById('userExistingAddress');
+                     if (existingAddrInput) pageAddress = existingAddrInput.value;
+                   } else {
+                     const newAddrTextarea = document.getElementById('deliveryAddress');
+                     if (newAddrTextarea) pageAddress = newAddrTextarea.value;
+                   }
+                   if (pageAddress && pageAddress.trim() !== '') {
+                     console.log("Using address from page form for PayPal order:", pageAddress);
+                     formData.append('address', pageAddress.trim()); // Send page address if PayPal didn't provide one
+                   } else {
+                     console.warn("No shipping address found from PayPal or page form.");
+                     // Decide how to handle this - maybe alert the user or rely on server validation
+                   }
+                }
+                // --- END: Extract and add PayPal shipping address ---
+
+
+                // Add items, quantities, and prices from the checkoutItems array
+                const currentItems = JSON.parse('<%- JSON.stringify(items || []) %>');
+                currentItems.forEach(item => {
+                  formData.append('itemid[]', item.item_id);
+                  formData.append('quantity[]', item.quantity);
+                  formData.append('subprice[]', item.subtotal);
                 });
-            });
-          },
 
-          // Handle errors or cancellations
-          onError: function(err) {
-            console.error('PayPal Error:', err);
-            alert('There was an error with the PayPal payment. Please try again or use another payment method.');
-          },
+                // Display loading indicator or disable buttons here
+                document.body.style.cursor = 'wait';
+                paypalContainer.style.opacity = '0.5'; // Dim PayPal button area
 
-          onCancel: function(data) {
-            console.log('Payment cancelled');
-            // Optional: Show a message that payment was cancelled
-          }
-        }).render('#paypal-button-container');
+                // Submit form data to the server
+                fetch('/checkout/process-payment', {
+                    method: 'POST',
+                    body: formData // Sending FormData
+                  })
+                  .then(response => {
+                    document.body.style.cursor = 'default';
+                    paypalContainer.style.opacity = '1';
+                    if (response.redirected) {
+                      window.location.href = response.url; // Follow server redirect (e.g., to confirmation)
+                    } else {
+                      // If no redirect, check response body for success/error
+                      return response.json().then(data => {
+                        if (data && data.redirectUrl) { // Handle JSON response with redirect URL
+                          window.location.href = data.redirectUrl;
+                        } else if (data && !data.success) {
+                          alert('Payment processing error: ' + (data.message || 'Unknown server error'));
+                        } else if (!response.ok) {
+                          // Handle non-2xx responses that weren't redirects
+                          alert(`Server error: ${response.status} ${response.statusText}`);
+                        } else {
+                          // Assume success if no redirect and no error message
+                          console.log("Payment processed, but no redirect. Response:", data);
+                        }
+                      });
+                    }
+                  })
+                  .catch(error => {
+                    document.body.style.cursor = 'default';
+                    paypalContainer.style.opacity = '1';
+                    console.error('Fetch Error:', error);
+                    alert('An error occurred submitting payment details to the server. Please try again.');
+                  });
+              });
+            },
+
+            // Handle errors during PayPal interaction
+            onError: function(err) {
+              console.error('PayPal Button Error:', err);
+              alert('An error occurred with the PayPal payment process. Please check console for details or try again.');
+              document.body.style.cursor = 'default';
+              if (paypalContainer) paypalContainer.style.opacity = '1';
+            },
+
+            // Handle payment cancellation by the user
+            onCancel: function(data) {
+              console.log('Payment cancelled by user:', data);
+              alert('Payment was cancelled.');
+              document.body.style.cursor = 'default';
+              if (paypalContainer) paypalContainer.style.opacity = '1';
+            }
+          }).render('#paypal-button-container').catch(err => {
+            console.error("Failed to render PayPal Buttons:", err);
+            paypalContainer.innerHTML = "<p class='text-danger'>Could not load PayPal buttons. Please try refreshing the page or use Cash on Delivery.</p>";
+          });
+        } else {
+          console.error("PayPal SDK script not loaded.");
+          paypalContainer.innerHTML = "<p class='text-danger'>PayPal is currently unavailable. Please try refreshing the page or use Cash on Delivery.</p>";
+        }
+      } else {
+        console.warn("PayPal button container not found.");
       }
     });
   </script>

@@ -162,7 +162,7 @@
                     <p><strong>Status:</strong> <%= order.order_status %></p>
                     <p>
                       <strong>Total Amount:</strong> $<%=
-                      order.total_amount.toFixed(2) %>
+                      parseInt(order.total_amount) %>
                     </p>
                     <p>
                       <strong>Delivery Address:</strong> <%=
@@ -236,13 +236,13 @@
                           </td>
                           <td style="padding: 8px"><%= item.item_name %></td>
                           <td style="padding: 8px; text-align: center">
-                            $<%= item.price_per_item.toFixed(2) %>
+                            $<%= parseInt(item.price_per_item) %>
                           </td>
                           <td style="padding: 8px; text-align: center">
                             <%= item.quantity %>
                           </td>
                           <td style="padding: 8px; text-align: center">
-                            $<%= item.subtotal.toFixed(2) %>
+                            $<%= parseInt(item.subtotal) %>
                           </td>
                         </tr>
                         <% }); %>
