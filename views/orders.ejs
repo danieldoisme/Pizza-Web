@@ -51,7 +51,9 @@
           </div>
           <div class="col-lg-10">
             <div class="main-navigation">
-              <button class="menu-toggle"><span></span><span></span></button>
+              <button class="menu-toggle user-nav-toggle">
+                <span></span><span></span>
+              </button>
               <div class="header-right">
                 <form action="#" class="header-search-form for-des">
                   <input
@@ -73,7 +75,7 @@
                     class="header-username"
                     style="color: #ff8243; padding: 4px 8px"
                   >
-                    <b><i> <%= userDetails[0].user_name %> </i></b>
+                    <b><i> <%= userDetails.user_name %> </i></b>
                   </button>
                   <div id="myDropdown" class="dropdown-content">
                     <a href="/orders" style="text-decoration: none !important"
@@ -120,59 +122,137 @@
                         </tr>
                       </thead>
                       <tbody>
-                        <td><%= userDetails[0].user_name %></td>
-                        <td><%= userDetails[0].user_email %></td>
-                        <td><%= userDetails[0].user_mobileno %></td>
-                        <td><%= userDetails[0].user_address %></td>
+                        <td><%= userDetails.user_name %></td>
+                        <td><%= userDetails.user_email %></td>
+                        <td><%= userDetails.user_mobileno %></td>
+                        <td><%= userDetails.user_address %></td>
                       </tbody>
                     </table>
                   </div>
                   <h2 class="h2-title">
-                    <%= userDetails[0].user_name %>'s Orders History
+                    <%= userDetails.user_name %>'s Orders History
                   </h2>
                   <div class="sec-title-shape mb-4">
                     <img src="/images/title-shape.svg" alt="" />
                   </div>
-                  <% let count=0 %>
-                  <table id="mycart">
-                    <thead>
-                      <tr>
-                        <th style="width: 5%">#</th>
-                        <th style="width: 10%">Product</th>
-                        <th style="width: 25%">Product Name</th>
-                        <th style="width: 10%">Price</th>
-                        <th style="width: 5%">Quantity</th>
-                        <th style="width: 20%">Total Price</th>
-                        <th style="width: 15%">Order ID</th>
-                        <th style="width: 30%">Date/Time</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <% for(let i = 0; i < items.length; i++) { %>
-                      <tr>
-                        <% count++ %>
-                        <td><%= i+1 %></td>
-                        <td>
-                          <img
-                            src="/images/dish/<%= items[i].item_img %>"
-                            alt=""
-                            style="
-                              border-radius: 10%;
-                              border: 2px solid rgb(68, 66, 66);
-                              box-shadow: 4px 4px 8px black;
-                            "
-                          />
-                        </td>
-                        <td><%= items[i].item_name %></td>
-                        <td><span>$ <%= items[i].price %></span></td>
-                        <td><%= items[i].quantity %></td>
-                        <td>$<%= items[i].price*items[i].quantity %></td>
-                        <td><%= items[i].order_id %></td>
-                        <td><%= items[i].datetime %></td>
-                      </tr>
-                      <% } %>
-                    </tbody>
-                  </table>
+
+                  <%# Check for errors passed from the server %> <% if (typeof
+                  error !== 'undefined' && error) { %>
+                  <p style="color: red; font-weight: bold"><%= error %></p>
+                  <%# Check if there are any orders %> <% } else if
+                  (orders.length === 0) { %>
+                  <p>You haven't placed any orders yet.</p>
+                  <%# Loop through each order %> <% } else { %> <%
+                  orders.forEach(function(order, orderIndex) { %>
+                  <div
+                    class="order-group"
+                    style="
+                      margin-bottom: 30px;
+                      border: 1px solid #ccc;
+                      padding: 15px;
+                      border-radius: 8px;
+                      background-color: rgba(255, 255, 255, 0.1);
+                    "
+                  >
+                    <h4 style="color: #ff8243">Order #<%= order.order_id %></h4>
+                    <p>
+                      <strong>Date:</strong> <%= new
+                      Date(order.order_datetime).toLocaleString() %>
+                    </p>
+                    <p><strong>Status:</strong> <%= order.order_status %></p>
+                    <p>
+                      <strong>Total Amount:</strong> $<%=
+                      parseInt(order.total_amount) %>
+                    </p>
+                    <p>
+                      <strong>Delivery Address:</strong> <%=
+                      order.delivery_address %>
+                    </p>
+                    <p>
+                      <strong>Payment Method:</strong> <%= order.payment_method
+                      %>
+                    </p>
+                    <% if (order.payment_id) { %>
+                    <p><strong>Payment ID:</strong> <%= order.payment_id %></p>
+                    <% } %>
+
+                    <h5 style="margin-top: 15px; color: #ff8243">
+                      Items in this order:
+                    </h5>
+                    <%# Check if the order has items %> <% if (order.items &&
+                    order.items.length > 0) { %>
+                    <table
+                      class="order-items-table"
+                      style="
+                        width: 100%;
+                        margin-top: 10px;
+                        border-collapse: collapse;
+                      "
+                    >
+                      <thead>
+                        <tr>
+                          <th
+                            style="width: 15%; padding: 8px; text-align: center"
+                          >
+                            Product
+                          </th>
+                          <th
+                            style="width: 35%; padding: 8px; text-align: center"
+                          >
+                            Name
+                          </th>
+                          <th
+                            style="width: 15%; padding: 8px; text-align: center"
+                          >
+                            Price/Item
+                          </th>
+                          <th
+                            style="width: 10%; padding: 8px; text-align: center"
+                          >
+                            Quantity
+                          </th>
+                          <th
+                            style="width: 25%; padding: 8px; text-align: center"
+                          >
+                            Subtotal
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <%# Loop through items within the current order %> <%
+                        order.items.forEach(function(item, itemIndex) { %>
+                        <tr style="border-bottom: 1px solid #eee">
+                          <td style="padding: 8px">
+                            <img
+                              src="/images/dish/<%= item.item_img %>"
+                              alt="<%= item.item_name %>"
+                              style="
+                                width: 60px;
+                                height: auto;
+                                border-radius: 5px;
+                                border: 1px solid #ddd;
+                              "
+                            />
+                          </td>
+                          <td style="padding: 8px"><%= item.item_name %></td>
+                          <td style="padding: 8px; text-align: center">
+                            $<%= parseInt(item.price_per_item) %>
+                          </td>
+                          <td style="padding: 8px; text-align: center">
+                            <%= item.quantity %>
+                          </td>
+                          <td style="padding: 8px; text-align: center">
+                            $<%= parseInt(item.subtotal) %>
+                          </td>
+                        </tr>
+                        <% }); %>
+                      </tbody>
+                    </table>
+                    <% } else { %>
+                    <p>No item details available for this order.</p>
+                    <% } %>
+                  </div>
+                  <% }); %> <% } %>
                 </div>
               </div>
             </div>

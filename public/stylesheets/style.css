@@ -25,6 +25,11 @@ img {
   max-width: 100%;
 }
 
+/* Hide menu toggle button on user pages */
+.user-nav-toggle {
+  display: none !important;
+}
+
 /* Banner and Header Section Starts */
 .site-header {
   position: fixed;
@@ -37,6 +42,12 @@ img {
   z-index: 99;
   transition: 0.5s;
   border-bottom: 1px solid transparent;
+}
+
+.header-logo img {
+  max-width: 100%; /* Ensure it doesn't exceed container width */
+  height: auto; /* Maintain aspect ratio */
+  display: block; /* Optional: remove potential extra space below image */
 }
 
 .site-header.sticky_head {
@@ -365,13 +376,10 @@ input * {
     margin-left: 10px;
   }
 
-  .header-username {
-    margin-left: -50px;
-    margin-right: 80px;
-  }
-
   .header-right {
     margin-left: 10px;
+    display: flex;
+    align-items: center;
   }
 
   .main-navigation .menu li {
@@ -415,14 +423,12 @@ input * {
 
   .site-header .container .row .col-lg-2 {
     width: auto;
+    max-width: 150px; /* Add a max-width for smaller screens */
     padding: 0;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 30px;
-    z-index: 2;
-    display: flex;
-    align-items: center;
+  }
+
+  .site-header .header-logo {
+    width: 100%; /* Make the logo container fill the column width */
   }
 
   .menu-toggle {
@@ -523,13 +529,26 @@ input * {
     color: #ff8243;
   }
 
-  .header-btn .header-cart .header-username {
-    display: none;
-  }
-
   .header-btn {
     margin: 0;
-    margin-right: 70px;
+    margin-left: 15px; /* Consistent spacing */
+  }
+
+  .dropdown {
+    /* Target the dropdown containing the username */
+    margin-left: 15px; /* Add consistent spacing */
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    padding-right: 70px; /* Space for the toggle button */
+    flex-wrap: nowrap; /* Prevent wrapping of buttons */
+  }
+
+  .header-btn .header-cart .header-username {
+    display: none;
   }
 
   .site-header {
@@ -561,7 +580,20 @@ input * {
   }
 
   .header-btn {
-    margin-right: 56px;
+    margin-left: 10px; /* Adjust spacing */
+  }
+
+  .dropdown {
+    /* Target the dropdown containing the username */
+    margin-left: 10px; /* Adjust spacing */
+  }
+
+  .header-right {
+    padding-right: 56px; /* Adjust padding for menu toggle */
+  }
+
+  .header-right {
+    padding-right: 56px;
   }
 
   .menu-toggle {
@@ -724,7 +756,6 @@ p {
   min-width: 120px;
   min-height: 58px;
   background: #f3f3f5;
-  box-shadow: 9px 9px 12px #b2b2b3, -9px -9px 12px #ffffff;
   display: inline-flex;
   justify-content: center;
   align-items: center;
@@ -750,6 +781,19 @@ p {
   color: #f16620;
   font-weight: 600;
 }
+
+/* Orange button style */
+.sec-btn-orange {
+  background: orange; /* Orange background */
+  color: white; /* White text */
+}
+
+.sec-btn-orange:hover {
+  background: darkorange; /* Darker orange on hover */
+  color: white;
+  box-shadow: inset 4px 4px 8px #c48000, inset -4px -4px 8px #ffae00; /* Inset shadow on hover */
+}
+
 /* About Section Ends */
 
 .section {
@@ -858,22 +902,30 @@ p {
   background: linear-gradient(145deg, #e3a92b, #ffc933);
 }
 
+.menu-list-row .row {
+  display: flex; /* Add flex display */
+  flex-wrap: wrap; /* Allow items to wrap */
+  align-items: stretch; /* Make items stretch to the same height */
+}
+
 .menu-list-row .bydefault_show .dish-box-wp {
-  display: inline-block !important;
+  display: inline-block; /* Removed !important */
 }
 
 .dish-box-wp {
-  display: none;
+  display: none; /* Keep only display: none; mixItUp will handle showing */
+  flex-direction: column; /* Stack content vertically */
 }
 
 .dish-box {
   border-radius: 30px;
   background: linear-gradient(145deg, #ececec, #ffffff);
   box-shadow: 28px 28px 45px #d4d4d4, -28px -28px 45px #ffffff;
-  display: flow-root;
-  padding: 0 30px 40px;
-  padding-top: 0;
-  margin: 130px 0 30px;
+  display: flex; /* Change to flex */
+  flex-direction: column; /* Stack children vertically */
+  height: 100%; /* Make the box take full height of its container */
+  margin: 0 0 30px; /* Add margin only at the bottom for spacing between rows */
+  padding: 30px 30px 40px; /* Add top padding to create space for the image inside the box */
   transition: 0.8s cubic-bezier(0.22, 0.78, 0.45, 1.02);
 }
 
@@ -882,14 +934,17 @@ p {
 }
 
 .dist-img {
-  margin-top: -130px;
-  margin-bottom: 30px;
+  margin-top: 0; /* Ensure no negative margin */
+  margin-bottom: 30px; /* Keep or adjust bottom margin for space below image */
 }
 
 .dist-img img {
   box-shadow: 28px 28px 45px #d4d4d4, -28px -28px 45px #ffffff;
   border-radius: 50%;
   overflow: hidden;
+  width: 100%; /* Ensure image scales with container */
+  height: auto; /* Maintain aspect ratio */
+  display: block; /* Remove extra space below image */
 }
 
 .dish-rating {
@@ -899,6 +954,10 @@ p {
 
 .dish-title {
   padding: 0 30px;
+  flex-grow: 1; /* Allow title to take up remaining space */
+  display: flex; /* Use flex to center content vertically if needed */
+  flex-direction: column; /* Stack title and calories */
+  justify-content: center; /* Center content vertically */
 }
 
 .dish-title .h3-title {
@@ -990,8 +1049,100 @@ p {
 
 .dish-add-btn:hover {
   background: linear-gradient(145deg, #e3a92b, #ffc933);
+  box-shadow: inset 6px 6px 9px #cccccc, inset -3px -3px 6px #ffffff;
 }
 /* Menu Card Design Ends*/
+
+/* Checkout Page Styles Start */
+.checkout-section .h2-title {
+  font-size: 38px; /* Slightly smaller for checkout context */
+  line-height: 48px;
+}
+
+.checkout-card {
+  border-radius: 20px; /* Consistent rounding */
+  background: linear-gradient(145deg, #ececec, #ffffff);
+  box-shadow: 20px 20px 40px #d4d4d4, -20px -20px 40px #ffffff; /* Consistent shadow */
+  padding: 30px;
+  margin-bottom: 30px;
+}
+
+.checkout-card-header {
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.checkout-card-header .h3-title {
+  font-size: 24px; /* Adjust heading size */
+  margin-bottom: 0;
+}
+
+.checkout-card-body .h4-title {
+  font-size: 20px; /* Adjust heading size */
+  margin-bottom: 15px;
+  color: #ff8243; /* Use accent color */
+}
+
+.checkout-card .form-check-label {
+  font-size: 16px;
+  margin-left: 5px;
+}
+
+.checkout-card .existing-address {
+  padding: 10px 15px;
+  background-color: #f8f8f8;
+  border-radius: 10px;
+  box-shadow: inset 4px 4px 6px #dadada, inset -4px -4px 6px #ffffff;
+  margin-top: 10px;
+}
+
+.checkout-card .form-input {
+  /* Ensure textarea matches input style */
+  min-height: 80px; /* Adjust height for textarea */
+}
+
+.checkout-table-wrapper {
+  border-radius: 10px;
+  overflow: hidden; /* Ensures border-radius applies to table */
+  box-shadow: inset 6px 6px 8px #dadada, inset -6px -6px 8px #ffffff;
+  margin-bottom: 25px;
+}
+
+.checkout-table {
+  background-color: #f8f8f8; /* Light background for table */
+  margin-bottom: 0; /* Remove default margin */
+}
+
+.checkout-table th,
+.checkout-table td {
+  padding: 12px 15px;
+  vertical-align: middle;
+  border-top: 1px solid #e8e8e8; /* Lighter border */
+}
+
+.checkout-table thead th {
+  background-color: #f3f3f5; /* Slightly different header background */
+  color: #0d0d25;
+  font-weight: 600;
+  border-top: none;
+  border-bottom: 2px solid #e8e8e8;
+}
+
+.checkout-table tfoot th {
+  font-weight: 700;
+  color: #0d0d25;
+}
+
+.checkout-table tfoot tr:first-child th {
+  border-top: 2px solid #e8e8e8;
+}
+
+.paypal-button-container {
+  text-align: center; /* Center PayPal button */
+}
+
+/* Checkout Page Styles End */
 
 .xxl-title {
   text-transform: capitalize;
@@ -1342,6 +1493,32 @@ p {
   color: #0d0d25;
 }
 
+/* Settings Page Responsiveness */
+.settings-container .form-input {
+  width: 100%; /* Make inputs take full width of their container */
+  max-width: 450px; /* Optional: Keep a max-width for larger screens */
+}
+
+/* Ensure sections stack on smaller screens */
+@media (max-width: 767px) {
+  .settings-container > .row > section {
+    margin-bottom: 100px; /* Further increased margin for better spacing */
+  }
+  .settings-container .sec-title {
+    margin-bottom: 2rem !important; /* Adjust margin for smaller screens */
+  }
+  .settings-container .h2-title {
+    font-size: 30px; /* Adjust title size */
+    line-height: 40px;
+  }
+  .settings-container .sec-btn {
+    padding: 6px 15px; /* Reduce horizontal padding */
+    min-width: auto; /* Allow button to shrink below 120px */
+    width: auto; /* Ensure button width adjusts to content */
+    max-width: 100%; /* Prevent button from exceeding container width */
+  }
+}
+
 /* Responsiveness */
 @media (min-width: 2100px) {
   .container {
@@ -1397,15 +1574,11 @@ p {
   }
 
   .dish-box {
-    padding: 0 0 40px;
-  }
-
-  .dist-img img {
-    width: 220px;
+    padding: 30px 30px 40px;
   }
 
   .dist-img {
-    margin-top: -110px;
+    margin-bottom: 30px;
   }
 
   .dist-bottom-row ul li b {
@@ -1594,11 +1767,18 @@ p {
   }
 
   .dist-img img {
-    width: 180px;
+    max-width: 180px; /* Optional: Set a max-width if needed */
+    margin-left: auto; /* Center image if needed */
+    margin-right: auto; /* Center image if needed */
   }
 
   .dist-img {
-    margin-top: -80px;
+    margin-bottom: 30px; /* Add back bottom margin if needed */
+  }
+
+  .dish-box {
+    margin: 30px 0 30px; /* Adjust top margin */
+    padding-top: 30px; /* Add padding to position image */
   }
 
   .menu-tab-wp {
@@ -1692,5 +1872,13 @@ p {
 
   .team-img {
     height: 280px;
+  }
+
+  .header-btn {
+    margin-left: 10px;
+  }
+
+  .header-right {
+    padding-right: 56px;
   }
 }

@@ -92,23 +92,24 @@ $(document).ready(function ($) {
     },
   });
 
-  jQuery(".filters").on("click", function () {
-    jQuery("#menu-dish").removeClass("bydefault_show");
-  });
+  // jQuery(".filters").on("click", function () {
+  //   jQuery("#menu-dish").removeClass("bydefault_show");
+  // });
   $(function () {
     var filterList = {
       init: function () {
-        $("#menu-dish").mixItUp({
+        // Initialize mixItUp on the parent container '.menu-list-row'
+        $(".menu-list-row").mixItUp({
           selectors: {
-            target: ".dish-box-wp",
-            filter: ".filter",
+            target: ".dish-box-wp", // Items to filter remain the same
+            filter: ".filter", // Filter controls remain the same
           },
           animation: {
             effects: "fade",
             easing: "ease-in-out",
           },
           load: {
-            filter: ".all, .pizzas, .appetizers, .desserts, .beverages",
+            filter: "all",
           },
         });
       },

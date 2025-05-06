@@ -1,7 +1,7 @@
 <header class="site-header">
   <!-- Debug info that will be visible in development -->
   <% if (process.env.NODE_ENV !== 'production') { %>
-    <!-- 
+  <!-- 
     <div style="display: none;">
       Auth Debug: 
       userid: <%= typeof userid !== 'undefined' ? userid : 'undefined' %>, 
@@ -11,10 +11,15 @@
   <% } %>
 
   <div class="container">
-    <div class="row">
+    <div class="row align-items-center">
       <div class="col-lg-2">
         <div class="header-logo">
-          <a href="/"><img src="/images/logo.svg" style="max-width: 100%; height: auto" alt="PizzazzPizza Logo" /></a>
+          <a href="/"
+            ><img
+              src="/images/logo.svg"
+              style="max-width: 100%; height: auto"
+              alt="PizzazzPizza Logo"
+          /></a>
         </div>
       </div>
       <div class="col-lg-10">
@@ -31,25 +36,28 @@
           </nav>
           <div class="header-right">
             <form action="#" class="header-search-form for-des">
-              <input type="search" class="form-input" placeholder="Search Here..." />
+              <input
+                type="search"
+                class="form-input"
+                placeholder="Search Here..."
+              />
               <button type="submit">
                 <i class="uil uil-search"></i>
               </button>
             </form>
-            <% if (typeof userid !== 'undefined' && userid) { %>
-              <% if (typeof isAdmin !== 'undefined' && isAdmin === true) { %>
-                <a href="/admin/dashboard" class="header-btn">
-                  <i class="uil uil-user-circle" title="Admin Dashboard"></i>
-                </a>
-              <% } else { %>
-                <a href="/homepage" class="header-btn">
-                  <i class="uil uil-user-circle" title="My Account"></i>
-                </a>
-              <% } %>
+            <% if (typeof userid !== 'undefined' && userid) { %> <% if (typeof
+            isAdmin !== 'undefined' && isAdmin === true) { %>
+            <a href="/admin/dashboard" class="header-btn">
+              <i class="uil uil-user-circle" title="Admin Dashboard"></i>
+            </a>
             <% } else { %>
-              <a href="/signin" class="header-btn">
-                <i class="uil uil-user-md" title="Sign In / Sign Up"></i>
-              </a>
+            <a href="/homepage" class="header-btn">
+              <i class="uil uil-user-circle" title="My Account"></i>
+            </a>
+            <% } %> <% } else { %>
+            <a href="/signin" class="header-btn">
+              <i class="uil uil-user-md" title="Sign In / Sign Up"></i>
+            </a>
             <% } %>
           </div>
         </div>
