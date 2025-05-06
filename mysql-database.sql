@@ -1,4 +1,3 @@
--- MySQL dump 10.13  Distrib 8.0.38, for macos14 (arm64)
 --
 -- Host: localhost    Database: pizzazzpizza
 -- ------------------------------------------------------
@@ -165,7 +164,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Tom Holland','USA','iamspiderman@gmail.com','123456789','9632012542'),(2,'Tony Stark','USA','iamironman@gmail.com','123456789','7854120365'),(3,'Thanh','Hanoi, Vietnam','thanh@gmail.com','123456','0984536121');
+INSERT INTO `users` VALUES (1,'Tom Holland','3 Country Club Ave. Tracy, CA 95376, US','iamspiderman@gmail.com','123456789','9632012542'),(2,'Tony Stark','73 Prospect Lane Oceanside, CA 92056, US','iamironman@gmail.com','123456789','7854120365');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -177,5 +176,3 @@ UNLOCK TABLES;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-
--- Dump completed on 2025-05-01 10:09:06
