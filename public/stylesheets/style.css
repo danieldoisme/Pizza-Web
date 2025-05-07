@@ -45,9 +45,8 @@ img {
 }
 
 .header-logo img {
-  max-width: 100%; /* Ensure it doesn't exceed container width */
-  height: auto; /* Maintain aspect ratio */
-  display: block; /* Optional: remove potential extra space below image */
+  max-width: 100%;
+  height: auto;
 }
 
 .site-header.sticky_head {
@@ -273,6 +272,7 @@ button {
   padding: 10px 15px;
   color: #0d0d25;
   -webkit-appearance: none;
+  appearance: none;
   border-radius: 10px;
   border: none;
   background: #f8f8f8;
@@ -286,6 +286,7 @@ button {
   padding: 10px 15px;
   color: #0d0d25;
   -webkit-appearance: none;
+  appearance: none;
   border-radius: 10px;
   border: none;
   background: #f8f8f8;
@@ -423,12 +424,12 @@ input * {
 
   .site-header .container .row .col-lg-2 {
     width: auto;
-    max-width: 150px; /* Add a max-width for smaller screens */
+    max-width: 150px;
     padding: 0;
   }
 
   .site-header .header-logo {
-    width: 100%; /* Make the logo container fill the column width */
+    width: 100%;
   }
 
   .menu-toggle {
@@ -531,20 +532,19 @@ input * {
 
   .header-btn {
     margin: 0;
-    margin-left: 15px; /* Consistent spacing */
+    margin-left: 15px;
   }
 
   .dropdown {
-    /* Target the dropdown containing the username */
-    margin-left: 15px; /* Add consistent spacing */
+    margin-left: 15px;
   }
 
   .header-right {
     display: flex;
     align-items: center;
     margin-left: auto;
-    padding-right: 70px; /* Space for the toggle button */
-    flex-wrap: nowrap; /* Prevent wrapping of buttons */
+    padding-right: 70px;
+    flex-wrap: nowrap;
   }
 
   .header-btn .header-cart .header-username {
@@ -580,16 +580,15 @@ input * {
   }
 
   .header-btn {
-    margin-left: 10px; /* Adjust spacing */
+    margin-left: 10px;
   }
 
   .dropdown {
-    /* Target the dropdown containing the username */
-    margin-left: 10px; /* Adjust spacing */
+    margin-left: 10px;
   }
 
   .header-right {
-    padding-right: 56px; /* Adjust padding for menu toggle */
+    padding-right: 56px;
   }
 
   .header-right {
@@ -782,18 +781,16 @@ p {
   font-weight: 600;
 }
 
-/* Orange button style */
 .sec-btn-orange {
-  background: orange; /* Orange background */
-  color: white; /* White text */
+  background: orange;
+  color: white;
 }
 
 .sec-btn-orange:hover {
-  background: darkorange; /* Darker orange on hover */
+  background: darkorange;
   color: white;
-  box-shadow: inset 4px 4px 8px #c48000, inset -4px -4px 8px #ffae00; /* Inset shadow on hover */
+  box-shadow: inset 4px 4px 8px #c48000, inset -4px -4px 8px #ffae00;
 }
-
 /* About Section Ends */
 
 .section {
@@ -903,29 +900,29 @@ p {
 }
 
 .menu-list-row .row {
-  display: flex; /* Add flex display */
-  flex-wrap: wrap; /* Allow items to wrap */
-  align-items: stretch; /* Make items stretch to the same height */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
 }
 
 .menu-list-row .bydefault_show .dish-box-wp {
-  display: inline-block; /* Removed !important */
+  display: inline-block;
 }
 
 .dish-box-wp {
-  display: none; /* Keep only display: none; mixItUp will handle showing */
-  flex-direction: column; /* Stack content vertically */
+  display: none;
+  flex-direction: column;
 }
 
 .dish-box {
   border-radius: 30px;
   background: linear-gradient(145deg, #ececec, #ffffff);
   box-shadow: 28px 28px 45px #d4d4d4, -28px -28px 45px #ffffff;
-  display: flex; /* Change to flex */
-  flex-direction: column; /* Stack children vertically */
-  height: 100%; /* Make the box take full height of its container */
-  margin: 0 0 30px; /* Add margin only at the bottom for spacing between rows */
-  padding: 30px 30px 40px; /* Add top padding to create space for the image inside the box */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  margin: 0 0 30px;
+  padding: 30px 30px 40px;
   transition: 0.8s cubic-bezier(0.22, 0.78, 0.45, 1.02);
 }
 
@@ -934,17 +931,17 @@ p {
 }
 
 .dist-img {
-  margin-top: 0; /* Ensure no negative margin */
-  margin-bottom: 30px; /* Keep or adjust bottom margin for space below image */
+  margin-top: 0;
+  margin-bottom: 30px;
 }
 
 .dist-img img {
   box-shadow: 28px 28px 45px #d4d4d4, -28px -28px 45px #ffffff;
   border-radius: 50%;
   overflow: hidden;
-  width: 100%; /* Ensure image scales with container */
-  height: auto; /* Maintain aspect ratio */
-  display: block; /* Remove extra space below image */
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .dish-rating {
@@ -954,10 +951,10 @@ p {
 
 .dish-title {
   padding: 0 30px;
-  flex-grow: 1; /* Allow title to take up remaining space */
-  display: flex; /* Use flex to center content vertically if needed */
-  flex-direction: column; /* Stack title and calories */
-  justify-content: center; /* Center content vertically */
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .dish-title .h3-title {
@@ -970,6 +967,7 @@ p {
   min-height: 76px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   font-weight: 900;
@@ -1055,14 +1053,14 @@ p {
 
 /* Checkout Page Styles Start */
 .checkout-section .h2-title {
-  font-size: 38px; /* Slightly smaller for checkout context */
+  font-size: 38px;
   line-height: 48px;
 }
 
 .checkout-card {
-  border-radius: 20px; /* Consistent rounding */
+  border-radius: 20px;
   background: linear-gradient(145deg, #ececec, #ffffff);
-  box-shadow: 20px 20px 40px #d4d4d4, -20px -20px 40px #ffffff; /* Consistent shadow */
+  box-shadow: 20px 20px 40px #d4d4d4, -20px -20px 40px #ffffff;
   padding: 30px;
   margin-bottom: 30px;
 }
@@ -1074,14 +1072,14 @@ p {
 }
 
 .checkout-card-header .h3-title {
-  font-size: 24px; /* Adjust heading size */
+  font-size: 24px;
   margin-bottom: 0;
 }
 
 .checkout-card-body .h4-title {
-  font-size: 20px; /* Adjust heading size */
+  font-size: 20px;
   margin-bottom: 15px;
-  color: #ff8243; /* Use accent color */
+  color: #ff8243;
 }
 
 .checkout-card .form-check-label {
@@ -1098,31 +1096,30 @@ p {
 }
 
 .checkout-card .form-input {
-  /* Ensure textarea matches input style */
-  min-height: 80px; /* Adjust height for textarea */
+  min-height: 80px;
 }
 
 .checkout-table-wrapper {
   border-radius: 10px;
-  overflow: hidden; /* Ensures border-radius applies to table */
+  overflow: hidden;
   box-shadow: inset 6px 6px 8px #dadada, inset -6px -6px 8px #ffffff;
   margin-bottom: 25px;
 }
 
 .checkout-table {
-  background-color: #f8f8f8; /* Light background for table */
-  margin-bottom: 0; /* Remove default margin */
+  background-color: #f8f8f8;
+  margin-bottom: 0;
 }
 
 .checkout-table th,
 .checkout-table td {
   padding: 12px 15px;
   vertical-align: middle;
-  border-top: 1px solid #e8e8e8; /* Lighter border */
+  border-top: 1px solid #e8e8e8;
 }
 
 .checkout-table thead th {
-  background-color: #f3f3f5; /* Slightly different header background */
+  background-color: #f3f3f5;
   color: #0d0d25;
   font-weight: 600;
   border-top: none;
@@ -1139,9 +1136,8 @@ p {
 }
 
 .paypal-button-container {
-  text-align: center; /* Center PayPal button */
+  text-align: center;
 }
-
 /* Checkout Page Styles End */
 
 .xxl-title {
@@ -1344,6 +1340,7 @@ p {
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1495,27 +1492,27 @@ p {
 
 /* Settings Page Responsiveness */
 .settings-container .form-input {
-  width: 100%; /* Make inputs take full width of their container */
-  max-width: 450px; /* Optional: Keep a max-width for larger screens */
+  width: 100%;
+  max-width: 450px;
 }
 
 /* Ensure sections stack on smaller screens */
 @media (max-width: 767px) {
   .settings-container > .row > section {
-    margin-bottom: 100px; /* Further increased margin for better spacing */
+    margin-bottom: 100px;
   }
   .settings-container .sec-title {
-    margin-bottom: 2rem !important; /* Adjust margin for smaller screens */
+    margin-bottom: 2rem !important;
   }
   .settings-container .h2-title {
-    font-size: 30px; /* Adjust title size */
+    font-size: 30px;
     line-height: 40px;
   }
   .settings-container .sec-btn {
-    padding: 6px 15px; /* Reduce horizontal padding */
-    min-width: auto; /* Allow button to shrink below 120px */
-    width: auto; /* Ensure button width adjusts to content */
-    max-width: 100%; /* Prevent button from exceeding container width */
+    padding: 6px 15px;
+    min-width: auto;
+    width: auto;
+    max-width: 100%;
   }
 }
 
@@ -1767,18 +1764,18 @@ p {
   }
 
   .dist-img img {
-    max-width: 180px; /* Optional: Set a max-width if needed */
-    margin-left: auto; /* Center image if needed */
-    margin-right: auto; /* Center image if needed */
+    max-width: 180px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .dist-img {
-    margin-bottom: 30px; /* Add back bottom margin if needed */
+    margin-bottom: 30px;
   }
 
   .dish-box {
-    margin: 30px 0 30px; /* Adjust top margin */
-    padding-top: 30px; /* Add padding to position image */
+    margin: 30px 0 30px;
+    padding-top: 30px;
   }
 
   .menu-tab-wp {
@@ -1805,6 +1802,43 @@ p {
 
   .menu-tab ul li {
     padding: 10px 20px;
+  }
+
+  .admin-sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+    box-shadow: none;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  .admin-main-content {
+    margin-left: 0;
+    width: 100%;
+    padding: 20px;
+    height: auto !important;
+    overflow-y: visible !important;
+  }
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  /* Allow body to scroll in mobile admin view */
+  body.admin-active.body-fixed,
+  body.admin-active {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow-y: auto !important;
+  }
+
+  /* Ensure viewport and js-scroll-content are static in mobile admin view */
+  body.admin-active .admin-main-content #viewport,
+  body.admin-active .admin-main-content #js-scroll-content {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    transform: none !important;
   }
 }
 
@@ -1881,4 +1915,137 @@ p {
   .header-right {
     padding-right: 56px;
   }
+}
+
+/* Admin Sidebar Styles */
+.admin-layout {
+  display: flex;
+}
+
+.admin-sidebar {
+  width: 250px;
+  background: #f8f8f8;
+  padding: 20px;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-sidebar .sidebar-header {
+  text-align: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.admin-sidebar .sidebar-header h5 {
+  margin-top: 5px;
+  color: #333;
+  font-family: "Playfair Display", serif;
+  font-weight: 700;
+  font-size: 1.2em;
+}
+
+.admin-sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.admin-sidebar ul li a {
+  display: block;
+  padding: 12px 15px;
+  color: #333;
+  text-decoration: none !important;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  font-weight: 500;
+}
+
+.admin-sidebar ul li a:hover,
+.admin-sidebar ul li a.active {
+  background-color: #ff8243;
+  color: #fff;
+  text-decoration: none !important;
+}
+
+.sidebar-logout {
+  margin-top: auto;
+}
+
+.sidebar-logout a {
+  display: block;
+  padding: 12px 15px;
+  background-color: #ff8243;
+  color: white !important;
+  text-decoration: none !important;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Add hover state for logout button */
+.sidebar-logout a:hover {
+  background-color: #e67330;
+  color: #fff !important;
+  text-decoration: none !important;
+}
+
+.admin-main-content {
+  margin-left: 250px;
+  padding: 20px;
+  width: calc(100% - 250px);
+  overflow-y: auto;
+  height: 100vh;
+}
+
+/* Adjustments for body when admin sidebar is active */
+body.admin-active {
+  overflow: hidden;
+}
+
+/* Responsive adjustments for admin sidebar */
+@media (max-width: 767px) {
+  .admin-sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+    box-shadow: none;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  .admin-main-content {
+    margin-left: 0;
+    width: 100%;
+    padding-top: 20px;
+  }
+  .admin-layout {
+    flex-direction: column;
+  }
+}
+
+/* Desktop Admin View: Overrides for #viewport and #js-scroll-content */
+@media screen and (min-width: 992px) {
+  body.admin-active .admin-main-content #viewport {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  body.admin-active .admin-main-content #js-scroll-content {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* The actual scrolling container should be admin-main-content */
 }

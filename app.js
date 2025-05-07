@@ -1089,7 +1089,7 @@ function renderViewDispatchOrdersPage(req, res) {
         return res.redirect("/admin/login");
       }
 
-      // Fetch orders that are 'Pending' or 'Processing', joining with users table
+      // Fetch orders, joining with users table
       const ordersQuery = `
         SELECT
           o.order_id,
@@ -1102,7 +1102,6 @@ function renderViewDispatchOrdersPage(req, res) {
           o.order_status
         FROM orders o
         JOIN users u ON o.user_id = u.user_id
-        WHERE o.order_status IN ('Pending', 'Processing')
         ORDER BY o.order_datetime ASC
       `;
 
