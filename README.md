@@ -2,33 +2,34 @@
 
 A traditional Italian-inspired pizza restaurant brought to the web.
 
-## Features
+## Installation
 
-- Secure user authentication and account management
-- Interactive and responsive menu browsing experience
-- Customizable pizza and food ordering options
-- Streamlined and secure checkout process
-- Real-time order and delivery tracking functionality
-- Comprehensive order history and saved preferences
-- Mobile-friendly responsive design for ordering on any device
+To run this project locally, follow these steps:
 
-## Technologies
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/danieldoisme/Pizza-Web.git
+   cd Pizza-Web
+   ```
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+3. **Set up the database:**
 
-- Frontend: HTML, CSS, JavaScript
-- Backend: Node.js with Express.js
-- Template Engine: EJS (Embedded JavaScript)
-- Database: MySQL
-- Additional: Swiper.js, Fancy Box, Custom CSS animations
+   - Ensure you have MySQL installed and running.
+   - The `mysql-database.sql` script will create the database `pizzazzpizza` if it doesn't already exist and then set it up. Run the following command to execute the script:
+     ```bash
+     mysql -u your_mysql_user -p < mysql-database.sql
+     ```
+   - Configure your database credentials in the application (e.g., in a `.env` file or directly in `app.js` if not using environment variables).
 
-## TODO:
+4. **Run the application:**
+   ```bash
+   npm start
+   ```
+   The application should now be running on `http://localhost:3000` (or the port specified in `bin/www`).
 
-Before this, the web app is currently in simulation environment, where there has not been any Payment Gateways, now let's implement the Payment Option for the customer after they confirm their cart.
-The Payment Options will be implemented are:
+## Contributing
 
-- Cash On Delivery (COD)
-- PayPal (using PayPal sandbox developer environment)
-- Credit/Debit Card (PayPal checkout button also have this)
-  After the user click on "Buy Now" button on /cart page, instead of direct to /confirmation page, user will be guided to /checkout page.
-  On this page, the COD layout will be on the left, make up for 2/3 portions of the page. And the online payment options will be on the right with the remaining portions.
-  The COD option provides user with existing address, OR user can fill in a different address with a form below the existing address. With a button at the end to confirm COD payment option.
-  The online payment options will be implemented with the help of PayPal developer tools, specifically PayPal Checkout. With the helper tools, there should be a PayPal button, and Credit/Debit Card button. This PayPal tools should be served as a hosted service, which means our website only provides the interfaces, any logic behind the buttons will be handled by PayPal.
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
