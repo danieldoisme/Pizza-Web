@@ -47,6 +47,9 @@ app.use((req, res, next) => {
   res.locals.renderChangePricePage = renderChangePricePage;
   res.locals.changePrice = changePrice;
   res.locals.logout = logout;
+  // Add new admin handlers
+  res.locals.setOrderProcessing = setOrderProcessing;
+  res.locals.setOrderDeliveredAdmin = setOrderDeliveredAdmin;
   next();
 });
 
@@ -72,6 +75,9 @@ app.post("/password", updatePassword);
 app.get("/logout", logout);
 app.post("/checkout", renderCheckoutPage);
 app.post("/checkout/process-payment", processPayment);
+
+// Route for user to mark order as delivered
+app.post("/order/mark-delivered/:order_id", setOrderDeliveredUser);
 
 app.post("/updateCart", function (req, res) {
   const cart = req.body.cart || [];
@@ -424,9 +430,21 @@ function processPayment(req, res) {
   // --- END: Determine Delivery Address ---
 
   const paymentId = req.body.paymentId || null; // For PayPal transactions
-  const itemid = req.body["itemid[]"];
-  const quantity = req.body["quantity[]"];
-  const subprice = req.body["subprice[]"];
+
+  let itemid_data_accessor, quantity_data_accessor, subprice_data_accessor;
+
+  if (paymentMethod === "PayPal") {
+    // For PayPal, data is sent via FormData and keys are like 'itemid[]'
+    itemid_data_accessor = req.body["itemid[]"];
+    quantity_data_accessor = req.body["quantity[]"];
+    subprice_data_accessor = req.body["subprice[]"];
+  } else {
+    // For COD (and potentially others using standard form submission with name="foo[]"),
+    // bodyParser.urlencoded({ extended: true }) parses 'foo[]' into req.body.foo
+    itemid_data_accessor = req.body.itemid;
+    quantity_data_accessor = req.body.quantity;
+    subprice_data_accessor = req.body.subprice;
+  }
 
   console.log("Processing payment:", {
     paymentMethod,
@@ -444,16 +462,20 @@ function processPayment(req, res) {
   }
 
   // Ensure item data are arrays (handle single item case)
-  const itemIds = Array.isArray(itemid) ? itemid : itemid ? [itemid] : [];
-  const quantities = Array.isArray(quantity)
-    ? quantity
-    : quantity
-    ? [quantity]
+  const itemIds = Array.isArray(itemid_data_accessor)
+    ? itemid_data_accessor
+    : itemid_data_accessor
+    ? [itemid_data_accessor]
     : [];
-  const subprices = Array.isArray(subprice)
-    ? subprice
-    : subprice
-    ? [subprice]
+  const quantities = Array.isArray(quantity_data_accessor)
+    ? quantity_data_accessor
+    : quantity_data_accessor
+    ? [quantity_data_accessor]
+    : [];
+  const subprices = Array.isArray(subprice_data_accessor)
+    ? subprice_data_accessor
+    : subprice_data_accessor
+    ? [subprice_data_accessor]
     : [];
 
   // Validate address - ensure we have one either from PayPal or the form
@@ -523,15 +545,28 @@ function processPayment(req, res) {
 
     // 1. Insert into orders table
     const orderQuery =
-      "INSERT INTO orders (user_id, order_datetime, total_amount, payment_method, payment_id, delivery_address, order_status) VALUES (?, ?, ?, ?, ?, ?, ?)";
+      "INSERT INTO orders (user_id, order_datetime, total_amount, payment_method, payment_id, delivery_address, order_status, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"; // Added payment_status field
+
+    let initialPaymentStatus = "Unpaid"; // Default for COD or if PayPal status is not 'COMPLETED'
+    if (paymentMethod === "PayPal") {
+      // req.body.status comes from PayPal onApprove: formData.append('status', orderData.status);
+      if (req.body.status === "COMPLETED") {
+        initialPaymentStatus = "Paid";
+      } else {
+        // If PayPal payment wasn't 'COMPLETED', mark as 'Failed' or handle as per your business logic
+        initialPaymentStatus = "Failed";
+      }
+    }
+
     const orderValues = [
       userId,
       currDate,
-      totalAmount, // Use the sum calculated from client-side subtotals
+      totalAmount,
       paymentMethod,
       paymentId,
-      deliveryAddress, // Use the determined delivery address
-      "Pending", // Default status
+      deliveryAddress,
+      "Pending", // Initial order_status
+      initialPaymentStatus, // Initial payment_status
     ];
 
     connection.query(orderQuery, orderValues, (error, orderResult) => {
@@ -1079,7 +1114,19 @@ function renderViewDispatchOrdersPage(req, res) {
   const adminId = req.cookies.cookuid;
   const adminName = req.cookies.cookuname;
 
-  // Check admin authentication
+  let redirectMessage = null;
+  if (req.query.error) {
+    redirectMessage = {
+      type: "error",
+      text: decodeURIComponent(req.query.error),
+    };
+  } else if (req.query.success) {
+    redirectMessage = {
+      type: "success",
+      text: decodeURIComponent(req.query.success),
+    };
+  }
+
   connection.query(
     "SELECT admin_id FROM admin WHERE admin_id = ? AND admin_name = ?",
     [adminId, adminName],
@@ -1089,7 +1136,6 @@ function renderViewDispatchOrdersPage(req, res) {
         return res.redirect("/admin/login");
       }
 
-      // Fetch orders that are 'Pending' or 'Processing', joining with users table
       const ordersQuery = `
         SELECT
           o.order_id,
@@ -1099,10 +1145,10 @@ function renderViewDispatchOrdersPage(req, res) {
           o.total_amount,
           o.delivery_address,
           o.payment_method,
-          o.order_status
+          o.order_status,
+          o.payment_status 
         FROM orders o
         JOIN users u ON o.user_id = u.user_id
-        WHERE o.order_status IN ('Pending', 'Processing')
         ORDER BY o.order_datetime ASC
       `;
 
@@ -1113,20 +1159,19 @@ function renderViewDispatchOrdersPage(req, res) {
             username: adminName,
             userid: adminId,
             orders: [],
-            error: "Could not load orders.",
+            message: { type: "error", text: "Could not load orders." },
           });
         }
 
         if (orders.length === 0) {
-          // No pending/processing orders found
           return res.render("admin/orders", {
             username: adminName,
             userid: adminId,
             orders: [],
+            message: redirectMessage, // Show redirect message if any, even with no orders
           });
         }
 
-        // Fetch items for each order
         const orderItemPromises = orders.map((order) => {
           return new Promise((resolve, reject) => {
             const itemsQuery = `
@@ -1148,22 +1193,22 @@ function renderViewDispatchOrdersPage(req, res) {
                     `Admin Orders - Error fetching items for order ${order.order_id}:`,
                     itemError
                   );
-                  return reject(itemError); // Propagate error
+                  return reject(itemError);
                 }
-                order.items = items; // Attach items to the order object
+                order.items = items;
                 resolve(order);
               }
             );
           });
         });
 
-        // Wait for all item queries to complete
         Promise.all(orderItemPromises)
           .then((ordersWithItems) => {
             res.render("admin/orders", {
               username: adminName,
               userid: adminId,
-              orders: ordersWithItems, // Pass orders with nested items
+              orders: ordersWithItems,
+              message: redirectMessage, // Pass redirect message
             });
           })
           .catch((fetchItemsError) => {
@@ -1174,8 +1219,11 @@ function renderViewDispatchOrdersPage(req, res) {
             res.render("admin/orders", {
               username: adminName,
               userid: adminId,
-              orders: [], // Pass empty array on error
-              error: "Could not load details for all orders.",
+              orders: [],
+              message: {
+                type: "error",
+                text: "Could not load details for all orders.",
+              },
             });
           });
       });
@@ -1185,39 +1233,30 @@ function renderViewDispatchOrdersPage(req, res) {
 
 // Dispatch Orders
 function dispatchOrders(req, res) {
-  const adminId = req.cookies.cookuid; // Get admin ID for logging
-  const adminName = req.cookies.cookuname;
-  let orderIdsToDispatch = req.body.order_id_s; // Can be a single string or an array
+  const adminId = req.cookies.cookuid;
+  const adminName = req.cookies.cookuname; // For logging or further checks
+  let orderIdsToDispatch = req.body.order_id_s;
 
-  // Ensure orderIdsToDispatch is an array
   if (!Array.isArray(orderIdsToDispatch)) {
     orderIdsToDispatch = orderIdsToDispatch ? [orderIdsToDispatch] : [];
   }
 
-  // Validate that orders were selected
   if (!orderIdsToDispatch || orderIdsToDispatch.length === 0) {
     console.log("Dispatch Orders - No orders selected");
-    // Re-render the page with an error message
-    // Need to fetch orders again to display the page correctly
-    return renderViewDispatchOrdersPage(req, res); // Re-use the render function
-    // Or redirect with a query parameter: return res.redirect('/admin/orders?error=No orders selected');
+    return res.redirect("/admin/orders?error=No%20orders%20selected");
   }
 
-  // Ensure unique order IDs
   const uniqueOrderIds = [...new Set(orderIdsToDispatch)];
   const currDate = new Date();
 
-  // Begin transaction
   connection.beginTransaction((err) => {
     if (err) {
       console.error("Dispatch Orders - Transaction Begin Error:", err);
-      // Consider rendering the page with an error
-      return res.status(500).send("Database transaction error");
+      return res.redirect("/admin/orders?error=Database%20transaction%20error");
     }
 
     const dispatchPromises = uniqueOrderIds.map((orderId) => {
       return new Promise((resolve, reject) => {
-        // 1. Update order status
         connection.query(
           "UPDATE orders SET order_status = 'Dispatched' WHERE order_id = ? AND order_status IN ('Pending', 'Processing')",
           [orderId],
@@ -1230,52 +1269,47 @@ function dispatchOrders(req, res) {
               return reject(updateError);
             }
 
-            // Check if the order was actually updated (it might have been already dispatched or didn't exist)
-            if (updateResult.affectedRows === 0) {
-              console.warn(
-                `Dispatch Orders - Order ${orderId} not found or not in a dispatchable state.`
-              );
-              // Resolve even if not updated, to not block other dispatches,
-              // but maybe log this or handle differently depending on requirements.
-              // If strictness is required, could reject here.
-              return resolve();
-            }
-
-            // 2. Insert into dispatch log
-            connection.query(
-              "INSERT INTO order_dispatch (order_id, dispatch_datetime, dispatched_by_admin_id) VALUES (?, ?, ?)",
-              [orderId, currDate, adminId],
-              (insertError) => {
-                if (insertError) {
-                  // Handle potential duplicate entry if an order is somehow dispatched twice
-                  if (insertError.code === "ER_DUP_ENTRY") {
-                    console.warn(
-                      `Dispatch Orders - Order ${orderId} already marked as dispatched in log.`
+            if (updateResult.affectedRows > 0) {
+              // Order status successfully updated, now log it
+              connection.query(
+                "INSERT INTO order_dispatch (order_id, dispatch_datetime, dispatched_by_admin_id) VALUES (?, ?, ?)",
+                [orderId, currDate, adminId],
+                (insertError) => {
+                  if (insertError) {
+                    if (insertError.code === "ER_DUP_ENTRY") {
+                      console.warn(
+                        `Dispatch Orders - Order ${orderId} already marked as dispatched in log.`
+                      );
+                      resolve(); // Already logged, consider success for this order's dispatch logging
+                    } else {
+                      console.error(
+                        `Dispatch Orders - Error inserting into dispatch log for order ${orderId}:`,
+                        insertError
+                      );
+                      reject(insertError);
+                    }
+                  } else {
+                    console.log(
+                      `Dispatch Orders - Order ${orderId} marked as dispatched and logged.`
                     );
-                    // Resolve, as the goal (dispatch recorded) is met.
-                    return resolve();
+                    resolve();
                   }
-                  console.error(
-                    `Dispatch Orders - Error inserting into dispatch log for order ${orderId}:`,
-                    insertError
-                  );
-                  return reject(insertError);
                 }
-                console.log(
-                  `Dispatch Orders - Order ${orderId} marked as dispatched.`
-                );
-                resolve();
-              }
-            );
+              );
+            } else {
+              // Order not updated (not in 'Pending'/'Processing', or already 'Dispatched', or not found)
+              console.warn(
+                `Dispatch Orders - Order ${orderId} not updated to Dispatched (state was not Pending/Processing or already Dispatched).`
+              );
+              resolve(); // Resolve to not block other dispatches, as this one didn't need/couldn't be actioned.
+            }
           }
         );
       });
     });
 
-    // Wait for all operations to complete
     Promise.all(dispatchPromises)
       .then(() => {
-        // All updates and inserts successful, commit the transaction
         connection.commit((commitError) => {
           if (commitError) {
             console.error(
@@ -1283,28 +1317,190 @@ function dispatchOrders(req, res) {
               commitError
             );
             return connection.rollback(() => {
-              // Render page with error
-              res.status(500).send("Failed to commit dispatch transaction");
+              res.redirect(
+                "/admin/orders?error=Failed%20to%20commit%20dispatch%20transaction"
+              );
             });
           }
-
           console.log("Dispatch Orders - Transaction committed successfully.");
-          // Redirect back to the orders page with a success message
-          res.redirect("/admin/orders?success=Orders dispatched successfully");
+          res.redirect(
+            "/admin/orders?success=Orders%20dispatched%20successfully"
+          );
         });
       })
       .catch((error) => {
-        // An error occurred during one of the updates or inserts, rollback
         console.error(
           "Dispatch Orders - Error during dispatch operations:",
           error
         );
         connection.rollback(() => {
-          // Render page with error
-          res.status(500).send("Error dispatching orders: " + error.message);
+          res.redirect(
+            `/admin/orders?error=Error%20dispatching%20orders:%20${encodeURIComponent(
+              error.message
+            )}`
+          );
         });
       });
   });
+}
+
+// Admin: Set Order Status to Processing
+function setOrderProcessing(req, res) {
+  const order_id = req.params.order_id;
+  const adminId = req.cookies.cookuid;
+  const adminName = req.cookies.cookuname;
+
+  if (!adminId || !adminName) {
+    return res.redirect("/admin/login");
+  }
+
+  connection.query(
+    "SELECT admin_id FROM admin WHERE admin_id = ? AND admin_name = ?",
+    [adminId, adminName],
+    function (authError, authResults) {
+      if (authError || authResults.length === 0) {
+        console.error(
+          "Admin Action (Set Processing) - Auth failed:",
+          authError
+        );
+        return res.redirect("/admin/login");
+      }
+
+      connection.query(
+        "UPDATE orders SET order_status = 'Processing' WHERE order_id = ? AND order_status = 'Pending'",
+        [order_id],
+        function (error, results) {
+          if (error) {
+            console.error(
+              `Error updating order ${order_id} to Processing:`,
+              error
+            );
+            // Consider sending an error message to the admin page
+          } else if (results.affectedRows > 0) {
+            console.log(
+              `Order ${order_id} status updated to Processing by admin ${adminId}`
+            );
+          } else {
+            console.log(
+              `Order ${order_id} not updated (not Pending or not found).`
+            );
+          }
+          res.redirect("/admin/orders");
+        }
+      );
+    }
+  );
+}
+
+// Admin: Set Order Status to Delivered (and handle COD)
+function setOrderDeliveredAdmin(req, res) {
+  const order_id = req.params.order_id;
+  const adminId = req.cookies.cookuid;
+  const adminName = req.cookies.cookuname;
+
+  if (!adminId || !adminName) {
+    return res.redirect("/admin/login");
+  }
+
+  connection.query(
+    "SELECT admin_id FROM admin WHERE admin_id = ? AND admin_name = ?",
+    [adminId, adminName],
+    function (authError, authResults) {
+      if (authError || authResults.length === 0) {
+        console.error("Admin Action (Set Delivered) - Auth failed:", authError);
+        return res.redirect("/admin/login");
+      }
+
+      connection.query(
+        "SELECT payment_method, order_status FROM orders WHERE order_id = ?",
+        [order_id],
+        function (fetchError, orderResults) {
+          if (fetchError || orderResults.length === 0) {
+            console.error(
+              `Error fetching order ${order_id} for delivery update or order not found:`,
+              fetchError
+            );
+            return res.redirect("/admin/orders");
+          }
+
+          const order = orderResults[0];
+          if (order.order_status !== "Dispatched") {
+            console.log(
+              `Order ${order_id} cannot be marked delivered by admin (not Dispatched).`
+            );
+            // Optionally, add a query param to show a message to admin
+            return res.redirect("/admin/orders");
+          }
+
+          let updateQuery;
+          let queryParams = [order_id];
+
+          if (order.payment_method === "COD") {
+            updateQuery =
+              "UPDATE orders SET order_status = 'Delivered', payment_status = 'Paid' WHERE order_id = ? AND order_status = 'Dispatched'";
+          } else {
+            updateQuery =
+              "UPDATE orders SET order_status = 'Delivered' WHERE order_id = ? AND order_status = 'Dispatched'";
+          }
+
+          connection.query(
+            updateQuery,
+            queryParams,
+            function (updateError, results) {
+              if (updateError) {
+                console.error(
+                  `Error updating order ${order_id} to Delivered by admin:`,
+                  updateError
+                );
+              } else if (results.affectedRows > 0) {
+                console.log(
+                  `Order ${order_id} status updated to Delivered by admin ${adminId}`
+                );
+              } else {
+                console.log(
+                  `Order ${order_id} not updated to Delivered (already Delivered or not found).`
+                );
+              }
+              res.redirect("/admin/orders");
+            }
+          );
+        }
+      );
+    }
+  );
+}
+
+// User: Mark Order as Delivered
+function setOrderDeliveredUser(req, res) {
+  const order_id = req.params.order_id;
+  const userId = req.cookies.cookuid;
+  const userName = req.cookies.cookuname; // For logging or further checks if needed
+
+  if (!userId || !userName) {
+    // User not logged in
+    return res.redirect("/signin");
+  }
+
+  connection.query(
+    "UPDATE orders SET order_status = 'Delivered' WHERE order_id = ? AND user_id = ? AND order_status = 'Dispatched'",
+    [order_id, userId],
+    function (error, results) {
+      if (error) {
+        console.error(
+          `User ${userId} error marking order ${order_id} as Delivered:`,
+          error
+        );
+        // Consider sending an error message to the user's orders page
+      } else if (results.affectedRows > 0) {
+        console.log(`Order ${order_id} marked as Delivered by user ${userId}`);
+      } else {
+        console.log(
+          `Order ${order_id} not updated by user ${userId} (not Dispatched, not owned, or not found).`
+        );
+      }
+      res.redirect("/orders");
+    }
+  );
 }
 
 // Render Admin Change Price Page

@@ -44,6 +44,16 @@ router.post("/dispatch_orders", (req, res) => {
   res.locals.dispatchOrders(req, res);
 });
 
+// Route for admin to set order to Processing
+router.post("/order/set-processing/:order_id", (req, res) => {
+  res.locals.setOrderProcessing(req, res);
+});
+
+// Route for admin to set order to Delivered
+router.post("/order/set-delivered-admin/:order_id", (req, res) => {
+  res.locals.setOrderDeliveredAdmin(req, res);
+});
+
 router.get("/dispatch_orders", (req, res) => {
   res.locals.renderViewDispatchOrdersPage(req, res);
 });

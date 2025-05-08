@@ -20,71 +20,32 @@
     <link rel="stylesheet" href="/stylesheets/style.css" />
   </head>
 
-  <body class="body-fixed">
-    <%- include('../partials/adminNav') %>
-
-    <div id="viewport">
-      <div id="js-scroll-content">
-        <section
-          class="section"
-          id="admin-dashboard"
-          style="background-image: url(/images/menu-bg.png)"
-        >
-          <div class="container">
-            <div class="row">
-              <div class="col-lg-12">
-                <div class="sec-title text-center mb-5">
-                  <h2
-                    class="h2-title"
-                    style="color: #ff8243; margin-bottom: 20px"
-                  >
-                    Admin Portal
-                  </h2>
-                  <h2 class="h2-title">Welcome, <%= username %></h2>
-                  <div class="sec-title-shape mb-4">
-                    <img src="/images/title-shape.svg" alt="" />
-                  </div>
-                  <div>
-                    <button
-                      class="sec-btn"
-                      style="width: 30%; color: white; background: orange"
-                    >
-                      <a
-                        href="/admin/addFood"
-                        style="color: white; text-decoration: none !important"
-                        >Add New Food to Menu</a
-                      >
-                    </button>
-                    <br /><br />
-                    <button
-                      class="sec-btn"
-                      style="width: 30%; color: white; background: orange"
-                    >
-                      <a
-                        href="/admin/orders"
-                        style="color: white; text-decoration: none !important"
-                        >View & Dispatch Orders</a
-                      >
-                    </button>
-                    <br /><br />
-                    <button
-                      class="sec-btn"
-                      style="width: 30%; color: white; background: orange"
-                    >
-                      <a
-                        href="/admin/changePrice"
-                        style="color: white; text-decoration: none !important"
-                        >Change Price</a
-                      >
-                    </button>
+  <body class="body-fixed admin-active">
+    <div class="admin-layout">
+      <%- include('../partials/adminSidebar') %>
+      <div class="admin-main-content">
+        <div id="viewport">
+          <div id="js-scroll-content">
+            <section
+              class="section d-flex align-items-center justify-content-center"
+              id="admin-dashboard"
+              style="
+                background-image: url(/images/menu-bg.png);
+                min-height: 100vh;
+              "
+            >
+              <div class="container">
+                <div class="row">
+                  <div class="col-lg-12">
+                    <div class="sec-title text-center">
+                      <h2 class="h2-title">Welcome, <%= username %></h2>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
           </div>
-        </section>
-
-        <%- include('../partials/footer') %>
+        </div>
       </div>
     </div>
 

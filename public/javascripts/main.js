@@ -98,11 +98,10 @@ $(document).ready(function ($) {
   $(function () {
     var filterList = {
       init: function () {
-        // Initialize mixItUp on the parent container '.menu-list-row'
         $(".menu-list-row").mixItUp({
           selectors: {
-            target: ".dish-box-wp", // Items to filter remain the same
-            filter: ".filter", // Filter controls remain the same
+            target: ".dish-box-wp",
+            filter: ".filter",
           },
           animation: {
             effects: "fade",
@@ -160,7 +159,6 @@ $(document).ready(function ($) {
 jQuery(window).on("load", function () {
   $("body").removeClass("body-fixed");
 
-  // activating tab of filter
   let targets = document.querySelectorAll(".filter");
   let activeTab = 0;
   let old = 0;
@@ -172,7 +170,6 @@ jQuery(window).on("load", function () {
     targets[i].addEventListener("click", moveBar);
   }
 
-  // initial position on first === All
   gsap.set(".filter-active", {
     x: targets[0].offsetLeft,
     width: targets[0].offsetWidth,
