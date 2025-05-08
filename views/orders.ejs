@@ -161,6 +161,16 @@
                     </p>
                     <p><strong>Status:</strong> <%= order.order_status %></p>
                     <p>
+                      <strong>Payment Status:</strong>
+                      <span
+                        style="
+                          font-weight: bold;
+                          color: <%= (order.payment_status === "Paid") ? "green" : (order.payment_status === "Unpaid" ? "orange" : "red") %>;
+                        "
+                        ><%= order.payment_status %></span
+                      >
+                    </p>
+                    <p>
                       <strong>Total Amount:</strong> $<%=
                       parseInt(order.total_amount) %>
                     </p>
@@ -250,6 +260,16 @@
                     </table>
                     <% } else { %>
                     <p>No item details available for this order.</p>
+                    <% } %> <% if (order.order_status === 'Dispatched') { %>
+                    <form
+                      action="/order/mark-delivered/<%= order.order_id %>"
+                      method="POST"
+                      style="margin-top: 15px"
+                    >
+                      <button type="submit" class="btn btn-success">
+                        Mark as Received
+                      </button>
+                    </form>
                     <% } %>
                   </div>
                   <% }); %> <% } %>

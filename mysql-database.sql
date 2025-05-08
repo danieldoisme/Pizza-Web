@@ -13,6 +13,8 @@
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+CREATE DATABASE IF NOT EXISTS `pizzazzpizza` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */;
+USE `pizzazzpizza`;
 
 --
 -- Table structure for table `admin`
@@ -89,6 +91,7 @@ CREATE TABLE `orders` (
   `payment_id` VARCHAR(255) NULL,
   `delivery_address` VARCHAR(500) NOT NULL,
   `order_status` VARCHAR(50) NOT NULL DEFAULT 'Pending',
+  `payment_status` VARCHAR(50) DEFAULT 'Unpaid',
   PRIMARY KEY (`order_id`),
   KEY `fk_orders_user_id` (`user_id`),
   CONSTRAINT `fk_orders_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
