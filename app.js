@@ -424,9 +424,21 @@ function processPayment(req, res) {
   // --- END: Determine Delivery Address ---
 
   const paymentId = req.body.paymentId || null; // For PayPal transactions
-  const itemid = req.body["itemid[]"];
-  const quantity = req.body["quantity[]"];
-  const subprice = req.body["subprice[]"];
+
+  let itemid_data_accessor, quantity_data_accessor, subprice_data_accessor;
+
+  if (paymentMethod === "PayPal") {
+    // For PayPal, data is sent via FormData and keys are like 'itemid[]'
+    itemid_data_accessor = req.body["itemid[]"];
+    quantity_data_accessor = req.body["quantity[]"];
+    subprice_data_accessor = req.body["subprice[]"];
+  } else {
+    // For COD (and potentially others using standard form submission with name="foo[]"),
+    // bodyParser.urlencoded({ extended: true }) parses 'foo[]' into req.body.foo
+    itemid_data_accessor = req.body.itemid;
+    quantity_data_accessor = req.body.quantity;
+    subprice_data_accessor = req.body.subprice;
+  }
 
   console.log("Processing payment:", {
     paymentMethod,
@@ -444,16 +456,20 @@ function processPayment(req, res) {
   }
 
   // Ensure item data are arrays (handle single item case)
-  const itemIds = Array.isArray(itemid) ? itemid : itemid ? [itemid] : [];
-  const quantities = Array.isArray(quantity)
-    ? quantity
-    : quantity
-    ? [quantity]
+  const itemIds = Array.isArray(itemid_data_accessor)
+    ? itemid_data_accessor
+    : itemid_data_accessor
+    ? [itemid_data_accessor]
     : [];
-  const subprices = Array.isArray(subprice)
-    ? subprice
-    : subprice
-    ? [subprice]
+  const quantities = Array.isArray(quantity_data_accessor)
+    ? quantity_data_accessor
+    : quantity_data_accessor
+    ? [quantity_data_accessor]
+    : [];
+  const subprices = Array.isArray(subprice_data_accessor)
+    ? subprice_data_accessor
+    : subprice_data_accessor
+    ? [subprice_data_accessor]
     : [];
 
   // Validate address - ensure we have one either from PayPal or the form
