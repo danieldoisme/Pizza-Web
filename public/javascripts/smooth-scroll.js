@@ -17,8 +17,8 @@ const scrollerTargetElement = document.querySelector("#js-scroll-content");
 
 // smooth scroll logic for #js-scroll-content
 if (!IS_ADMIN_PAGE && scrollerTargetElement) {
-  var html = document.documentElement;
-  var body = document.body;
+  // var html = document.documentElement;
+  // var body = document.body;
 
   var scroller = {
     target: scrollerTargetElement,

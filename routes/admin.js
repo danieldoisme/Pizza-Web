@@ -54,6 +54,11 @@ router.post("/order/set-delivered-admin/:order_id", (req, res) => {
   res.locals.setOrderDeliveredAdmin(req, res);
 });
 
+// Route for admin to mark COD order as paid
+router.post("/order/mark-paid-cod/:order_id", (req, res) => {
+  res.locals.setOrderPaidCodAdmin(req, res);
+});
+
 router.get("/dispatch_orders", (req, res) => {
   res.locals.renderViewDispatchOrdersPage(req, res);
 });

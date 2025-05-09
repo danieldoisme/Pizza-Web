@@ -239,8 +239,9 @@
         // Update form before submission logic (ensure elements exist)
         if (codForm && newAddressRadio && deliveryAddress && userExistingAddress) {
           codForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent default form submission to handle with fetch
+
             if (newAddressRadio.checked && deliveryAddress.value.trim() === '') {
-              e.preventDefault();
               alert('Please enter a delivery address');
               return false; // Stop submission
             }
@@ -249,6 +250,29 @@
             if (newAddressRadio.checked) {
               userExistingAddress.value = deliveryAddress.value;
             }
+
+            const formData = new FormData(codForm);
+            const action = codForm.action;
+            const method = codForm.method;
+
+            fetch(action, {
+                method: method,
+                body: new URLSearchParams(formData) // Properly encode form data
+              })
+              .then(response => response.json())
+              .then(data => {
+                if (data.success && data.redirectUrl) {
+                  window.location.href = data.redirectUrl;
+                } else {
+                  // Handle error or unexpected response
+                  alert('There was an issue processing your order. Please try again.');
+                  console.error('Order processing failed or redirectUrl missing:', data);
+                }
+              })
+              .catch(error => {
+                console.error('Error submitting COD form:', error);
+                alert('An error occurred. Please try again.');
+              });
           });
         } else {
           console.warn("COD form submission logic cannot be fully initialized - elements missing.");
@@ -316,23 +340,23 @@
                   console.log("PayPal provided shipping address:", paypalShippingAddress);
                   formData.append('paypalShippingAddress', paypalShippingAddress);
                 } else {
-                   // If no address from PayPal, check the address selected/entered on the page
-                   const selectedAddressOption = document.querySelector('input[name="addressOption"]:checked');
-                   let pageAddress = '';
-                   if (selectedAddressOption && selectedAddressOption.value === 'existing') {
-                     const existingAddrInput = document.getElementById('userExistingAddress');
-                     if (existingAddrInput) pageAddress = existingAddrInput.value;
-                   } else {
-                     const newAddrTextarea = document.getElementById('deliveryAddress');
-                     if (newAddrTextarea) pageAddress = newAddrTextarea.value;
-                   }
-                   if (pageAddress && pageAddress.trim() !== '') {
-                     console.log("Using address from page form for PayPal order:", pageAddress);
-                     formData.append('address', pageAddress.trim()); // Send page address if PayPal didn't provide one
-                   } else {
-                     console.warn("No shipping address found from PayPal or page form.");
-                     // Decide how to handle this - maybe alert the user or rely on server validation
-                   }
+                  // If no address from PayPal, check the address selected/entered on the page
+                  const selectedAddressOption = document.querySelector('input[name="addressOption"]:checked');
+                  let pageAddress = '';
+                  if (selectedAddressOption && selectedAddressOption.value === 'existing') {
+                    const existingAddrInput = document.getElementById('userExistingAddress');
+                    if (existingAddrInput) pageAddress = existingAddrInput.value;
+                  } else {
+                    const newAddrTextarea = document.getElementById('deliveryAddress');
+                    if (newAddrTextarea) pageAddress = newAddrTextarea.value;
+                  }
+                  if (pageAddress && pageAddress.trim() !== '') {
+                    console.log("Using address from page form for PayPal order:", pageAddress);
+                    formData.append('address', pageAddress.trim()); // Send page address if PayPal didn't provide one
+                  } else {
+                    console.warn("No shipping address found from PayPal or page form.");
+                    // Decide how to handle this - maybe alert the user or rely on server validation
+                  }
                 }
                 // --- END: Extract and add PayPal shipping address ---
 

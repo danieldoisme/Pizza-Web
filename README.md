@@ -8,7 +8,7 @@ To run this project locally, follow these steps:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/danieldoisme/Pizza-Web.git
+   git clone <repository-url>
    cd Pizza-Web
    ```
 2. **Install dependencies:**

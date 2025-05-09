@@ -1,6 +1,8 @@
-function scrollToTop() {
+/* global Swiper, ScrollTrigger, Parallax */
+
+window.scrollToTop = function () {
   window.scrollTo({ top: 0, behavior: "smooth" });
-}
+};
 
 document.addEventListener("DOMContentLoaded", function () {
   const dropdownBtn = document.getElementById("usernameDropdownBtn");
@@ -30,7 +32,7 @@ document.addEventListener("DOMContentLoaded", function () {
 $(document).ready(function ($) {
   "use strict";
 
-  var book_table = new Swiper(".book-table-img-slider", {
+  new Swiper(".book-table-img-slider", {
     slidesPerView: 1,
     spaceBetween: 20,
     loop: true,
@@ -58,7 +60,7 @@ $(document).ready(function ($) {
     },
   });
 
-  var team_slider = new Swiper(".team-slider", {
+  new Swiper(".team-slider", {
     slidesPerView: 3,
     spaceBetween: 30,
     loop: true,
@@ -92,9 +94,6 @@ $(document).ready(function ($) {
     },
   });
 
-  // jQuery(".filters").on("click", function () {
-  //   jQuery("#menu-dish").removeClass("bydefault_show");
-  // });
   $(function () {
     var filterList = {
       init: function () {
@@ -153,7 +152,7 @@ $(document).ready(function ($) {
   }
 
   var scene = $(".js-parallax-scene").get(0);
-  var parallaxInstance = new Parallax(scene);
+  new Parallax(scene);
 });
 
 jQuery(window).on("load", function () {
@@ -162,7 +161,6 @@ jQuery(window).on("load", function () {
   let targets = document.querySelectorAll(".filter");
   let activeTab = 0;
   let old = 0;
-  let dur = 0.4;
   let animation;
 
   for (let i = 0; i < targets.length; i++) {

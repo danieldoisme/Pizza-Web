@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-function addToCart(item_id) {
+window.addToCart = function (item_id) {
   // Check if item is already in cart to prevent duplicates
   if (!cart.includes(item_id)) {
     item_count++;
@@ -35,9 +35,9 @@ function addToCart(item_id) {
     localStorage.setItem("item_count", item_count);
     localStorage.setItem("cart", JSON.stringify(cart));
   }
-}
+};
 
-function openMyCart() {
+window.openMyCart = function () {
   let url = "/cart";
   fetch(url, {
     method: "POST",
@@ -49,4 +49,4 @@ function openMyCart() {
   });
 
   window.location.href = "/cart";
-}
+};
