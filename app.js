@@ -86,7 +86,7 @@ app.get("/item/:itemId", renderItemDetailPage);
 app.post("/item/:itemId/rate", isAuthenticated, submitItemRating);
 
 // Search Route
-app.get("/search", renderSearchResultsPage);
+app.get("/search", isAuthenticated, renderSearchResultsPage);
 
 app.post("/updateCart", function (req, res) {
   const cart = req.body.cart || [];
@@ -119,18 +119,32 @@ function renderIndexPage(req, res) {
   console.log("=========================================");
 
   if (userId && userName && userType) {
-    const isAdmin = userType === "admin";
-    res.render("index", {
-      userid: userId,
-      username: userName,
-      isAdmin: isAdmin,
-      item_count: itemCount, // Pass item_count
-    });
+    // User is logged in
+    if (userType === "admin") {
+      res.render("index", {
+        userid: userId,
+        username: userName,
+        isAdmin: true,
+        itemCount: itemCount,
+        pageType: "index", // Added pageType
+      });
+    } else {
+      res.render("index", {
+        userid: userId,
+        username: userName,
+        isAdmin: false,
+        itemCount: itemCount,
+        pageType: "index", // Added pageType
+      });
+    }
   } else {
-    // User not fully logged in or guest
+    // User is not logged in
     res.render("index", {
-      // No userid, username, isAdmin for guest
-      item_count: itemCount, // Pass item_count for guest too
+      userid: null,
+      username: null,
+      isAdmin: false,
+      itemCount: itemCount,
+      pageType: "index", // Added pageType
     });
   }
 }

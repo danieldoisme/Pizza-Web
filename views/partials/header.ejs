@@ -30,12 +30,14 @@
             </ul>
           </nav>
           <div class="header-right">
+            <% if (typeof pageType === 'undefined' || pageType !== 'index') { %>
             <form action="/search" method="GET" class="header-search-form for-des">
               <input type="search" name="query" class="form-input" placeholder="Search Menu..." />
               <button type="submit">
                 <i class="uil uil-search"></i>
               </button>
             </form>
+            <% } %>
             <% if (typeof userid !== 'undefined' && userid) { %> <% if (typeof
             isAdmin !== 'undefined' && isAdmin === true) { %>
             <a href="/admin/dashboard" class="header-btn">
