@@ -49,8 +49,8 @@
               <span></span><span></span>
             </button>
             <div class="header-right">
-              <form action="#" class="header-search-form for-des">
-                <input type="search" class="form-input" placeholder="Search Here..." />
+              <form action="/search" method="GET" class="header-search-form for-des">
+                <input type="search" name="query" class="form-input" placeholder="Search Menu..." />
                 <button type="submit">
                   <i class="uil uil-search"></i>
                 </button>
@@ -142,7 +142,7 @@
                   </p>
                   <p>
                     <strong>Total Amount:</strong> $<%=
-                      parseInt(order.total_amount) %>
+                      parseFloat(order.total_amount).toFixed(2) %>
                   </p>
                   <p>
                     <strong>Delivery Address:</strong> <%=
@@ -199,13 +199,13 @@
                         </td>
                         <td style="padding: 8px"><%= item.item_name %></td>
                         <td style="padding: 8px; text-align: center">
-                          $<%= parseInt(item.price_per_item) %>
+                          $<%= parseFloat(item.price_per_item).toFixed(2) %>
                         </td>
                         <td style="padding: 8px; text-align: center">
                           <%= item.quantity %>
                         </td>
                         <td style="padding: 8px; text-align: center">
-                          $<%= parseInt(item.subtotal) %>
+                          $<%= parseFloat(item.subtotal).toFixed(2) %>
                         </td>
                       </tr>
                       <% }); %>

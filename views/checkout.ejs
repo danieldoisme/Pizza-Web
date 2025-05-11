@@ -52,7 +52,7 @@
                       <% items.forEach(function(item, index) { %>
                       <input type="hidden" name="itemid[]" value="<%= item.item_id %>">
                       <input type="hidden" name="quantity[]" value="<%= item.quantity %>">
-                      <input type="hidden" name="subprice[]" value="<%= item.subtotal %>">
+                      <input type="hidden" name="subprice[]" value="<%= parseFloat(item.subtotal).toFixed(2) %>">
                       <% }); %>
                       <% } %>
 
@@ -105,7 +105,7 @@
                               <% items.forEach(function(item) { %>
                               <tr>
                                 <td><%= item.item_name %></td>
-                                <td>$<%= item.item_price %></td>
+                                <td>$<%= parseFloat(item.item_price).toFixed(2) %></td>
                                 <td><%= item.quantity %></td>
                                 <td>$<%= item.subtotal %></td>
                                 <% totalAmount += item.subtotal; %>

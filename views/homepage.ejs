@@ -104,7 +104,7 @@
                 <div class="dist-bottom-row">
                   <ul>
                     <li>
-                      <b>$ <%= items[i].item_price %></b>
+                      <b>$ <%= parseFloat(items[i].item_price).toFixed(2) %></b>
                     </li>
                     <li>
                       <button class="dish-add-btn" id="btn<%= items[i].item_id %>" onclick="addToCart('<%= items[i].item_id %>')">

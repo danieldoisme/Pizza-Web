@@ -81,7 +81,7 @@
                         <td>
                           $
                           <span class="item-price">
-                            <%= items[i].item_price %>
+                            <%= parseFloat(items[i].item_price).toFixed(2) %>
                           </span>
                         </td>
                         <td>
@@ -90,7 +90,7 @@
                         <td>
                           $
                           <span class="price">
-                            <%= items[i].item_price %>
+                            <%= parseFloat(items[i].item_price).toFixed(2) %>
                           </span>
                         </td>
                         <td>
@@ -100,7 +100,7 @@
                         </td>
                         <input type="hidden" name="itemid[]" value="<%= items[i].item_id %>" />
                         <input type="hidden" name="quantity[]" id="quantity_hidden_<%= i %>" value="1" />
-                        <input type="hidden" name="subprice[]" id="subprice_hidden_<%= i %>" value="<%= items[i].item_price %>" />
+                        <input type="hidden" name="subprice[]" id="subprice_hidden_<%= i %>" value="<%= parseFloat(items[i].item_price).toFixed(2) %>" />
                         <% total_price +=items[i].item_price %>
                       </tr>
                       <% } %>
@@ -112,7 +112,7 @@
                         <span id="inital_quantity" style="display: hidden" hidden>
                           <%= count %>
                         </span>
-                        <td id="total_price">$ <%= total_price %></td>
+                        <td id="total_price">$ <%= parseFloat(total_price).toFixed(2) %></td>
                         <span id="inital_price" style="display: hidden" hidden>
                           <%= total_price %>
                         </span>
@@ -166,18 +166,18 @@
     function updateData(qty, i) {
       // Updating Sub Price Display
       const item_price = document.querySelectorAll(".item-price");
-      const newPrice = parseInt(qty) * parseInt(item_price[i].innerHTML);
-      document.querySelectorAll(".price")[i].innerHTML = newPrice;
+      const newPrice = parseFloat(qty) * parseFloat(item_price[i].innerHTML);
+      document.querySelectorAll(".price")[i].innerHTML = newPrice.toFixed(2);
 
       // Update hidden subprice input
-      document.getElementById(`subprice_hidden_${i}`).value = newPrice;
+      document.getElementById(`subprice_hidden_${i}`).value = newPrice.toFixed(2);
 
       // Update hidden quantity input
       document.getElementById(`quantity_hidden_${i}`).value = qty;
 
       // Updating Total Quantity Display
       const quantity = document.querySelectorAll(".quantity");
-      let total_qty = parseInt(0);
+      let total_qty = 0; // Keep as integer
       for (let j = 0; j < quantity.length; j++) {
         total_qty += parseInt(quantity[j].value);
       }
@@ -185,11 +185,11 @@
 
       // Updating Total Price Display
       const price = document.querySelectorAll(".price");
-      let total_price = parseInt(0);
+      let total_price = 0.0;
       for (let j = 0; j < price.length; j++) {
-        total_price += parseInt(price[j].innerHTML);
+        total_price += parseFloat(price[j].innerHTML);
       }
-      document.getElementById("total_price").innerHTML = "$ " + total_price;
+      document.getElementById("total_price").innerHTML = "$ " + total_price.toFixed(2);
     }
   </script>
   <script>
@@ -255,7 +255,7 @@
     function updateTotals() {
       // Updating Total Quantity
       const quantity = document.querySelectorAll(".quantity");
-      let total_qty = 0;
+      let total_qty = 0; // Keep as integer
       for (let j = 0; j < quantity.length; j++) {
         total_qty += parseInt(quantity[j].value);
       }
@@ -263,11 +263,11 @@
 
       // Updating Total Price
       const price = document.querySelectorAll(".price");
-      let total_price = 0;
+      let total_price = 0.0;
       for (let j = 0; j < price.length; j++) {
-        total_price += parseInt(price[j].innerHTML);
+        total_price += parseFloat(price[j].innerHTML);
       }
-      document.getElementById("total_price").innerHTML = "$ " + total_price;
+      document.getElementById("total_price").innerHTML = "$ " + total_price.toFixed(2);
     }
 
     function updateServerCart(cart, itemCount) {

@@ -181,7 +181,7 @@
                     for(let i = 0; i < emptyStars; i++) { %><i class="uil uil-star empty"></i><% } %></div>
                   <p>(<%= Number(averageRating).toFixed(2) %> based on <%= totalRatings %> review<%= totalRatings !== 1 ? 's' : '' %>)</p>
                 </div>
-                <p class="price">$<%= Number(item.item_price).toFixed(2) %></p>
+                <p class="price">$<%= parseFloat(item.item_price).toFixed(2) %></p>
                 <p class="description"><%= item.item_description_long || 'Detailed description not available.' %></p>
                 <ul class="details-list">
                   <li><strong>Category:</strong> <%= item.item_category.charAt(0).toUpperCase() + item.item_category.slice(1).toLowerCase() %></li>
@@ -250,7 +250,7 @@
   </div>
 
   <script src="/javascripts/jquery-3.5.1.min.js"></script>
-  <script src="/javascripts/bootstrap.bundle.min.js"></script> <!-- Bootstrap bundle includes Popper -->
+  <script src="/javascripts/bootstrap.min.js"></script>
   <script src="/javascripts/swiper-bundle.min.js"></script>
   <script src="/javascripts/jquery.fancybox.min.js"></script>
   <script src="/javascripts/gsap.min.js"></script>
@@ -258,7 +258,7 @@
   <script src="/javascripts/ScrollToPlugin.min.js"></script>
   <script src="/javascripts/smooth-scroll.js"></script>
   <script src="/javascripts/main.js"></script>
-  <script src="/javascripts/cart.js"></script> <%# Added cart.js for addToCart function %>
+  <script src="/javascripts/cart.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const stars = document.querySelectorAll('.rating-stars-input span');

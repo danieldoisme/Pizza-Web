@@ -85,6 +85,9 @@ app.get("/item/:itemId", renderItemDetailPage);
 // New route for submitting item rating
 app.post("/item/:itemId/rate", isAuthenticated, submitItemRating);
 
+// Search Route
+app.get("/search", renderSearchResultsPage);
+
 app.post("/updateCart", function (req, res) {
   const cart = req.body.cart || [];
   const itemCount = req.body.item_count || 0;
@@ -107,6 +110,7 @@ function renderIndexPage(req, res) {
   const userId = req.cookies.cookuid;
   const userName = req.cookies.cookuname;
   const userType = req.cookies.usertype;
+  const itemCount = req.cookies.item_count || 0; // Ensure item_count is fetched
 
   console.log("=============== INDEX PAGE ==============");
   console.log("Cookies received:", req.cookies);
@@ -116,15 +120,18 @@ function renderIndexPage(req, res) {
 
   if (userId && userName && userType) {
     const isAdmin = userType === "admin";
-
     res.render("index", {
       userid: userId,
       username: userName,
       isAdmin: isAdmin,
+      item_count: itemCount, // Pass item_count
     });
   } else {
-    console.log("No valid auth cookies found");
-    res.render("index", {});
+    // User not fully logged in or guest
+    res.render("index", {
+      // No userid, username, isAdmin for guest
+      item_count: itemCount, // Pass item_count for guest too
+    });
   }
 }
 
@@ -195,6 +202,7 @@ function signInUser(req, res) {
 function renderHomePage(req, res) {
   const userId = req.cookies.cookuid;
   const userName = req.cookies.cookuname;
+  const itemCount = req.cookies.item_count || 0; // Get item count
 
   if (!userId || !userName) {
     return res.redirect("/signin");
@@ -203,18 +211,30 @@ function renderHomePage(req, res) {
   connection.query(
     "SELECT user_id, user_name FROM users WHERE user_id = ? AND user_name = ?",
     [userId, userName],
-    function (error, results) {
-      if (!error && results.length) {
-        connection.query("SELECT * FROM menu", function (error, results) {
-          if (!error) {
-            res.render("homepage", {
-              username: userName,
-              userid: userId,
-              items: results,
-            });
+    function (error, userResults) {
+      if (error) {
+        console.error("Error fetching user for homepage:", error);
+        return res.status(500).send("Error loading homepage.");
+      }
+      if (userResults.length) {
+        connection.query("SELECT * FROM menu", function (error, menuResults) {
+          if (error) {
+            console.error("Error fetching menu for homepage:", error);
+            return res.status(500).send("Error loading menu.");
           }
+          res.render("homepage", {
+            username: userName,
+            userid: userId,
+            items: menuResults,
+            item_count: itemCount, // Pass item count to homepage
+          });
         });
       } else {
+        // User details from cookie not found in DB, likely invalid session
+        res.clearCookie("cookuid");
+        res.clearCookie("cookuname");
+        res.clearCookie("usertype");
+        res.clearCookie("item_count");
         return res.redirect("/signin");
       }
     }
@@ -225,19 +245,32 @@ function renderHomePage(req, res) {
 function renderCart(req, res) {
   const userId = req.cookies.cookuid;
   const userName = req.cookies.cookuname;
+  const itemCount = req.cookies.item_count || 0; // Get item_count from cookies
+
   connection.query(
     "SELECT user_id, user_name FROM users WHERE user_id = ? AND user_name = ?",
     [userId, userName],
     function (error, results) {
-      if (!error && results.length) {
+      if (error) {
+        console.error("Error fetching user for cart:", error);
+        return res.status(500).send("Error loading cart.");
+      }
+      if (results.length) {
+        // citemdetails should ideally be populated based on current cart state,
+        // not just a global variable if cart can be modified elsewhere.
+        // For now, assuming citemdetails is correctly managed by updateCart.
         res.render("cart", {
           username: userName,
           userid: userId,
           items: citemdetails,
-          item_count: item_in_cart,
+          item_count: itemCount, // Pass item_count
         });
       } else {
-        res.render("signin");
+        res.clearCookie("cookuid");
+        res.clearCookie("cookuname");
+        res.clearCookie("usertype");
+        res.clearCookie("item_count");
+        res.redirect("/signin");
       }
     }
   );
@@ -295,42 +328,50 @@ function renderCheckoutPage(req, res) {
   const userId = req.cookies.cookuid;
   const userName = req.cookies.cookuname;
   const { itemid, quantity, subprice } = req.body;
+  const itemCount = req.cookies.item_count || 0; // Get item_count
 
   if (!userId || !userName) {
     return res.redirect("/signin");
-  }
-
-  if (
-    !itemid ||
-    !quantity ||
-    !subprice ||
-    !Array.isArray(itemid) ||
-    !Array.isArray(quantity) ||
-    !Array.isArray(subprice) ||
-    itemid.length !== quantity.length ||
-    itemid.length !== subprice.length
-  ) {
-    return res.redirect("/cart");
   }
 
   connection.query(
     "SELECT user_id, user_name, user_address AS address, user_mobileno AS contact FROM users WHERE user_id = ? AND user_name = ?",
     [userId, userName],
     function (error, userResults) {
-      if (error) {
-        return res.redirect("/signin");
+      if (error || userResults.length === 0) {
+        console.error(
+          "Error fetching user for checkout or user not found:",
+          error
+        );
+        return res.redirect("/signin"); // Or an error page
       }
 
-      if (!userResults || userResults.length === 0) {
-        return res.redirect("/signin");
+      // Ensure itemid is an array for the IN clause
+      const itemIdsForQuery = Array.isArray(itemid)
+        ? itemid
+        : itemid
+        ? [itemid]
+        : [];
+
+      if (itemIdsForQuery.length === 0) {
+        // No items to checkout, redirect to cart or show message
+        return res.render("checkout", {
+          username: userName,
+          userid: userId,
+          address: userResults[0].address,
+          contact: userResults[0].contact,
+          items: [], // No items
+          item_count: itemCount,
+          checkoutError: "No items selected for checkout.",
+        });
       }
 
-      const placeHolders = itemid.map(() => "?").join(",");
-      const query = `SELECT item_id, item_name, item_price FROM menu WHERE item_id IN (${placeHolders})`;
-
-      connection.query(query, itemid, (err, itemDetailsResults) => {
+      const query =
+        "SELECT item_id, item_name, item_price FROM menu WHERE item_id IN (?)";
+      connection.query(query, [itemIdsForQuery], (err, itemDetailsResults) => {
         if (err) {
-          return res.redirect("/cart");
+          console.error("Error fetching item details for checkout:", err);
+          return res.redirect("/cart?error=fetch_failed");
         }
 
         const itemDetailsMap = new Map();
@@ -338,38 +379,40 @@ function renderCheckoutPage(req, res) {
           itemDetailsMap.set(item.item_id.toString(), item);
         });
 
-        const checkoutItems = itemid
+        const checkoutItems = itemid // Use original itemid from req.body for mapping
           .map((id, index) => {
             const details = itemDetailsMap.get(id.toString());
-            const qty = parseInt(quantity[index], 10);
+            const qty =
+              quantity && quantity[index] ? parseInt(quantity[index], 10) : 0;
             if (details && !isNaN(qty) && qty > 0) {
+              const itemPrice = parseFloat(details.item_price); // Ensure item_price is a float
               return {
                 item_id: id,
                 item_name: details.item_name,
-                item_price: details.item_price,
+                item_price: itemPrice,
                 quantity: qty,
-                subtotal: details.item_price * qty,
+                subtotal: itemPrice * qty, // Calculation will be float
               };
             }
             return null;
           })
           .filter((item) => item !== null);
 
-        if (checkoutItems.length === 0) {
-          return res.redirect("/cart");
+        if (checkoutItems.length === 0 && itemid && itemid.length > 0) {
+          console.warn("Checkout attempted with invalid item data:", {
+            itemid,
+            quantity,
+          });
+          return res.redirect("/cart?error=invalid_checkout_items");
         }
-
-        const totalItemCount = checkoutItems.reduce(
-          (sum, item) => sum + item.quantity,
-          0
-        );
 
         res.render("checkout", {
           username: userName,
           userid: userId,
-          user: userResults[0],
+          address: userResults[0].address,
+          contact: userResults[0].contact,
           items: checkoutItems,
-          item_count: totalItemCount,
+          item_count: itemCount,
         });
       });
     }
@@ -525,12 +568,12 @@ function processPayment(req, res) {
                   )
                 );
               }
-              const price_per_item = priceResults[0].item_price;
+              const price_per_item = parseFloat(priceResults[0].item_price); // Ensure float
               resolve({
                 item_id: item.id,
                 quantity: item.qty,
-                price_per_item: parseFloat(price_per_item),
-                subtotal: parseFloat(price_per_item) * item.qty,
+                price_per_item: price_per_item,
+                subtotal: price_per_item * item.qty, // Calculation will be float
               });
             }
           );
@@ -540,7 +583,7 @@ function processPayment(req, res) {
       Promise.all(itemPricePromises)
         .then((detailedOrderItems) => {
           const serverCalculatedTotalAmount = detailedOrderItems.reduce(
-            (sum, item) => sum + item.subtotal,
+            (sum, item) => sum + item.subtotal, // item.subtotal is already float
             0
           );
 
@@ -581,7 +624,7 @@ function processPayment(req, res) {
             const orderValues = [
               userId,
               currDate,
-              serverCalculatedTotalAmount,
+              parseFloat(serverCalculatedTotalAmount.toFixed(2)), // Ensure total_amount is stored as float
               paymentMethod,
               deliveryAddress,
               "Pending",
@@ -654,8 +697,8 @@ function processPayment(req, res) {
                   orderId,
                   item.item_id,
                   item.quantity,
-                  item.price_per_item,
-                  item.subtotal,
+                  parseFloat(item.price_per_item.toFixed(2)), // Ensure price_per_item is stored as float
+                  parseFloat(item.subtotal.toFixed(2)), // Ensure subtotal is stored as float
                 ]);
 
                 connection.query(
@@ -732,29 +775,32 @@ function processPayment(req, res) {
 function renderConfirmationPage(req, res) {
   const userId = req.cookies.cookuid;
   const userName = req.cookies.cookuname;
+  const itemCount = req.cookies.item_count || 0; // Get item_count
+
   connection.query(
     "SELECT user_id, user_name FROM users WHERE user_id = ? AND user_name = ?",
     [userId, userName],
     function (error, results) {
-      if (!error && results.length) {
-        res.render("confirmation", { username: userName, userid: userId });
+      if (error) {
+        console.error("Error fetching user for confirmation:", error);
+        return res.status(500).send("Error loading confirmation page.");
+      }
+      if (results.length) {
+        res.render("confirmation", {
+          username: userName,
+          userid: userId,
+          item_count: itemCount,
+        });
       } else {
-        res.render("signin");
+        res.clearCookie("cookuid");
+        res.clearCookie("cookuname");
+        res.clearCookie("usertype");
+        res.clearCookie("item_count");
+        res.redirect("/signin");
       }
     }
   );
 }
-
-app.get("/confirmation", function (req, res) {
-  const userId = req.cookies.cookuid;
-  const userName = req.cookies.cookuname;
-
-  if (userId && userName) {
-    res.render("confirmation", { username: userName, userid: userId });
-  } else {
-    res.redirect("/signin");
-  }
-});
 
 // Render My Orders Page
 function renderMyOrdersPage(req, res) {
@@ -856,16 +902,28 @@ function renderMyOrdersPage(req, res) {
 function renderSettingsPage(req, res) {
   const userId = req.cookies.cookuid;
   const userName = req.cookies.cookuname;
+  const itemCount = req.cookies.item_count || 0; // Get item_count
+
   connection.query(
     "SELECT user_id, user_name FROM users WHERE user_id = ? AND user_name = ?",
     [userId, userName],
     function (error, results) {
-      if (!error && results.length) {
+      if (error) {
+        console.error("Error fetching user for settings:", error);
+        return res.status(500).send("Error loading settings page.");
+      }
+      if (results.length) {
         res.render("settings", {
           username: userName,
           userid: userId,
-          item_count: item_in_cart,
+          item_count: itemCount, // Pass item_count
         });
+      } else {
+        res.clearCookie("cookuid");
+        res.clearCookie("cookuname");
+        res.clearCookie("usertype");
+        res.clearCookie("item_count");
+        res.redirect("/signin");
       }
     }
   );
@@ -1066,7 +1124,7 @@ function addFood(req, res) {
     FoodCategory,
     FoodServing,
     FoodCalories,
-    FoodPrice,
+    FoodPrice, // This will be parsed to float
     FoodDescriptionLong, // Added for detailed description
   } = req.body;
   if (!req.files || !req.files.FoodImg) {
@@ -1074,6 +1132,13 @@ function addFood(req, res) {
   }
   const fimage = req.files.FoodImg;
   const fimage_name = fimage.name;
+
+  // Ensure FoodPrice is a float
+  const foodPriceFloat = parseFloat(FoodPrice);
+  if (isNaN(foodPriceFloat) || foodPriceFloat < 0) {
+    return res.redirect("/admin/addFood?error=InvalidFoodPrice");
+  }
+
   if (
     fimage.mimetype == "image/jpeg" ||
     fimage.mimetype == "image/png" ||
@@ -1094,7 +1159,7 @@ function addFood(req, res) {
           FoodCategory,
           FoodServing,
           FoodCalories,
-          FoodPrice,
+          foodPriceFloat, // Use the parsed float value
           fimage_name,
           FoodDescriptionLong, // Added
         ],
@@ -1118,7 +1183,7 @@ function renderItemDetailPage(req, res) {
   const itemId = req.params.itemId;
   const userId = req.cookies.cookuid;
   const userName = req.cookies.cookuname;
-  const itemCount = req.cookies.item_count || 0; // Ensure item_count has a default
+  const itemCount = req.cookies.item_count || 0; // Get item_count
 
   const itemQuery = "SELECT * FROM menu WHERE item_id = ?";
   const ratingsQuery = `
@@ -1166,7 +1231,7 @@ function renderItemDetailPage(req, res) {
         totalRatings: item.total_ratings,
         username: userName,
         userid: userId,
-        item_count: itemCount,
+        item_count: itemCount, // Pass item_count
         error: req.query.error,
         success: req.query.success,
       });
@@ -1243,6 +1308,68 @@ function submitItemRating(req, res) {
       }
     );
   });
+}
+
+// Render Search Results Page
+function renderSearchResultsPage(req, res) {
+  const query = req.query.query || "";
+  const userId = req.cookies.cookuid;
+  const userName = req.cookies.cookuname;
+  const userType = req.cookies.usertype;
+  const itemCount = req.cookies.item_count || 0;
+
+  // Determine if user is admin for header/nav partial rendering
+  const isAdmin = userType === "admin";
+
+  if (!query.trim()) {
+    // If search query is empty, redirect to homepage or show a message
+    // For now, let's render the search page with a message or an empty result set
+    return res.render("searchResults", {
+      query: "", // Pass empty query
+      results: [], // No results
+      username: userName,
+      userid: userId,
+      isAdmin: isAdmin,
+      item_count: itemCount,
+      searchMessage: "Please enter a search term.", // Optional message
+    });
+  }
+
+  const searchQuery = `
+    SELECT * FROM menu 
+    WHERE LOWER(item_name) LIKE LOWER(?) 
+       OR LOWER(item_description_long) LIKE LOWER(?) 
+       OR LOWER(item_category) LIKE LOWER(?)
+  `;
+  const searchTerm = `%${query}%`;
+
+  connection.query(
+    searchQuery,
+    [searchTerm, searchTerm, searchTerm],
+    (error, results) => {
+      if (error) {
+        console.error("Error performing search:", error);
+        return res.status(500).render("searchResults", {
+          query: query,
+          results: [],
+          username: userName,
+          userid: userId,
+          isAdmin: isAdmin,
+          item_count: itemCount,
+          searchError: "An error occurred while searching. Please try again.",
+        });
+      }
+
+      res.render("searchResults", {
+        query: query,
+        results: results,
+        username: userName,
+        userid: userId,
+        isAdmin: isAdmin,
+        item_count: itemCount,
+      });
+    }
+  );
 }
 
 // Middleware to check if user is authenticated
@@ -1632,10 +1759,11 @@ function changePrice(req, res) {
     return res.status(400).send("Please select a valid food item");
   }
 
-  const price = parseInt(new_food_price, 10);
+  // Ensure the price is treated as a float
+  const price = parseFloat(new_food_price);
 
-  if (isNaN(price) || price < 0 || price.toString() !== new_food_price.trim()) {
-    return res.status(400).send("Please enter a valid positive integer price");
+  if (isNaN(price) || price < 0) {
+    return res.status(400).send("Please enter a valid positive price");
   }
 
   connection.query(
@@ -1651,6 +1779,7 @@ function changePrice(req, res) {
       }
 
       connection.query(
+        // Ensure item_price is set as a float
         "UPDATE menu SET item_price = ? WHERE item_name = ?",
         [price, item_name],
         function (error) {

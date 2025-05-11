@@ -95,24 +95,27 @@ $(document).ready(function ($) {
   });
 
   $(function () {
-    var filterList = {
-      init: function () {
-        $(".menu-list-row").mixItUp({
-          selectors: {
-            target: ".dish-box-wp",
-            filter: ".filter",
-          },
-          animation: {
-            effects: "fade",
-            easing: "ease-in-out",
-          },
-          load: {
-            filter: "all",
-          },
-        });
-      },
-    };
-    filterList.init();
+    // Only initialize mixItUp if filter controls are present on the page
+    if ($(".filter").length > 0 && $(".menu-list-row").length > 0) {
+      var filterList = {
+        init: function () {
+          $(".menu-list-row").mixItUp({
+            selectors: {
+              target: ".dish-box-wp",
+              filter: ".filter",
+            },
+            animation: {
+              effects: "fade",
+              easing: "ease-in-out",
+            },
+            load: {
+              filter: "all", // Default to showing all items if filters are present
+            },
+          });
+        },
+      };
+      filterList.init();
+    }
   });
 
   jQuery(".menu-toggle").click(function () {

@@ -911,8 +911,13 @@ p {
   align-items: stretch;
 }
 
-.menu-list-row .bydefault_show .dish-box-wp {
-  display: inline-block;
+.menu-list-row.bydefault_show .dish-box-wp {
+  display: block !important; /* Use block for Bootstrap column compatibility and to override display:none */
+  opacity: 1 !important; /* Make items fully opaque, overriding opacity:0 */
+  visibility: visible !important; /* Explicitly set visibility to override any inherited hidden state */
+  transform: translateY(
+    0
+  ) !important; /* Reset any vertical transform, overriding transform:translateY(30px) */
 }
 
 .dish-box-wp {
