@@ -846,6 +846,12 @@ p {
 }
 /* Scroll Bar Design Ends */
 
+/* Main content top padding */
+.main-content-top-padding {
+  padding-top: 80px;
+}
+/* Main content top padding ends */
+
 /* Menu Card Design Starts */
 .repeat-img {
   background-size: contain;
@@ -975,6 +981,15 @@ p {
 
 .dish-title p {
   color: #bfbfbf;
+}
+
+.dish-title .stretched-link-custom {
+  color: inherit; /* Inherit color from parent */
+  text-decoration: none; /* Remove underline */
+}
+
+.dish-title .stretched-link-custom:hover {
+  color: #ff8243; /* Change color on hover, or your preferred hover color */
 }
 
 .dish-info ul,
@@ -2048,4 +2063,8 @@ body.admin-active {
   }
 
   /* The actual scrolling container should be admin-main-content */
+}
+
+#cart-body td a:hover {
+  color: orange !important; /* Ensure this overrides other styles */
 }

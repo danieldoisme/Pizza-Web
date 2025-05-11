@@ -71,10 +71,19 @@ app.post("/contact", updateContact);
 app.post("/password", updatePassword);
 app.get("/logout", logout);
 app.post("/checkout", renderCheckoutPage);
-app.post("/checkout/process-payment", processPayment);
+app.post("/checkout/process-payment", isAuthenticated, processPayment);
 
 // Route for user to mark order as delivered
-app.post("/order/mark-delivered/:order_id", setOrderDeliveredUser);
+app.post(
+  "/order/mark-delivered/:order_id",
+  isAuthenticated,
+  setOrderDeliveredUser
+);
+
+// New route for item detail page
+app.get("/item/:itemId", renderItemDetailPage);
+// New route for submitting item rating
+app.post("/item/:itemId/rate", isAuthenticated, submitItemRating);
 
 app.post("/updateCart", function (req, res) {
   const cart = req.body.cart || [];
@@ -1058,20 +1067,27 @@ function addFood(req, res) {
     FoodServing,
     FoodCalories,
     FoodPrice,
-    FoodRating,
+    FoodDescriptionLong, // Added for detailed description
   } = req.body;
-  if (!req.files) {
+  if (!req.files || !req.files.FoodImg) {
     return res.status(400).send("Image was not uploaded");
   }
   const fimage = req.files.FoodImg;
   const fimage_name = fimage.name;
-  if (fimage.mimetype == "image/jpeg" || fimage.mimetype == "image/png") {
+  if (
+    fimage.mimetype == "image/jpeg" ||
+    fimage.mimetype == "image/png" ||
+    fimage.mimetype == "image/webp" ||
+    fimage.mimetype == "image/jpg"
+  ) {
     fimage.mv("public/images/dish/" + fimage_name, function (err) {
       if (err) {
+        console.error("Error moving image:", err);
         return res.status(500).send(err);
       }
+      // item_rating and total_ratings will have default values (0.00 and 0) from the DB schema
       connection.query(
-        "INSERT INTO menu (item_name, item_type, item_category, item_serving, item_calories, item_price, item_rating, item_img) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO menu (item_name, item_type, item_category, item_serving, item_calories, item_price, item_img, item_description_long) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         [
           FoodName,
           FoodType,
@@ -1079,21 +1095,163 @@ function addFood(req, res) {
           FoodServing,
           FoodCalories,
           FoodPrice,
-          FoodRating,
           fimage_name,
+          FoodDescriptionLong, // Added
         ],
         function (error) {
           if (error) {
-            console.log(error);
+            console.log("Error adding food to DB:", error);
+            res.redirect("/admin/addFood?error=FailedToAddFood");
           } else {
-            res.redirect("/admin/addFood");
+            res.redirect("/admin/addFood?success=FoodAdded");
           }
         }
       );
     });
   } else {
-    res.render("admin/addFood");
+    res.redirect("/admin/addFood?error=InvalidImageFormat");
   }
+}
+
+// Render Item Detail Page
+function renderItemDetailPage(req, res) {
+  const itemId = req.params.itemId;
+  const userId = req.cookies.cookuid;
+  const userName = req.cookies.cookuname;
+  const itemCount = req.cookies.item_count || 0; // Ensure item_count has a default
+
+  const itemQuery = "SELECT * FROM menu WHERE item_id = ?";
+  const ratingsQuery = `
+    SELECT ir.rating_id, ir.item_id, ir.user_id, ir.rating_value, ir.review_text, ir.rating_date, u.user_name 
+    FROM item_ratings ir 
+    JOIN users u ON ir.user_id = u.user_id 
+    WHERE ir.item_id = ? 
+    ORDER BY ir.rating_date DESC
+  `;
+
+  connection.query(itemQuery, [itemId], (err, itemResults) => {
+    if (err) {
+      console.error("Error fetching item:", err);
+      return res
+        .status(500)
+        .render("error", { message: "Error fetching item details." }); // Assuming you have an error.ejs
+    }
+    if (itemResults.length === 0) {
+      return res.status(404).render("error", { message: "Item not found." }); // Assuming you have an error.ejs
+    }
+    const item = itemResults[0];
+
+    connection.query(ratingsQuery, [itemId], (ratingsErr, ratingsResults) => {
+      if (ratingsErr) {
+        console.error("Error fetching ratings:", ratingsErr);
+        // Render the page anyway, but indicate ratings couldn't be loaded
+        return res.render("itemDetail", {
+          // This EJS file will be created in Phase 3
+          item: item,
+          ratings: [],
+          averageRating: item.item_rating,
+          totalRatings: item.total_ratings,
+          username: userName,
+          userid: userId,
+          item_count: itemCount,
+          error: "Could not load ratings at this time.",
+          success: req.query.success, // For success messages from rating submission
+        });
+      }
+      res.render("itemDetail", {
+        // This EJS file will be created in Phase 3
+        item: item,
+        ratings: ratingsResults,
+        averageRating: item.item_rating,
+        totalRatings: item.total_ratings,
+        username: userName,
+        userid: userId,
+        item_count: itemCount,
+        error: req.query.error,
+        success: req.query.success,
+      });
+    });
+  });
+}
+
+// Submit Item Rating (ensure user is authenticated via middleware)
+function submitItemRating(req, res) {
+  const itemId = req.params.itemId;
+  const userId = req.cookies.cookuid;
+  const { rating_value, review_text } = req.body;
+
+  // Basic validation, though client-side and more robust server-side might be added
+  const parsedRating = parseInt(rating_value, 10);
+  if (isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+    return res.redirect(`/item/${itemId}?error=InvalidRatingValue`);
+  }
+
+  connection.beginTransaction((transactionErr) => {
+    if (transactionErr) {
+      console.error("Transaction Begin Error:", transactionErr);
+      return res.redirect(`/item/${itemId}?error=DatabaseError`);
+    }
+
+    const upsertRatingQuery = `
+      INSERT INTO item_ratings (item_id, user_id, rating_value, review_text, rating_date) 
+      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON DUPLICATE KEY UPDATE 
+        rating_value = VALUES(rating_value), 
+        review_text = VALUES(review_text), 
+        rating_date = CURRENT_TIMESTAMP
+    `;
+    connection.query(
+      upsertRatingQuery,
+      [itemId, userId, parsedRating, review_text || null],
+      (upsertErr, result) => {
+        if (upsertErr) {
+          return connection.rollback(() => {
+            console.error("Error inserting/updating rating:", upsertErr);
+            res.redirect(`/item/${itemId}?error=RatingSubmissionFailed`);
+          });
+        }
+
+        const updateMenuQuery = `
+        UPDATE menu
+        SET 
+          total_ratings = (SELECT COUNT(*) FROM item_ratings WHERE item_id = ?),
+          item_rating = (SELECT AVG(rating_value) FROM item_ratings WHERE item_id = ?)
+        WHERE item_id = ?
+      `;
+        connection.query(
+          updateMenuQuery,
+          [itemId, itemId, itemId],
+          (updateErr) => {
+            if (updateErr) {
+              return connection.rollback(() => {
+                console.error("Error updating menu rating:", updateErr);
+                res.redirect(`/item/${itemId}?error=MenuUpdateFailed`);
+              });
+            }
+
+            connection.commit((commitErr) => {
+              if (commitErr) {
+                return connection.rollback(() => {
+                  console.error("Transaction Commit Error:", commitErr);
+                  res.redirect(`/item/${itemId}?error=DatabaseCommitError`);
+                });
+              }
+              res.redirect(`/item/${itemId}?success=RatingSubmitted`);
+            });
+          }
+        );
+      }
+    );
+  });
+}
+
+// Middleware to check if user is authenticated
+function isAuthenticated(req, res, next) {
+  const userId = req.cookies.cookuid;
+  if (!userId) {
+    return res.redirect("/signin");
+  }
+  next();
 }
 
 // Render Admin View and Dispatch Orders Page

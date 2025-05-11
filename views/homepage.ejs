@@ -78,12 +78,16 @@
                   <img src="/images/dish/<%= items[i].item_img %>" alt="<%= items[i].item_name %>" />
                 </div>
                 <div class="dish-rating">
-                  <%= items[i].item_rating %>
+                  <%= Number(items[i].item_rating).toFixed(1) %>
+                  <!-- Display average rating -->
                   <i class="uil uil-star"></i>
+                  <span style="font-size: 0.8em; color: #777;">(<%= items[i].total_ratings %> review<%= items[i].total_ratings !== 1 ? "s" : "" %>)</span> <!-- Display total ratings count -->
                 </div>
                 <div class="dish-title">
-                  <h3 class="h3-title"><%= items[i].item_name %></h3>
-                  <p><%= items[i].item_calories %></p>
+                  <h3 class="h3-title">
+                    <a href="/item/<%= items[i].item_id %>" class="stretched-link-custom"><%= items[i].item_name %></a>
+                  </h3>
+                  <p><%= items[i].item_calories %> kcal</p>
                 </div>
                 <div class="dish-info">
                   <ul>

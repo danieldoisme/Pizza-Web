@@ -73,7 +73,11 @@
                                 box-shadow: 4px 4px 8px black;
                               " />
                         </td>
-                        <td><%= items[i].item_name %></td>
+                        <td>
+                          <a href="/item/<%= items[i].item_id %>" style="color: inherit; text-decoration: none;">
+                            <%= items[i].item_name %>
+                          </a>
+                        </td>
                         <td>
                           $
                           <span class="item-price">

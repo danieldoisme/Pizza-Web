@@ -39,14 +39,37 @@ window.addToCart = function (item_id) {
 
 window.openMyCart = function () {
   let url = "/cart";
+  // Ensure cart and item_count are fresh from localStorage before sending
+  const currentCart = JSON.parse(localStorage.getItem("cart") || "[]");
+  const currentItemCount = parseInt(localStorage.getItem("item_count") || 0);
+
   fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      cart: cart,
-      item_count: item_count,
+      cart: currentCart,
+      item_count: currentItemCount,
     }),
-  });
-
-  window.location.href = "/cart";
+  })
+    .then((response) => {
+      if (response.ok) {
+        // Successfully updated server-side cart, now navigate
+        window.location.href = "/cart";
+      } else {
+        // Server responded with an error
+        console.error(
+          "Failed to update cart on server. Status:",
+          response.status
+        );
+        // Optionally, inform the user, e.g., alert("Could not sync cart with server.");
+        // Still navigate, or handle error more gracefully depending on desired UX
+        window.location.href = "/cart"; // Navigate even if there was a server error, or handle differently
+      }
+    })
+    .catch((error) => {
+      console.error("Error posting cart data to server:", error);
+      // Optionally, inform the user, e.g., alert("Could not connect to server to update cart.");
+      // Still navigate or handle error
+      window.location.href = "/cart"; // Navigate on network error, or handle differently
+    });
 };

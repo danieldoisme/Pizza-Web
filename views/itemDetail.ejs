@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= item.item_name %> - PizzazzPizza</title>
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
+  <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
+  <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css" />
+  <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css" />
+  <link rel="stylesheet" href="/stylesheets/style.css" />
+  <style>
+    .item-detail-section {
+      padding: 60px 0;
+    }
+
+    .item-detail-img {
+      max-width: 100%;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .item-info h1 {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .item-info .price {
+      font-size: 1.8rem;
+      color: #ff8243;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+
+    .item-info .description {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #555;
+      margin-bottom: 20px;
+    }
+
+    .item-info .details-list {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 20px;
+    }
+
+    .item-info .details-list li {
+      margin-bottom: 8px;
+      font-size: 1rem;
+      color: #444;
+    }
+
+    .item-info .details-list li strong {
+      color: #333;
+    }
+
+    .rating-summary .stars {
+      color: #ff8243;
+      font-size: 1.5rem;
+    }
+
+    .rating-summary .stars .uil-star.empty {
+      color: #e0e0e0;
+    }
+
+    .rating-summary p {
+      margin-left: 10px;
+      font-size: 1rem;
+      color: #666;
+    }
+
+    .reviews-section {
+      margin-top: 40px;
+    }
+
+    .review-box {
+      border: 1px solid #eee;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      background: #f9f9f9;
+    }
+
+    .review-box .reviewer-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .review-box .reviewer-info .stars {
+      color: #ff8243;
+    }
+
+    .review-box .reviewer-info .stars .uil-star.empty {
+      color: #e0e0e0;
+    }
+
+    .review-box .review-text {
+      font-size: 0.95rem;
+      color: #555;
+    }
+
+    .review-box .review-date {
+      font-size: 0.8rem;
+      color: #999;
+      text-align: right;
+      margin-top: 10px;
+    }
+
+    .rating-form-section {
+      margin-top: 30px;
+      padding: 25px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.07);
+    }
+
+    .rating-form-section h3 {
+      margin-bottom: 20px;
+    }
+
+    .rating-stars-input span {
+      font-size: 2rem;
+      color: #e0e0e0;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+
+    .rating-stars-input span.selected,
+    .rating-stars-input span:hover {
+      color: #ff8243;
+    }
+
+    .rating-stars-input span:hover~span {
+      color: #e0e0e0;
+    }
+
+    /* Make subsequent stars default on hover */
+
+    .rating-stars-input span i {
+      color: inherit;
+      /* Ensure icon inherits color from parent span */
+    }
+
+    .alert-fixed {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1050;
+      min-width: 250px;
+    }
+  </style>
+</head>
+
+<body class="body-fixed">
+  <%- include('partials/userNav', { current_page: '', username: username, userid: userid, item_count: typeof item_count !== 'undefined' ? item_count : 0 }) %>
+
+  <div id="viewport">
+    <div id="js-scroll-content" class="main-content-top-padding">
+      <main>
+        <section class="item-detail-section section">
+          <div class="container">
+            <div class="row">
+              <div class="col-lg-6 mb-4 mb-lg-0">
+                <img src="/images/dish/<%= item.item_img %>" alt="<%= item.item_name %>" class="item-detail-img">
+              </div>
+              <div class="col-lg-6 item-info">
+                <h1><%= item.item_name %></h1>
+                <div class="rating-summary d-flex align-items-center mb-3">
+                  <div class="stars"><%
+                    const fullStars = Math.floor(averageRating);
+                    const halfStar = (averageRating - fullStars) >= 0.25 && (averageRating - fullStars) < 0.75;
+                    const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+                    %><% for(let i = 0; i < fullStars; i++) { %><i class="uil uil-star"></i><% } %><%
+                    if (halfStar) { %><i class="uil uil-star-half-alt"></i><% } %><%
+                    for(let i = 0; i < emptyStars; i++) { %><i class="uil uil-star empty"></i><% } %></div>
+                  <p>(<%= Number(averageRating).toFixed(2) %> based on <%= totalRatings %> review<%= totalRatings !== 1 ? 's' : '' %>)</p>
+                </div>
+                <p class="price">$<%= Number(item.item_price).toFixed(2) %></p>
+                <p class="description"><%= item.item_description_long || 'Detailed description not available.' %></p>
+                <ul class="details-list">
+                  <li><strong>Category:</strong> <%= item.item_category.charAt(0).toUpperCase() + item.item_category.slice(1).toLowerCase() %></li>
+                  <li><strong>Type:</strong> <%= item.item_type %></li>
+                  <li><strong>Servings:</strong> <%= item.item_serving %></li>
+                  <li><strong>Calories:</strong> <%= item.item_calories %> kcal</li>
+                </ul>
+                <button id="btn<%= item.item_id %>" class="sec-btn sec-btn-orange" onclick="addToCart('<%= item.item_id %>')">Add to Cart</button>
+              </div>
+            </div>
+
+            <div class="reviews-section">
+              <h2 class="h2-title text-center mb-4">Customer Reviews</h2>
+              <% if (ratings && ratings.length > 0) { %>
+              <% ratings.forEach(function(rating) { %>
+              <div class="review-box">
+                <div class="reviewer-info">
+                  <strong><%= rating.user_name %></strong>
+                  <div class="stars">
+                    <% for(let i = 0; i < 5; i++) { %>
+                    <i class="uil uil-star <%= i < rating.rating_value ? '' : 'empty' %>"></i>
+                    <% } %>
+                  </div>
+                </div>
+                <p class="review-text"><%= rating.review_text || 'No review text provided.' %></p>
+                <p class="review-date"><%= new Date(rating.rating_date).toLocaleDateString() %></p>
+              </div>
+              <% }); %>
+              <% } else { %>
+              <p class="text-center">No reviews yet. Be the first to review!</p>
+              <% } %>
+            </div>
+
+            <% if (userid) { %>
+            <div class="rating-form-section">
+              <h3>Leave a Review</h3>
+              <form action="/item/<%= item.item_id %>/rate" method="POST">
+                <div class="mb-3">
+                  <label for="rating_value" class="form-label">Your Rating:</label>
+                  <div class="rating-stars-input">
+                    <span data-value="1"><i class="uil uil-star"></i></span>
+                    <span data-value="2"><i class="uil uil-star"></i></span>
+                    <span data-value="3"><i class="uil uil-star"></i></span>
+                    <span data-value="4"><i class="uil uil-star"></i></span>
+                    <span data-value="5"><i class="uil uil-star"></i></span>
+                  </div>
+                  <input type="hidden" name="rating_value" id="rating_value" required>
+                </div>
+                <div class="mb-3">
+                  <label for="review_text" class="form-label">Your Review (Optional):</label>
+                  <textarea class="form-control form-input" id="review_text" name="review_text" rows="4"></textarea>
+                </div>
+                <button type="submit" class="sec-btn sec-btn-orange">Submit Review</button>
+              </form>
+            </div>
+            <% } else { %>
+            <p class="text-center mt-4">Please <a href="/signin">log in</a> to leave a review.</p>
+            <% } %>
+
+          </div>
+        </section>
+      </main>
+
+      <%- include('partials/footer') %>
+    </div>
+  </div>
+
+  <script src="/javascripts/jquery-3.5.1.min.js"></script>
+  <script src="/javascripts/bootstrap.bundle.min.js"></script> <!-- Bootstrap bundle includes Popper -->
+  <script src="/javascripts/swiper-bundle.min.js"></script>
+  <script src="/javascripts/jquery.fancybox.min.js"></script>
+  <script src="/javascripts/gsap.min.js"></script>
+  <script src="/javascripts/ScrollTrigger.min.js"></script>
+  <script src="/javascripts/ScrollToPlugin.min.js"></script>
+  <script src="/javascripts/smooth-scroll.js"></script>
+  <script src="/javascripts/main.js"></script>
+  <script src="/javascripts/cart.js"></script> <%# Added cart.js for addToCart function %>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const stars = document.querySelectorAll('.rating-stars-input span');
+      const ratingInput = document.getElementById('rating_value');
+
+      stars.forEach(star => {
+        star.addEventListener('click', function() {
+          const value = this.dataset.value;
+          ratingInput.value = value;
+          stars.forEach(s => {
+            s.classList.toggle('selected', s.dataset.value <= value);
+            if (s.dataset.value <= value) {
+              s.style.color = '#ff8243';
+            } else {
+              s.style.color = '#e0e0e0';
+            }
+          });
+        });
+        star.addEventListener('mouseover', function() {
+          const hoverValue = this.dataset.value;
+          stars.forEach(s => {
+            if (s.dataset.value <= hoverValue) {
+              s.style.color = '#ff8243';
+            } else {
+              s.style.color = '#e0e0e0';
+            }
+          });
+        });
+        star.addEventListener('mouseout', function() {
+          const currentValue = ratingInput.value;
+          stars.forEach(s => {
+            if (s.dataset.value <= currentValue) {
+              s.style.color = '#ff8243';
+            } else {
+              s.style.color = '#e0e0e0';
+            }
+          });
+        });
+      });
+
+      var alertList = document.querySelectorAll('.alert');
+      alertList.forEach(function(alert) {
+        new bootstrap.Alert(alert);
+      });
+    });
+  </script>
+</body>
+
+</html>
