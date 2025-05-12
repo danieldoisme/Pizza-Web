@@ -1058,6 +1058,7 @@ p {
   transition: 0.3s;
   background: linear-gradient(145deg, #ffc954, #ffbc00);
   box-shadow: inset 4px 4px 8px #d6a029, inset -4px -4px 8px #ffd837;
+  font-weight: bold; /* Added for bold font */
 }
 
 .dish-add-btn i {
@@ -1066,8 +1067,13 @@ p {
 }
 
 .dish-add-btn:hover {
-  background: linear-gradient(145deg, #e3a92b, #ffc933);
-  box-shadow: inset 6px 6px 9px #cccccc, inset -3px -3px 6px #ffffff;
+  background: linear-gradient(
+    145deg,
+    #e67330,
+    #d8860b
+  ); /* Darker gradient on hover */
+  box-shadow: inset 4px 4px 8px #b86228, inset -4px -4px 8px #e09900; /* Adjusted shadow for darker hover */
+  color: #f0f0f0; /* Slightly off-white icon color on hover for better contrast if needed */
 }
 /* Menu Card Design Ends*/
 

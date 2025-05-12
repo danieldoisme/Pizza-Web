@@ -254,25 +254,18 @@ async function renderMyOrdersPage(req, res) {
           o.order_id, 
           o.order_date, 
           o.total_amount, 
-          o.shipping_address AS delivery_address,
+          o.shipping_address,
           o.order_status,
           o.payment_method,
           o.payment_status,
-          (SELECT GROUP_CONCAT(CONCAT(m.item_name, ' (x', oi.quantity, ')') SEPARATOR '<br>') 
-           FROM order_items oi
-           JOIN menu m ON oi.item_id = m.item_id
-           WHERE oi.order_id = o.order_id
-          ) AS items_ordered_details,
-          (SELECT SUM(oi.quantity) 
-           FROM order_items oi 
-           WHERE oi.order_id = o.order_id
-          ) AS total_items_in_order
+          o.notes,
+          o.delivery_date 
         FROM orders o
         WHERE o.user_id = ?
         ORDER BY o.order_date DESC
       `;
 
-      connection.query(ordersQuery, [userId], (ordersErr, orders) => {
+      connection.query(ordersQuery, [userId], async (ordersErr, orders) => {
         if (ordersErr) {
           console.error("Error fetching orders:", ordersErr);
           return res.status(500).render("orders", {
@@ -284,10 +277,64 @@ async function renderMyOrdersPage(req, res) {
           });
         }
 
+        if (orders.length === 0) {
+          return res.render("orders", {
+            pageType: "orders",
+            item_count: itemCount,
+            orders: [],
+            userDetails: currentUserDetails,
+            error: null,
+          });
+        }
+
+        // 3. For each order, fetch its items
+        const ordersWithItems = [];
+        for (const order of orders) {
+          const orderItemsQuery = `
+            SELECT 
+              oi.item_id, 
+              oi.quantity, 
+              oi.price_per_item, 
+              oi.subtotal,
+              m.item_name,
+              m.item_img 
+            FROM order_items oi
+            JOIN menu m ON oi.item_id = m.item_id
+            WHERE oi.order_id = ?
+          `;
+          try {
+            // Promisify connection.query for use with async/await
+            const items = await new Promise((resolve, reject) => {
+              connection.query(
+                orderItemsQuery,
+                [order.order_id],
+                (itemErr, itemResults) => {
+                  if (itemErr) {
+                    return reject(itemErr);
+                  }
+                  resolve(itemResults);
+                }
+              );
+            });
+            ordersWithItems.push({ ...order, items: items });
+          } catch (itemFetchError) {
+            console.error(
+              `Error fetching items for order ${order.order_id}:`,
+              itemFetchError
+            );
+            // Add order even if items fail to load, with empty items array or an error flag
+            ordersWithItems.push({
+              ...order,
+              items: [],
+              errorFetchingItems: true,
+            });
+          }
+        }
+
         res.render("orders", {
           pageType: "orders",
           item_count: itemCount,
-          orders: orders,
+          orders: ordersWithItems,
           userDetails: currentUserDetails, // Pass the fetched user details
           error: null,
         });

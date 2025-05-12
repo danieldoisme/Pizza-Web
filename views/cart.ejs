@@ -29,6 +29,10 @@
     a {
       color: white;
     }
+
+    #checkout-button-container button.btn-primary:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 
@@ -57,8 +61,8 @@
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>Image</th>
-                    <th>Item Name</th>
+                    <th>Product</th>
+                    <th>Name</th>
                     <th>Price</th>
                     <th>Quantity</th>
                     <th>Subtotal</th>
@@ -70,7 +74,7 @@
                   <tr id="cart-item-row-<%= item.item_id %>">
                     <td><%= index + 1 %></td>
                     <td><img src="<%= item.item_image || '/images/dish/default-pizza.jpg' %>" alt="<%= item.item_name %>" style="width: 70px; height: 70px; object-fit: cover; border-radius: 5px;"></td>
-                    <td><%= item.item_name %></td>
+                    <td><a href="/item/<%= item.item_id %>" style="color: #ff8243; text-decoration: none;"><%= item.item_name %></a></td>
                     <td class="item-price" data-price="<%= item.item_price %>">$<%= item.item_price.toFixed(2) %></td>
                     <td>
                       <input type="number" class="form-control quantity-input" style="width: 80px; margin: 0 auto; text-align: center;" id="quantity-<%= item.item_id %>" value="<%= item.quantity %>" min="1" data-item-id="<%= item.item_id %>" data-item-price="<%= item.item_price %>" onchange="handleQuantityChange(this)">

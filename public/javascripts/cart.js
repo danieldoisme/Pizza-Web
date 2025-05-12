@@ -45,8 +45,14 @@ window.addToCart = function (item_id) {
         const btnName = "btn" + item_id;
         const btn = document.getElementById(btnName);
         if (btn) {
+          const originalButtonContent = btn.innerHTML; // Store original content
           btn.disabled = true;
-          btn.innerHTML = "Added";
+          btn.innerHTML = "Added"; // Change text to "Added"
+
+          setTimeout(() => {
+            btn.innerHTML = originalButtonContent; // Revert to original content
+            btn.disabled = false; // Re-enable the button
+          }, 2000); // 2 seconds
         }
 
         let localCartIds = JSON.parse(localStorage.getItem("cart") || "[]");

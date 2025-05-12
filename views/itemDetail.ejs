@@ -173,13 +173,14 @@
                 <h1><%= item.item_name %></h1>
                 <div class="rating-summary d-flex align-items-center mb-3">
                   <div class="stars"><%
-                    const fullStars = Math.floor(averageRating);
-                    const halfStar = (averageRating - fullStars) >= 0.25 && (averageRating - fullStars) < 0.75;
+                    const ratingValue = item.avg_rating === null ? 0 : parseFloat(item.avg_rating);
+                    const fullStars = Math.floor(ratingValue);
+                    const halfStar = (ratingValue - fullStars) >= 0.25 && (ratingValue - fullStars) < 0.75;
                     const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
                     %><% for(let i = 0; i < fullStars; i++) { %><i class="uil uil-star"></i><% } %><%
                     if (halfStar) { %><i class="uil uil-star-half-alt"></i><% } %><%
                     for(let i = 0; i < emptyStars; i++) { %><i class="uil uil-star empty"></i><% } %></div>
-                  <p>(<%= Number(averageRating).toFixed(2) %> based on <%= totalRatings %> review<%= totalRatings !== 1 ? 's' : '' %>)</p>
+                  <p>(<%= Number(item.avg_rating === null ? 0 : item.avg_rating).toFixed(2) %> based on <%= item.num_ratings || 0 %> review<%= (item.num_ratings || 0) !== 1 ? 's' : '' %>)</p>
                 </div>
                 <p class="price">$<%= parseFloat(item.item_price).toFixed(2) %></p>
                 <p class="description"><%= item.item_description_long || 'Detailed description not available.' %></p>
@@ -195,8 +196,8 @@
 
             <div class="reviews-section">
               <h2 class="h2-title text-center mb-4">Customer Reviews</h2>
-              <% if (ratings && ratings.length > 0) { %>
-              <% ratings.forEach(function(rating) { %>
+              <% if (reviews && reviews.length > 0) { %>
+              <% reviews.forEach(function(rating) { %>
               <div class="review-box">
                 <div class="reviewer-info">
                   <strong><%= rating.user_name %></strong>
@@ -252,7 +253,7 @@
   <script src="/javascripts/jquery-3.5.1.min.js"></script>
   <script src="/javascripts/bootstrap.min.js"></script>
   <script src="/javascripts/swiper-bundle.min.js"></script>
-  <script src="/javascripts/jjquery.fancybox.min.js"></script>
+  <script src="/javascripts/jquery.fancybox.min.js"></script>
   <script src="/javascripts/gsap.min.js"></script>
   <script src="/javascripts/ScrollTrigger.min.js"></script>
   <script src="/javascripts/ScrollToPlugin.min.js"></script>
@@ -303,6 +304,36 @@
       alertList.forEach(function(alert) {
         new bootstrap.Alert(alert);
       });
+
+      // Handle review form submission
+      const reviewForm = document.querySelector('.rating-form-section form');
+      if (reviewForm) {
+        reviewForm.addEventListener('submit', function(event) {
+          event.preventDefault(); // Prevent default form submission
+
+          const formData = new FormData(reviewForm);
+          const actionUrl = reviewForm.action;
+
+          fetch(actionUrl, {
+              method: 'POST',
+              body: new URLSearchParams(formData) // FormData can be sent directly for some content types, but URLSearchParams is robust for simple forms
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                // Optionally, show a success message before reloading
+                alert(data.message || 'Review submitted successfully!');
+                window.location.reload(); // Reload the page to see the new review
+              } else {
+                alert('Error: ' + (data.message || 'Could not submit review.'));
+              }
+            })
+            .catch(error => {
+              console.error('Error submitting review:', error);
+              alert('An error occurred while submitting your review. Please try again.');
+            });
+        });
+      }
     });
   </script>
 </body>

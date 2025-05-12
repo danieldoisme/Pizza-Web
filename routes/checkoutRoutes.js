@@ -1,17 +1,12 @@
 const express = require("express");
 const router = express.Router();
 
-// Middleware to check if user is authenticated (copy from app.js or import if modularized)
-function isAuthenticated(req, res, next) {
-  if (req.cookies.cookuid && req.cookies.cookuname) {
-    return next();
-  }
-  res.redirect("/signin");
-}
+const isAuthenticated = require("../middleware/isAuthenticated");
 
 // Render Checkout Page
 async function renderCheckoutPage(req, res) {
   const user_id = req.cookies.cookuid;
+  // res.locals.username and res.locals.userid are available from app.js middleware
   const connection = req.app.get("dbConnection");
 
   try {
@@ -29,9 +24,12 @@ async function renderCheckoutPage(req, res) {
           items: [],
           total: 0,
           itemCount: 0,
-          existingAddress: null,
+          user: {
+            name: res.locals.username,
+            id: res.locals.userid,
+            address: null,
+          }, // Pass a default user object
           pageType: "checkout",
-          // username, userid, isAdmin are available via res.locals
         });
       }
 
@@ -56,31 +54,35 @@ async function renderCheckoutPage(req, res) {
       );
       const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
-      // Assuming user_addresses table exists as per original app.js logic
+      // Fetch user's address from the users table
       const addressQuery =
-        "SELECT user_address AS address_line1, 'Default City' AS city, 'DF' AS state, '00000' AS zip_code, 'USA' AS country FROM users WHERE user_id = ? LIMIT 1"; // Simplified, adjust if you have a user_addresses table
+        "SELECT user_address FROM users WHERE user_id = ? LIMIT 1";
       connection.query(
         addressQuery,
         [user_id],
         (addressErr, addressResults) => {
-          let existingAddress = null;
+          let userDbAddress = null;
           if (addressErr) {
             console.error("Error fetching user address:", addressErr);
-          } else {
-            existingAddress =
-              addressResults && addressResults.length > 0
-                ? addressResults[0] // This will need adjustment if user_addresses table is different or not used.
-                : { address_line1: req.cookies.user_address || "N/A" }; // Fallback or get from user table
+            // Potentially render with an error or proceed without address
+          } else if (addressResults && addressResults.length > 0) {
+            userDbAddress = addressResults[0].user_address;
           }
+
+          // Construct the user object for the template
+          const userForTemplate = {
+            name: res.locals.username, // Already available via res.locals
+            id: res.locals.userid, // Already available via res.locals
+            address: userDbAddress, // This is the string address or null
+          };
 
           res.render("checkout", {
             items: cartItems,
             total: totalAmount.toFixed(2),
             itemCount: itemCount,
-            existingAddress: existingAddress, // This structure depends on your actual address table/logic
+            user: userForTemplate, // Pass the structured user object
             pageType: "checkout",
             error: null,
-            // username, userid, isAdmin are available via res.locals
           });
         }
       );
@@ -92,18 +94,27 @@ async function renderCheckoutPage(req, res) {
       items: [],
       total: 0,
       itemCount: 0,
-      existingAddress: null,
+      user: { name: res.locals.username, id: res.locals.userid, address: null }, // Pass a default user object
       pageType: "checkout",
-      // username, userid, isAdmin are available via res.locals
     });
   }
 }
 
 // Process Payment
 async function processPayment(req, res) {
+  console.log("processPayment req.body:", req.body); // Debugging: Log incoming request body
+
   const user_id = req.cookies.cookuid;
-  const { paymentMethod, addressData, paymentId, payerId, selectedAddressId } =
-    req.body;
+  const {
+    paymentMethod,
+    // For COD, the address will be in 'address' field due to frontend script
+    address, // This field should contain the final address for COD
+    // For PayPal
+    paymentId, // PayPal Order ID
+    status, // PayPal status e.g. 'COMPLETED'
+    paypalShippingAddress, // Address from PayPal
+    notes, // Optional notes from customer
+  } = req.body;
   const connection = req.app.get("dbConnection");
 
   if (!user_id) {
@@ -139,53 +150,64 @@ async function processPayment(req, res) {
         0
       );
 
-      // Determine shipping address (simplified, adjust based on your actual address handling)
-      let finalAddressString = "N/A";
-      if (
-        selectedAddressId &&
-        selectedAddressId !== "new" &&
-        selectedAddressId !== "current"
-      ) {
-        // If you have a user_addresses table, fetch address by selectedAddressId
-        // For now, using placeholder logic or user's main address
-        connection.query(
-          "SELECT user_address FROM users WHERE user_id = ?",
-          [user_id],
-          (err, userAddr) => {
-            if (userAddr && userAddr.length > 0)
-              finalAddressString = userAddr[0].user_address;
-          }
-        );
-      } else if (typeof addressData === "string" && addressData.trim() !== "") {
-        finalAddressString = addressData.substring(0, 255);
-      } else if (addressData && typeof addressData === "object") {
-        // For new address form
-        finalAddressString = `${addressData.street || ""}, ${
-          addressData.city || ""
-        }, ${addressData.state || ""} ${addressData.zip || ""}, ${
-          addressData.country || "USA"
-        }`.substring(0, 255);
+      let finalAddressString = "";
+
+      if (paymentMethod === "COD") {
+        if (address && typeof address === "string" && address.trim() !== "") {
+          finalAddressString = address.trim().substring(0, 255);
+        } else {
+          // Address is crucial for COD
+          console.error(
+            "COD order: Delivery address is missing or empty in 'address' field.",
+            req.body
+          );
+          return res
+            .status(400)
+            .json({
+              success: false,
+              message:
+                "Delivery address is required. Please check your address details.",
+            });
+        }
+      } else if (paymentMethod === "PayPal") {
+        // Ensure 'PayPal' is the value sent by frontend
+        if (
+          paypalShippingAddress &&
+          typeof paypalShippingAddress === "string" &&
+          paypalShippingAddress.trim() !== ""
+        ) {
+          finalAddressString = paypalShippingAddress.trim().substring(0, 255);
+        } else if (
+          address &&
+          typeof address === "string" &&
+          address.trim() !== ""
+        ) {
+          // Fallback to address from form if PayPal didn't provide one (e.g. if user selected on page)
+          finalAddressString = address.trim().substring(0, 255);
+        }
+        // For PayPal, if address is still empty, it might be acceptable depending on PayPal's flow or if it's digital goods.
+        // For physical goods, an address would typically be required.
+        if (!finalAddressString) {
+          console.warn("PayPal order: Shipping address not determined.");
+          // If address is strictly required for PayPal orders too, add a check and error response here.
+        }
       } else {
-        // Fallback to user's default address from users table if no other address provided
-        connection.query(
-          "SELECT user_address FROM users WHERE user_id = ?",
-          [user_id],
-          (err, userAddr) => {
-            if (userAddr && userAddr.length > 0)
-              finalAddressString = userAddr[0].user_address;
-            else finalAddressString = "Address not provided";
-          }
-        );
+        console.error("Invalid payment method received:", paymentMethod);
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid payment method." });
       }
 
-      const orderStatus = "Pending"; // Initial status
-      const paymentStatus =
-        paymentMethod === "paypal" && paymentId ? "Paid" : "Unpaid"; // Adjust for COD
+      const orderStatus = "Pending";
+      const paymentStatusDb =
+        paymentMethod === "PayPal" && status === "COMPLETED"
+          ? "Paid"
+          : "Unpaid";
 
       const orderInsertQuery = `
         INSERT INTO orders (user_id, total_amount, payment_method, shipping_address, order_status, payment_status, notes) 
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `; // Assuming 'notes' can be null or from req.body.notes
+      `;
       connection.query(
         orderInsertQuery,
         [
@@ -194,8 +216,8 @@ async function processPayment(req, res) {
           paymentMethod,
           finalAddressString, // Use the determined address
           orderStatus,
-          paymentStatus,
-          req.body.notes || null, // Example for notes
+          paymentStatusDb,
+          notes || null,
         ],
         (orderErr, orderResult) => {
           if (orderErr) {
@@ -210,10 +232,9 @@ async function processPayment(req, res) {
             order_id,
             item.item_id,
             parseInt(item.quantity),
-            parseFloat(item.item_price), // price_per_item
-            parseFloat(item.item_price) * parseInt(item.quantity), // subtotal
+            parseFloat(item.item_price),
+            parseFloat(item.item_price) * parseInt(item.quantity),
           ]);
-          // Ensure your order_items table has price_per_item and subtotal columns
           const orderItemsInsertQuery = `INSERT INTO order_items (order_id, item_id, quantity, price_per_item, subtotal) VALUES ?`;
 
           connection.query(
@@ -222,7 +243,6 @@ async function processPayment(req, res) {
             (orderItemsErr) => {
               if (orderItemsErr) {
                 console.error("Error creating order items:", orderItemsErr);
-                // Consider rolling back the order insertion or marking it as failed
                 return res.status(500).json({
                   success: false,
                   message: "Failed to record order items.",
@@ -237,15 +257,14 @@ async function processPayment(req, res) {
                     "Error clearing cart after order:",
                     clearCartErr
                   );
-                  // Log error but proceed as order is placed
                 }
-                // Update client-side item_count cookie
-                res.cookie("item_count", 0, { httpOnly: false }); // Client accessible
+                res.cookie("item_count", 0, { httpOnly: false });
 
                 res.json({
                   success: true,
                   message: "Order placed successfully!",
                   orderId: order_id,
+                  redirectUrl: `/confirmation?orderId=${order_id}`, // Added redirectUrl
                 });
               });
             }
