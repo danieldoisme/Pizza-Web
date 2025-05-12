@@ -1,9 +1,9 @@
 const mysql = require("mysql");
 const connection = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "root",
-  database: "pizzazzpizza",
+  host: process.env.DB_HOST || "localhost", // Use environment variable or fallback
+  user: process.env.DB_USER || "root", // Use environment variable or fallback
+  password: process.env.DB_PASSWORD || "", // Use environment variable or fallback (empty string if not set)
+  database: process.env.DB_NAME || "pizzazzpizza", // Use environment variable or fallback
 });
 
 function isAdmin(req, res, next) {

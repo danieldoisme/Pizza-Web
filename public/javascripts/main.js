@@ -303,20 +303,68 @@ $(document).ready(function ($) {
     jQuery(".main-navigation").toggleClass("toggled");
   });
 
-  jQuery(".header-menu ul li a").click(function (e) {
-    e.preventDefault();
-    var target = $(this).attr("href");
-    if (target == "/") {
-      window.location.href = "/";
-      return;
+  jQuery(".main-navigation ul li a").on("click", function (e) {
+    const $this = jQuery(this);
+    const href = $this.attr("href");
+    const isMobileMenuToggled = jQuery(".main-navigation").hasClass("toggled");
+
+    // Update active class for styling (optional, but often part of such handlers)
+    $this.parent().addClass("active");
+    $this.parent().siblings().removeClass("active");
+
+    // Resolve the target URL relative to the current page's URL
+    const currentBaseUrl = window.location.origin + window.location.pathname;
+    const targetUrl = new URL(href, currentBaseUrl);
+    const currentUrl = new URL(window.location.href);
+
+    // Check if the link is intended for an anchor on the *current* page
+    const isSamePageNavigation =
+      targetUrl.origin === currentUrl.origin &&
+      targetUrl.pathname === currentUrl.pathname;
+
+    if (isSamePageNavigation && targetUrl.hash) {
+      // It's an anchor on the current page
+      const $targetElement = jQuery(targetUrl.hash);
+      if ($targetElement.length) {
+        e.preventDefault(); // Prevent default navigation ONLY for successful on-page scroll
+        jQuery("html, body")
+          .stop()
+          .animate(
+            {
+              // Adjust the '50' based on your fixed header's height, if any
+              scrollTop: $targetElement.offset().top - 50,
+            },
+            800 // Animation duration in milliseconds
+          );
+        if (isMobileMenuToggled) {
+          jQuery(".main-navigation").removeClass("toggled");
+        }
+        return; // Stop further processing for this handled on-page scroll
+      }
+      // If the anchor (#hash) doesn't exist on the current page,
+      // let the browser handle it (it will typically scroll to top or do nothing).
     }
-    $("html, body").animate(
-      {
-        scrollTop: $(target).offset().top,
-      },
-      200
-    );
-    jQuery(".main-navigation").removeClass("toggled");
+
+    // For all other cases:
+    // 1. Link to a different page (e.g., /contact)
+    // 2. Link to an anchor on a different page (e.g., /#about from /contact)
+    // 3. Link to an anchor on the current page but the anchor element doesn't exist
+    // In these cases, we allow the browser's default navigation.
+
+    // If the mobile menu is toggled, close it before navigating.
+    if (isMobileMenuToggled) {
+      jQuery(".main-navigation").removeClass("toggled");
+      // Note: If closing the menu has a long animation and interferes with
+      // immediate navigation, you might need to e.preventDefault(),
+      // then navigate after a short timeout. However, this is often not necessary.
+      // Example for delayed navigation (use with caution):
+      // e.preventDefault();
+      // setTimeout(function() { window.location.href = href; }, 150);
+      // return;
+    }
+
+    // Allow default browser behavior (navigation) to proceed.
+    // No e.preventDefault() here for off-page links or unhandled on-page anchors.
   });
 
   gsap.registerPlugin(ScrollTrigger);

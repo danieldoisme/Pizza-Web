@@ -1,4 +1,12 @@
+# IDEs
 .idea
 .vscode
+
+# macOS
 .DS_Store
+
+# Environment
+.env
+
+# Dependencies
 node_modules

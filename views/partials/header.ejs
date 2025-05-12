@@ -23,14 +23,14 @@
           <nav class="header-menu">
             <ul class="menu food-nav-menu">
               <li><a href="/">Home</a></li>
-              <li><a href="#about">About Us</a></li>
-              <li><a href="#team">Our Chefs</a></li>
-              <li><a href="#testimonials">Testimonials</a></li>
-              <li><a href="#contact">Contact</a></li>
+              <li><a href="/#about">About Us</a></li>
+              <li><a href="/#team">Our Chefs</a></li>
+              <li><a href="/#testimonials">Testimonials</a></li>
+              <li><a href="/contact">Contact</a></li>
             </ul>
           </nav>
           <div class="header-right">
-            <% if (typeof pageType === 'undefined' || pageType !== 'index') { %>
+            <% if ( (typeof pageType === 'undefined') || (pageType !== 'index' && pageType !== 'contact') ) { %>
             <form action="/search" method="GET" class="header-search-form for-des">
               <input type="search" name="query" class="form-input" placeholder="Search Menu..." />
               <button type="submit">
