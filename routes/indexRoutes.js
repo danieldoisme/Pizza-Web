@@ -105,4 +105,4 @@ async function handleContactForm(req, res) {
 
 router.post("/contact/send", handleContactForm);
 
-module.exports = router;
+module.exports = { router, transporter };

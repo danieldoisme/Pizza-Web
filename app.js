@@ -10,13 +10,14 @@ const mysql = require("mysql");
 const app = express();
 
 // Import routes
-const indexRoutes = require("./routes/indexRoutes.js");
+const indexRoutesModule = require("./routes/indexRoutes.js");
 const adminRoutes = require("./routes/adminRoutes.js");
 const userRoutes = require("./routes/userRoutes.js");
 const authRoutes = require("./routes/authRoutes.js");
 const shopRoutes = require("./routes/shopRoutes.js");
-const cartRoutes = require("./routes/cartRoutes.js"); // Import cart routes
-const checkoutRoutes = require("./routes/checkoutRoutes.js"); // Import checkout routes
+const cartRoutes = require("./routes/cartRoutes.js");
+const checkoutRoutes = require("./routes/checkoutRoutes.js");
+const botApiRoutes = require("./routes/botApiRoutes.js");
 
 // Set View Engine and Middleware
 app.set("view engine", "ejs");
@@ -52,12 +53,13 @@ app.use((req, res, next) => {
 });
 
 // Set up routes
-app.use("/", indexRoutes);
+app.use("/", indexRoutesModule.router);
 app.use("/admin", adminRoutes);
 app.use("/", userRoutes);
 app.use("/", authRoutes);
 app.use("/", shopRoutes);
-app.use("/", cartRoutes); // Add cart routes
-app.use("/", checkoutRoutes); // Add checkout routes
+app.use("/", cartRoutes);
+app.use("/", checkoutRoutes);
+app.use("/api/bot", botApiRoutes);
 
 module.exports = app;
