@@ -27,10 +27,11 @@
               <li><a href="/#team">Our Chefs</a></li>
               <li><a href="/#testimonials">Testimonials</a></li>
               <li><a href="/contact">Contact</a></li>
+              <li><a href="/faqs">FAQs</a></li>
             </ul>
           </nav>
           <div class="header-right">
-            <% if ( (typeof pageType === 'undefined') || (pageType !== 'index' && pageType !== 'contact') ) { %>
+            <% if ( (typeof pageType === 'undefined') || (pageType !== 'index' && pageType !== 'contact' && pageType !== 'faqs') ) { %>
             <form action="/search" method="GET" class="header-search-form for-des">
               <input type="search" name="query" class="form-input" placeholder="Search Menu..." />
               <button type="submit">

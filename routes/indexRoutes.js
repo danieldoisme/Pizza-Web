@@ -34,9 +34,16 @@ router.get("/", (req, res) => {
 router.get("/contact", (req, res) => {
   res.render("contact", {
     pageType: "contact",
-    success: req.query.success, // For potential future use with redirects
-    error: req.query.error, // For potential future use with redirects
-    formData: {}, // Initialize formData
+    success: req.query.success,
+    error: req.query.error,
+    formData: {},
+  });
+});
+
+// Route for the FAQs Page
+router.get("/faqs", (req, res) => {
+  res.render("faqs", {
+    pageType: "faqs",
   });
 });
 
