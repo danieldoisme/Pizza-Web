@@ -18,7 +18,19 @@ function renderSignUpPage(req, res) {
 // User Sign-up Logic
 async function signUpUser(req, res) {
   // Make the function async
-  const { name, address, email, mobile, password, confirmPassword } = req.body;
+  const {
+    name,
+    address_line1,
+    address_line2,
+    city,
+    state,
+    postal_code,
+    country,
+    email,
+    mobile,
+    password,
+    confirmPassword,
+  } = req.body; // New
   const connection = req.app.get("dbConnection");
 
   if (password !== confirmPassword) {
@@ -40,9 +52,21 @@ async function signUpUser(req, res) {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+    const addressParts = [
+      address_line1,
+      address_line2,
+      city,
+      state,
+      postal_code,
+      country,
+    ];
+    const combinedAddress = addressParts
+      .filter((part) => part && part.trim() !== "")
+      .join(", ");
+
     connection.query(
       "INSERT INTO users (user_name, user_address, user_email, user_password, user_mobileno) VALUES (?, ?, ?, ?, ?)",
-      [name, address, email, hashedPassword, mobile], // Store the hashed password
+      [name, combinedAddress, email, hashedPassword, mobile], // New
       function (error, results) {
         if (error) {
           console.error("Error signing up user:", error);

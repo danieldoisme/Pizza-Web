@@ -35,7 +35,12 @@
                       <img src="images/title-shape.svg" alt="" />
                     </div>
                     <form action="/address" method="post">
-                      <input type="text" placeholder="Enter your New Address" name="address" required class="form-input" /><br /><br />
+                      <input type="text" placeholder="Street Address" required class="form-input" name="address_line1" /><br /><br />
+                      <input type="text" placeholder="Apartment, suite, etc. (Optional)" class="form-input" name="address_line2" /><br /><br />
+                      <input type="text" placeholder="City" required class="form-input" name="city" /><br /><br />
+                      <input type="text" placeholder="State/Province" required class="form-input" name="state" /><br /><br />
+                      <input type="text" placeholder="ZIP/Postal Code" required class="form-input" name="postal_code" /><br /><br />
+                      <input type="text" placeholder="Country" required class="form-input" name="country" /><br /><br />
                       <input type="submit" value="Update Address" class="sec-btn sec-btn-orange" /><br />
                     </form>
                   </div>

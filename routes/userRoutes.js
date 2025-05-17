@@ -70,21 +70,49 @@ function renderSettingsPage(req, res) {
 // Handler for updating user address
 function updateAddress(req, res) {
   const userId = req.cookies.cookuid;
-  const { address } = req.body;
+  // const { address } = req.body; // Old
+  const { address_line1, address_line2, city, state, postal_code, country } =
+    req.body; // New
   const connection = req.app.get("dbConnection");
 
   if (!userId) {
     return res.redirect("/signin");
   }
 
-  if (!address || address.trim() === "") {
+  // Basic validation for required new fields
+  if (
+    !address_line1 ||
+    address_line1.trim() === "" ||
+    !city ||
+    city.trim() === "" ||
+    !postal_code ||
+    postal_code.trim() === "" ||
+    !country ||
+    country.trim() === ""
+  ) {
     return res.redirect(
-      "/settings?error=" + encodeURIComponent("Address cannot be empty.")
+      "/settings?error=" +
+        encodeURIComponent(
+          "Street, City, Postal Code, and Country are required."
+        )
     );
   }
 
+  const addressParts = [
+    address_line1,
+    address_line2,
+    city,
+    state,
+    postal_code,
+    country,
+  ];
+  const combinedAddress = addressParts
+    .filter((part) => part && part.trim() !== "")
+    .join(", ");
+
   const query = "UPDATE users SET user_address = ? WHERE user_id = ?";
-  connection.query(query, [address, userId], (err, result) => {
+  // connection.query(query, [address, userId], (err, result) => { // Old
+  connection.query(query, [combinedAddress, userId], (err, result) => {
     if (err) {
       console.error("Error updating address:", err);
       return res.redirect(

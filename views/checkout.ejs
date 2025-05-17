@@ -79,10 +79,30 @@
                           </label>
                         </div>
 
-                        <div id="newAddressForm" class="mt-3">
+                        <div id="newAddressForm" class="mt-3" style="display: <%= (!user || !user.address) ? 'block' : 'none' %>;">
                           <div class="mb-3">
-                            <label for="deliveryAddress" class="form-label">New Delivery Address</label>
-                            <textarea class="form-control form-input" id="deliveryAddress" name="newDeliveryAddress" rows="3" placeholder="Enter your delivery address"></textarea>
+                            <label for="new_address_line1" class="form-label">Street Address</label>
+                            <input type="text" class="form-control form-control-sm" id="new_address_line1" name="new_address_line1" placeholder="Street Address">
+                          </div>
+                          <div class="mb-3">
+                            <label for="new_address_line2" class="form-label">Apartment, suite, etc. (Optional)</label>
+                            <input type="text" class="form-control form-control-sm" id="new_address_line2" name="new_address_line2" placeholder="Apartment, suite, etc.">
+                          </div>
+                          <div class="mb-3">
+                            <label for="new_city" class="form-label">City</label>
+                            <input type="text" class="form-control form-control-sm" id="new_city" name="new_city" placeholder="City">
+                          </div>
+                          <div class="mb-3">
+                            <label for="new_state" class="form-label">State/Province</label>
+                            <input type="text" class="form-control form-control-sm" id="new_state" name="new_state" placeholder="State/Province">
+                          </div>
+                          <div class="mb-3">
+                            <label for="new_postal_code" class="form-label">ZIP/Postal Code</label>
+                            <input type="text" class="form-control form-control-sm" id="new_postal_code" name="new_postal_code" placeholder="ZIP/Postal Code">
+                          </div>
+                          <div class="mb-3">
+                            <label for="new_country" class="form-label">Country</label>
+                            <input type="text" class="form-control form-control-sm" id="new_country" name="new_country" placeholder="Country">
                           </div>
                         </div>
                       </div>
@@ -208,8 +228,12 @@
       const newAddressRadio = document.getElementById('newAddress');
       const newAddressForm = document.getElementById('newAddressForm');
       const userExistingAddress = document.getElementById('userExistingAddress');
-      const deliveryAddress = document.getElementById('deliveryAddress');
+      const newAddressLine1 = document.getElementById('new_address_line1');
+      const newCity = document.getElementById('new_city');
+      const newPostalCode = document.getElementById('new_postal_code');
+      const newCountry = document.getElementById('new_country');
       const codForm = document.getElementById('cod-form');
+      const scrollContentElement = document.getElementById('js-scroll-content'); // Get the scrollable element
 
       // Function to update address form visibility
       function updateAddressFormVisibility() {
@@ -220,6 +244,9 @@
           } else {
             newAddressForm.style.display = 'none';
           }
+
+          // Dispatch a window resize event to trigger the smooth-scroll.js update
+          window.dispatchEvent(new Event('resize'));
         }
       }
 
@@ -237,19 +264,23 @@
         }
 
         // Update form before submission logic (ensure elements exist)
-        if (codForm && newAddressRadio && deliveryAddress && userExistingAddress) {
+        if (codForm && newAddressRadio && userExistingAddress) {
           codForm.addEventListener('submit', function(e) {
             e.preventDefault(); // Prevent default form submission to handle with fetch
 
-            if (newAddressRadio.checked && deliveryAddress.value.trim() === '') {
-              alert('Please enter a delivery address');
+            if (newAddressRadio.checked &&
+              (!newAddressLine1 || newAddressLine1.value.trim() === '' ||
+                !newCity || newCity.value.trim() === '' ||
+                !newPostalCode || newPostalCode.value.trim() === '' ||
+                !newCountry || newCountry.value.trim() === '')) {
+              alert('Please fill in all required new address fields (Street, City, ZIP/Postal Code, Country).');
               return false; // Stop submission
             }
 
-            // Update the hidden field only if 'new address' is checked and filled
-            if (newAddressRadio.checked) {
-              userExistingAddress.value = deliveryAddress.value;
-            }
+            // REMOVE THE PROBLEMATIC LINE:
+            // if (newAddressRadio.checked) {
+            //   userExistingAddress.value = deliveryAddress.value;
+            // }
 
             const formData = new FormData(codForm);
             const action = codForm.action;
@@ -342,20 +373,31 @@
                 } else {
                   // If no address from PayPal, check the address selected/entered on the page
                   const selectedAddressOption = document.querySelector('input[name="addressOption"]:checked');
-                  let pageAddress = '';
                   if (selectedAddressOption && selectedAddressOption.value === 'existing') {
                     const existingAddrInput = document.getElementById('userExistingAddress');
-                    if (existingAddrInput) pageAddress = existingAddrInput.value;
-                  } else {
-                    const newAddrTextarea = document.getElementById('deliveryAddress');
-                    if (newAddrTextarea) pageAddress = newAddrTextarea.value;
-                  }
-                  if (pageAddress && pageAddress.trim() !== '') {
-                    console.log("Using address from page form for PayPal order:", pageAddress);
-                    formData.append('address', pageAddress.trim()); // Send page address if PayPal didn't provide one
-                  } else {
-                    console.warn("No shipping address found from PayPal or page form.");
-                    // Decide how to handle this - maybe alert the user or rely on server validation
+                    if (existingAddrInput && existingAddrInput.value.trim() !== '') {
+                      formData.append('address', existingAddrInput.value.trim());
+                    }
+                  } else if (selectedAddressOption && selectedAddressOption.value === 'new') {
+                    // Append individual new address fields
+                    const new_address_line1_val = document.getElementById('new_address_line1') ? document.getElementById('new_address_line1').value.trim() : '';
+                    const new_address_line2_val = document.getElementById('new_address_line2') ? document.getElementById('new_address_line2').value.trim() : '';
+                    const new_city_val = document.getElementById('new_city') ? document.getElementById('new_city').value.trim() : '';
+                    const new_state_val = document.getElementById('new_state') ? document.getElementById('new_state').value.trim() : '';
+                    const new_postal_code_val = document.getElementById('new_postal_code') ? document.getElementById('new_postal_code').value.trim() : '';
+                    const new_country_val = document.getElementById('new_country') ? document.getElementById('new_country').value.trim() : '';
+
+                    if (new_address_line1_val && new_city_val && new_postal_code_val && new_country_val) {
+                      formData.append('new_address_line1', new_address_line1_val);
+                      if (new_address_line2_val) formData.append('new_address_line2', new_address_line2_val);
+                      formData.append('new_city', new_city_val);
+                      if (new_state_val) formData.append('new_state', new_state_val);
+                      formData.append('new_postal_code', new_postal_code_val);
+                      formData.append('new_country', new_country_val);
+                      console.log("Using new address from page form for PayPal order.");
+                    } else {
+                      console.warn("Attempted to use new address from form for PayPal, but required fields are missing.");
+                    }
                   }
                 }
                 // --- END: Extract and add PayPal shipping address ---

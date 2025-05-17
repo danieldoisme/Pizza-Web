@@ -102,14 +102,18 @@ async function renderCheckoutPage(req, res) {
 
 // Process Payment
 async function processPayment(req, res) {
-  console.log("processPayment req.body:", req.body); // Debugging: Log incoming request body
+  console.log("processPayment req.body:", req.body);
 
   const user_id = req.cookies.cookuid;
   const {
     paymentMethod,
-    // For COD, the address will be in 'address' field due to frontend script
-    address, // This field should contain the final address for COD
-    // For PayPal
+    address, // For existing address selection
+    new_address_line1, // New address fields start here
+    new_address_line2,
+    new_city,
+    new_state,
+    new_postal_code,
+    new_country, // New address fields end here
     paymentId, // PayPal Order ID
     status, // PayPal status e.g. 'COMPLETED'
     paypalShippingAddress, // Address from PayPal
@@ -153,24 +157,39 @@ async function processPayment(req, res) {
       let finalAddressString = "";
 
       if (paymentMethod === "COD") {
-        if (address && typeof address === "string" && address.trim() !== "") {
+        if (new_address_line1 && new_city && new_postal_code && new_country) {
+          // New address submitted for COD
+          const parts = [
+            new_address_line1,
+            new_address_line2,
+            new_city,
+            new_state,
+            new_postal_code,
+            new_country,
+          ];
+          finalAddressString = parts
+            .filter((part) => part && part.trim() !== "")
+            .join(", ")
+            .substring(0, 255);
+        } else if (
+          address &&
+          typeof address === "string" &&
+          address.trim() !== ""
+        ) {
+          // Existing address selected for COD
           finalAddressString = address.trim().substring(0, 255);
         } else {
-          // Address is crucial for COD
           console.error(
-            "COD order: Delivery address is missing or empty in 'address' field.",
+            "COD order: Delivery address is missing or empty. Required: new address fields or existing address.",
             req.body
           );
-          return res
-            .status(400)
-            .json({
-              success: false,
-              message:
-                "Delivery address is required. Please check your address details.",
-            });
+          return res.status(400).json({
+            success: false,
+            message:
+              "Delivery address is required for COD. Please check your address details.",
+          });
         }
       } else if (paymentMethod === "PayPal") {
-        // Ensure 'PayPal' is the value sent by frontend
         if (
           paypalShippingAddress &&
           typeof paypalShippingAddress === "string" &&
@@ -178,18 +197,38 @@ async function processPayment(req, res) {
         ) {
           finalAddressString = paypalShippingAddress.trim().substring(0, 255);
         } else if (
+          new_address_line1 &&
+          new_city &&
+          new_postal_code &&
+          new_country
+        ) {
+          // Fallback to new address from form for PayPal
+          const parts = [
+            new_address_line1,
+            new_address_line2,
+            new_city,
+            new_state,
+            new_postal_code,
+            new_country,
+          ];
+          finalAddressString = parts
+            .filter((part) => part && part.trim() !== "")
+            .join(", ")
+            .substring(0, 255);
+        } else if (
           address &&
           typeof address === "string" &&
           address.trim() !== ""
         ) {
-          // Fallback to address from form if PayPal didn't provide one (e.g. if user selected on page)
+          // Fallback to existing address from form for PayPal
           finalAddressString = address.trim().substring(0, 255);
-        }
-        // For PayPal, if address is still empty, it might be acceptable depending on PayPal's flow or if it's digital goods.
-        // For physical goods, an address would typically be required.
-        if (!finalAddressString) {
-          console.warn("PayPal order: Shipping address not determined.");
+        } else {
+          console.warn(
+            "PayPal order: Shipping address not determined from PayPal or form."
+          );
           // If address is strictly required for PayPal orders too, add a check and error response here.
+          // For now, we might allow it if PayPal flow doesn't mandate it and it's not physical goods.
+          // However, for physical goods, this would be an issue.
         }
       } else {
         console.error("Invalid payment method received:", paymentMethod);

@@ -48,7 +48,12 @@
                 </div>
                 <form action="/signup" method="post">
                   <input type="text" placeholder="Enter your Name" required class="form-input" name="name" id="InputName" style="width: 450px" /><br /><br />
-                  <input type="text" placeholder="Enter your Address" required class="form-input" name="address" id="InputAddress" style="width: 450px" /><br /><br />
+                  <input type="text" placeholder="Street Address" required class="form-input" name="address_line1" id="InputAddressLine1" style="width: 450px" /><br /><br />
+                  <input type="text" placeholder="Apartment, suite, etc. (Optional)" class="form-input" name="address_line2" id="InputAddressLine2" style="width: 450px" /><br /><br />
+                  <input type="text" placeholder="City" required class="form-input" name="city" id="InputCity" style="width: 450px" /><br /><br />
+                  <input type="text" placeholder="State/Province" required class="form-input" name="state" id="InputState" style="width: 450px" /><br /><br />
+                  <input type="text" placeholder="ZIP/Postal Code" required class="form-input" name="postal_code" id="InputPostalCode" style="width: 450px" /><br /><br />
+                  <input type="text" placeholder="Country" required class="form-input" name="country" id="InputCountry" style="width: 450px" /><br /><br />
                   <input type="text" placeholder="Enter your Email" required class="form-input" name="email" id="InputEmail" style="width: 450px" /><br /><br />
                   <input type="text" placeholder="Enter your Mobile number" required class="form-input" name="mobile" id="InputMobile" maxlength="10" style="width: 450px" /><br /><br />
                   <input type="password" placeholder="Enter your Password" required class="form-input" name="password" id="InputPassword" pattern=".{6,}" title="Minimum 6 character" style="width: 450px" /><br /><br />
