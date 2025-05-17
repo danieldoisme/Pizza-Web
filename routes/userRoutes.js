@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt"); // Import bcrypt
 const saltRounds = 10; // Define salt rounds
+const crypto = require("crypto"); // Import crypto for token generation
 
 // Middleware to check if user is authenticated
 // This should be the same as the one in app.js or imported from a shared middleware file
@@ -13,58 +14,50 @@ function isAuthenticated(req, res, next) {
 }
 
 // Handler for rendering the settings page
-function renderSettingsPage(req, res) {
+async function renderSettingsPage(req, res) {
   const userId = req.cookies.cookuid;
-  const userName = req.cookies.cookuname;
-  // Ensure item_count is retrieved from res.locals if set by middleware, or cookies as a fallback
-  const itemCount = res.locals.item_count || req.cookies.item_count || 0;
-  const connection = req.app.get("dbConnection"); // Access connection passed from app.js
-
   if (!userId) {
     return res.redirect("/signin");
   }
-
-  const query =
-    "SELECT user_id, user_name, user_email, user_address, user_mobileno FROM users WHERE user_id = ?";
-  connection.query(query, [userId], (err, results) => {
-    if (err) {
-      console.error("Error fetching user data for settings:", err);
-      return res.status(500).render("settings", {
-        pageType: "settings",
-        error: "Could not load your settings at this time.",
-        username: userName,
-        userid: userId,
-        item_count: itemCount,
-        userData: null,
-        success: null,
-        isAdmin: req.cookies.usertype === "admin",
-      });
+  const connection = req.app.get("dbConnection");
+  try {
+    const [userDataResults] = await connection
+      .promise()
+      .query("SELECT * FROM users WHERE user_id = ?", [userId]);
+    if (userDataResults.length === 0) {
+      return res.redirect("/signin"); // Or handle error
     }
+    const userData = userDataResults[0];
 
-    if (results.length === 0) {
-      return res.status(404).render("settings", {
-        pageType: "settings",
-        error: "User not found.",
-        username: userName,
-        userid: userId,
-        item_count: itemCount,
-        userData: null,
-        success: null,
-        isAdmin: req.cookies.usertype === "admin",
-      });
+    // Fetch promotion subscription status
+    let promotionSubscription = null;
+    const [subscriptionResults] = await connection
+      .promise()
+      .query(
+        "SELECT is_subscribed FROM email_subscriptions WHERE user_id = ? OR email = ?",
+        [userId, userData.user_email]
+      );
+
+    if (subscriptionResults.length > 0) {
+      promotionSubscription = subscriptionResults[0];
     }
 
     res.render("settings", {
       pageType: "settings",
-      username: userName,
+      username: req.cookies.cookuname,
       userid: userId,
-      item_count: itemCount,
-      userData: results[0],
-      error: req.query.error, // Pass error messages from query params
-      success: req.query.success, // Pass success messages from query params
-      isAdmin: req.cookies.usertype === "admin",
+      item_count: req.cookies.item_count || 0,
+      userData: userData,
+      promotionSubscription: promotionSubscription, // Pass to EJS
+      error: req.query.error || null,
+      success: req.query.success || null,
     });
-  });
+  } catch (error) {
+    console.error("Error fetching user data for settings:", error);
+    res.redirect(
+      "/homepage?error=" + encodeURIComponent("Could not load settings.")
+    );
+  }
 }
 
 // Handler for updating user address
@@ -441,6 +434,76 @@ async function setOrderDeliveredUser(req, res) {
     res.status(500).json({ success: false, message: "Server error." });
   }
 }
+
+// New route to update promotion subscription from settings
+router.post(
+  "/settings/update-promotion-subscription",
+  isAuthenticated,
+  async (req, res) => {
+    const userId = req.cookies.cookuid;
+    const { subscribe_promotions } = req.body; // 'on' or undefined
+    const shouldBeSubscribed = subscribe_promotions === "on";
+    const connection = req.app.get("dbConnection");
+
+    try {
+      const [userDataResults] = await connection
+        .promise()
+        .query("SELECT user_email FROM users WHERE user_id = ?", [userId]);
+      if (userDataResults.length === 0) {
+        return res.redirect(
+          "/settings?error=" + encodeURIComponent("User not found.")
+        );
+      }
+      const userEmail = userDataResults[0].user_email;
+      const unsubscribeToken = crypto.randomBytes(32).toString("hex");
+
+      const [existingSubscriptions] = await connection
+        .promise()
+        .query(
+          "SELECT subscription_id FROM email_subscriptions WHERE email = ?",
+          [userEmail]
+        );
+
+      if (existingSubscriptions.length > 0) {
+        // Update existing subscription
+        const subscriptionId = existingSubscriptions[0].subscription_id;
+        await connection
+          .promise()
+          .query(
+            "UPDATE email_subscriptions SET is_subscribed = ?, user_id = ?, unsubscribed_at = ?, unsubscribe_token = IF(? = 1, ?, unsubscribe_token), subscribed_at = IF(? = 1 AND is_subscribed = 0, NOW(), subscribed_at) WHERE subscription_id = ?",
+            [
+              shouldBeSubscribed,
+              userId,
+              shouldBeSubscribed ? null : new Date(),
+              shouldBeSubscribed,
+              unsubscribeToken,
+              shouldBeSubscribed,
+              subscriptionId,
+            ]
+          );
+      } else if (shouldBeSubscribed) {
+        // Create new subscription if user wants to subscribe and doesn't have one
+        await connection
+          .promise()
+          .query(
+            "INSERT INTO email_subscriptions (email, user_id, is_subscribed, unsubscribe_token, subscribed_at) VALUES (?, ?, 1, ?, NOW())",
+            [userEmail, userId, unsubscribeToken]
+          );
+      }
+
+      const message = shouldBeSubscribed
+        ? "Subscribed to promotions successfully."
+        : "Unsubscribed from promotions successfully.";
+      res.redirect("/settings?success=" + encodeURIComponent(message));
+    } catch (error) {
+      console.error("Error updating promotion subscription:", error);
+      res.redirect(
+        "/settings?error=" +
+          encodeURIComponent("Failed to update subscription status.")
+      );
+    }
+  }
+);
 
 // Define routes for user settings
 router.get("/settings", isAuthenticated, renderSettingsPage);

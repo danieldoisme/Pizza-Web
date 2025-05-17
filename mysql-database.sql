@@ -290,6 +290,39 @@ LOCK TABLES `users` WRITE;
 INSERT INTO `users` VALUES (1,'Do Duc Thanh','48 Giai Phong Lane Hai Ba Trung District, Hanoi, 100000, Vietnam','thanhdd@stu.ptit.edu.vn','$2b$10$jXtOSPTM4EdtSnjX8.1s6Oj2z8Nhwk5ej5JV3UZCLZv6g0G5qcAxG','0973586115');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for table `email_subscriptions`
+--
+
+DROP TABLE IF EXISTS `email_subscriptions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `email_subscriptions` (
+  `subscription_id` int NOT NULL AUTO_INCREMENT,
+  `email` varchar(255) NOT NULL,
+  `user_id` int DEFAULT NULL,
+  `is_subscribed` tinyint(1) DEFAULT '1',
+  `subscribed_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `unsubscribed_at` datetime DEFAULT NULL,
+  `unsubscribe_token` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`subscription_id`),
+  UNIQUE KEY `email_UNIQUE` (`email`),
+  KEY `fk_subscriptions_user_id_idx` (`user_id`),
+  KEY `idx_unsubscribe_token` (`unsubscribe_token`),
+  CONSTRAINT `fk_subscriptions_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+-- Dumping data for table `email_subscriptions`
+--
+
+LOCK TABLES `email_subscriptions` WRITE;
+/*!40000 ALTER TABLE `email_subscriptions` DISABLE KEYS */;
+/*!40000 ALTER TABLE `email_subscriptions` ENABLE KEYS */;
+UNLOCK TABLES;
+
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

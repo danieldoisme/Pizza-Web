@@ -4,7 +4,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const fileUpload = require("express-fileupload");
-const mysql = require("mysql");
+const mysql = require("mysql2");
 
 // Initialize Express App
 const app = express();
@@ -28,20 +28,17 @@ app.use(cookieParser());
 app.use(fileUpload());
 
 // Database Connection
-const connection = mysql.createConnection({
-  host: process.env.DB_HOST || "localhost", // Use environment variable or fallback
-  user: process.env.DB_USER || "root", // Use environment variable or fallback
-  password: process.env.DB_PASSWORD || "", // Use environment variable or fallback (empty string if not set)
-  database: process.env.DB_NAME || "pizzazzpizza", // Use environment variable or fallback
+const pool = mysql.createPool({
+  // Change to createPool and use 'pool'
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
+  database: process.env.DB_NAME || "pizzazzpizza",
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
-connection.connect((err) => {
-  if (err) {
-    console.error("Error connecting to database: " + err.stack);
-    return;
-  }
-  console.log("Connected to database as id " + connection.threadId);
-});
-app.set("dbConnection", connection);
+app.set("dbConnection", pool); // Set the pool object
 
 // Middleware to make user data and cart count available to all views
 app.use((req, res, next) => {

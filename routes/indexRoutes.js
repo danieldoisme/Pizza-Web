@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const nodemailer = require("nodemailer"); // Require nodemailer
+const crypto = require("crypto"); // Add crypto for token generation
 
 // --- Nodemailer Transporter Setup ---
 // Ensure you have GMAIL_USER and GMAIL_APP_PASSWORD set in your .env file
@@ -23,6 +24,8 @@ function isValidEmail(email) {
 router.get("/", (req, res) => {
   res.render("index", {
     pageType: "index",
+    subscription_message: req.query.subscription_message || null,
+    subscription_error: req.query.subscription_error || null,
     // username, userid, isAdmin, item_count are available via res.locals
   });
 });
@@ -104,5 +107,132 @@ async function handleContactForm(req, res) {
 }
 
 router.post("/contact/send", handleContactForm);
+
+// New route for handling promotion subscriptions
+router.post("/subscribe-promotions", async (req, res) => {
+  const { email } = req.body;
+  const connection = req.app.get("dbConnection");
+
+  if (!email || !isValidEmail(email)) {
+    return res.redirect(
+      "/?subscription_error=" +
+        encodeURIComponent("Please enter a valid email address.")
+    );
+  }
+
+  try {
+    // Check if user is registered
+    let userId = null;
+    const [users] = await connection
+      .promise()
+      .query("SELECT user_id FROM users WHERE user_email = ?", [email]);
+    if (users.length > 0) {
+      userId = users[0].user_id;
+    }
+
+    const unsubscribeToken = crypto.randomBytes(32).toString("hex");
+
+    // Check if email already exists in subscriptions
+    const [existingSubscriptions] = await connection
+      .promise()
+      .query("SELECT * FROM email_subscriptions WHERE email = ?", [email]);
+
+    if (existingSubscriptions.length > 0) {
+      // Email exists, update if not currently subscribed
+      const sub = existingSubscriptions[0];
+      if (!sub.is_subscribed) {
+        await connection
+          .promise()
+          .query(
+            "UPDATE email_subscriptions SET is_subscribed = 1, user_id = ?, subscribed_at = NOW(), unsubscribed_at = NULL, unsubscribe_token = ? WHERE email = ?",
+            [userId, unsubscribeToken, email]
+          );
+        // Optionally send a "Welcome Back" email
+        return res.redirect(
+          "/?subscription_message=" +
+            encodeURIComponent("You have been re-subscribed successfully!")
+        );
+      } else {
+        return res.redirect(
+          "/?subscription_message=" +
+            encodeURIComponent("You are already subscribed.")
+        );
+      }
+    } else {
+      // New subscription
+      await connection
+        .promise()
+        .query(
+          "INSERT INTO email_subscriptions (email, user_id, unsubscribe_token, subscribed_at) VALUES (?, ?, ?, NOW())",
+          [email, userId, unsubscribeToken]
+        );
+
+      // Send confirmation email (optional for this phase, but good practice)
+      const mailOptions = {
+        from: process.env.GMAIL_USER,
+        to: email,
+        subject: "Subscription Confirmed - PizzazzPizza Promotions",
+        html: `<p>Thank you for subscribing to PizzazzPizza promotions!</p><p>You'll be the first to know about our latest deals and offers.</p><p>To unsubscribe at any time, click here: ${
+          req.protocol
+        }://${req.get(
+          "host"
+        )}/unsubscribe-promotions?token=${unsubscribeToken}</p>`,
+      };
+      // await transporter.sendMail(mailOptions); // Uncomment to send email
+
+      return res.redirect(
+        "/?subscription_message=" +
+          encodeURIComponent("Thank you for subscribing!")
+      );
+    }
+  } catch (error) {
+    console.error("Error subscribing to promotions:", error);
+    return res.redirect(
+      "/?subscription_error=" +
+        encodeURIComponent("An error occurred. Please try again.")
+    );
+  }
+});
+
+// New route for handling unsubscriptions via email link
+router.get("/unsubscribe-promotions", async (req, res) => {
+  const { token } = req.query;
+  const connection = req.app.get("dbConnection");
+
+  if (!token) {
+    return res.status(400).send("Unsubscribe token is missing.");
+  }
+
+  try {
+    const [result] = await connection
+      .promise()
+      .query(
+        "UPDATE email_subscriptions SET is_subscribed = 0, unsubscribed_at = NOW(), unsubscribe_token = NULL WHERE unsubscribe_token = ? AND is_subscribed = 1",
+        [token]
+      );
+
+    if (result.affectedRows > 0) {
+      // You can render a simple confirmation page or redirect
+      res.send(`
+        <div style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+          <h2>Unsubscribed Successfully</h2>
+          <p>You have been successfully unsubscribed from our promotional emails.</p>
+          <p><a href="/">Go to Homepage</a></p>
+        </div>
+      `);
+    } else {
+      res.status(400).send(`
+        <div style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+          <h2>Invalid or Expired Link</h2>
+          <p>This unsubscribe link is either invalid or you are already unsubscribed.</p>
+          <p><a href="/">Go to Homepage</a></p>
+        </div>
+      `);
+    }
+  } catch (error) {
+    console.error("Error unsubscribing:", error);
+    res.status(500).send("An error occurred while processing your request.");
+  }
+});
 
 module.exports = { router, transporter };

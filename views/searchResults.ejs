@@ -78,7 +78,7 @@
                     <div class="dist-bottom-row">
                       <ul>
                         <li>
-                          <b>$ <%= item.item_price.toFixed(2) %></b>
+                          <b>$ <%= parseFloat(item.item_price).toFixed(2) %></b>
                         </li>
                         <li>
                           <button class="dish-add-btn" id="btn<%= item.item_id %>" onclick="addToCart('<%= item.item_id %>')">
