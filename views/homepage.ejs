@@ -38,6 +38,26 @@
             </div>
           </div>
         </div>
+
+        <% if (typeof promotionBanners !== 'undefined' && promotionBanners.length > 0) { %>
+        <section class="promotion-banner-section section" style="background-image: url(/images/menu-bg.png);">
+          <div class="container">
+            <div class="swiper-container promotion-banner-slider">
+              <div class="swiper-wrapper">
+                <% promotionBanners.forEach(function(banner) { %>
+                <div class="swiper-slide">
+                  <img src="/images/banner-image/<%= banner.banner_id %>" alt="<%= banner.alt_text || 'Promotional Banner' %>">
+                </div>
+                <% }); %>
+              </div>
+              <!-- Add Pagination -->
+              <div class="swiper-pagination"></div>
+              <!-- Navigation buttons removed from here -->
+            </div>
+          </div>
+        </section>
+        <% } %>
+
         <div class="menu-tab-wp">
           <div class="row">
             <div class="col-lg-12 m-auto">
@@ -75,7 +95,9 @@
             <div class="col-lg-4 col-sm-6 dish-box-wp <%= items[i].item_category.toLowerCase() %>">
               <div class="dish-box text-center">
                 <div class="dist-img">
-                  <img src="/images/item-image/<%= items[i].item_id %>" alt="<%= items[i].item_name %>" onerror="this.onerror=null; this.src='/images/dish/default-pizza.jpg';" />
+                  <a href="/item/<%= items[i].item_id %>">
+                    <img src="/images/item-image/<%= items[i].item_id %>" alt="<%= items[i].item_name %>" onerror="this.onerror=null; this.src='/images/dish/default-pizza.jpg';" />
+                  </a>
                 </div>
                 <div class="dish-rating">
                   <%= Number(items[i].item_rating).toFixed(1) %>

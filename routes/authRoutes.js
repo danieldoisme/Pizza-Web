@@ -388,13 +388,13 @@ router.get("/reset-password", async (req, res) => {
 // POST route to handle the actual password reset
 router.post("/reset-password", async (req, res) => {
   const { token, new_password, confirm_password } = req.body;
-  const connection = req.app.get("dbConnection");
+  const pool = req.app.get("dbConnection"); // Get the pool
 
   // Pass pageType for rendering in case of error
   const renderArgs = {
     token,
     pageType: "reset-password",
-    // res.locals will be available
+    // res.locals (username, userid, item_count, isAdmin etc.) will be available to partials
   };
 
   if (!token) {
@@ -410,93 +410,62 @@ router.post("/reset-password", async (req, res) => {
     return res.render("reset-password", renderArgs);
   }
 
+  let actualConnection; // Declare connection variable to be used in finally block
   try {
-    connection.query(
+    actualConnection = await pool.promise().getConnection(); // Get a dedicated connection from the pool
+    await actualConnection.beginTransaction(); // Start transaction on the dedicated connection
+
+    const [results] = await actualConnection.execute(
       "SELECT * FROM password_reset_tokens WHERE token = ? AND expires_at > NOW()",
-      [token],
-      async (err, results) => {
-        if (err) {
-          console.error("Error finding token for password reset:", err);
-          renderArgs.error = "Error processing your request. Please try again.";
-          return res.render("reset-password", renderArgs);
-        }
-        if (results.length === 0) {
-          renderArgs.error =
-            "Invalid or expired token. Please request a new password reset.";
-          return res.render("reset-password", renderArgs);
-        }
+      [token]
+    );
 
-        const tokenData = results[0];
-        const userId = tokenData.user_id;
+    if (results.length === 0) {
+      await actualConnection.rollback(); // Rollback transaction
+      renderArgs.error =
+        "Invalid or expired token. Please request a new password reset.";
+      return res.render("reset-password", renderArgs); // actualConnection will be released in finally
+    }
 
-        const hashedPassword = await bcrypt.hash(new_password, saltRounds);
+    const tokenData = results[0];
+    const userId = tokenData.user_id;
 
-        connection.beginTransaction(async (transactionErr) => {
-          if (transactionErr) {
-            console.error(
-              "Transaction error on password reset:",
-              transactionErr
-            );
-            renderArgs.error = "Database error. Please try again.";
-            return res.render("reset-password", renderArgs);
-          }
+    const hashedPassword = await bcrypt.hash(new_password, saltRounds);
 
-          connection.query(
-            "UPDATE users SET user_password = ? WHERE user_id = ?",
-            [hashedPassword, userId],
-            (updateErr) => {
-              if (updateErr) {
-                return connection.rollback(() => {
-                  console.error("Error updating password:", updateErr);
-                  renderArgs.error =
-                    "Failed to update password. Please try again.";
-                  res.render("reset-password", renderArgs);
-                });
-              }
+    await actualConnection.execute(
+      "UPDATE users SET user_password = ? WHERE user_id = ?",
+      [hashedPassword, userId]
+    );
 
-              connection.query(
-                "DELETE FROM password_reset_tokens WHERE token = ?",
-                [token],
-                (deleteErr) => {
-                  if (deleteErr) {
-                    // Log error, but proceed as password was updated
-                    console.error(
-                      "Error deleting reset token (password was updated):",
-                      deleteErr
-                    );
-                  }
-                  connection.commit((commitErr) => {
-                    if (commitErr) {
-                      return connection.rollback(() => {
-                        console.error(
-                          "Error committing transaction:",
-                          commitErr
-                        );
-                        renderArgs.error =
-                          "Failed to finalize password reset. Please try again.";
-                        res.render("reset-password", renderArgs);
-                      });
-                    }
-                    // Successfully reset password
-                    res.redirect(
-                      "/signin?message=" +
-                        encodeURIComponent(
-                          "Password has been reset successfully. Please sign in."
-                        )
-                    );
-                  });
-                }
-              );
-            }
-          );
-        });
-      }
+    await actualConnection.execute(
+      "DELETE FROM password_reset_tokens WHERE token = ?",
+      [token]
+    );
+
+    await actualConnection.commit(); // Commit transaction
+    // Successfully reset password
+    res.redirect(
+      "/signin?message=" +
+        encodeURIComponent(
+          "Password has been reset successfully. Please sign in."
+        )
     );
   } catch (error) {
+    if (actualConnection) {
+      try {
+        await actualConnection.rollback(); // Rollback transaction on error
+      } catch (rollbackError) {
+        console.error("Error rolling back transaction:", rollbackError);
+      }
+    }
     console.error("Server error on POST /reset-password:", error);
     renderArgs.error =
       "An internal server error occurred. Please try again later.";
     res.render("reset-password", renderArgs);
+  } finally {
+    if (actualConnection) {
+      actualConnection.release(); // Always release the connection back to the pool
+    }
   }
 });
 

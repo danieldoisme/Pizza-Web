@@ -20,6 +20,66 @@
       vertical-align: middle;
     }
 
+    .table {
+      /* Add this rule */
+      table-layout: fixed;
+      width: 100%;
+      /* Ensure table takes full available width */
+    }
+
+    .table td:nth-child(3),
+    /* Email column */
+    .table td:nth-child(5) {
+      /* Address column */
+      word-break: break-word;
+      overflow-wrap: break-word;
+      /* for better browser compatibility */
+    }
+
+    .table th:nth-child(1),
+    /* ID column */
+    .table td:nth-child(1) {
+      width: 8%;
+      /* Example width, adjust as needed */
+    }
+
+    .table th:nth-child(2),
+    /* Name column */
+    .table td:nth-child(2) {
+      width: 20%;
+      /* Example width */
+    }
+
+    .table th:nth-child(3),
+    /* Email column */
+    .table td:nth-child(3) {
+      width: 25%;
+      /* Example width */
+    }
+
+    .table th:nth-child(4),
+    /* Mobile No. column */
+    .table td:nth-child(4) {
+      width: 15%;
+      /* Example width */
+    }
+
+    .table th:nth-child(5),
+    /* Address column */
+    .table td:nth-child(5) {
+      width: 22%;
+      /* Example width */
+    }
+
+    .table th:nth-child(6),
+    /* Actions column */
+    .table td:nth-child(6) {
+      width: 10%;
+      /* Example width, adjust for buttons */
+      white-space: nowrap;
+      /* Keep action buttons on one line if possible */
+    }
+
     .action-buttons .btn {
       margin-right: 5px;
     }

@@ -682,31 +682,34 @@ router.post("/order/set-dispatched/:order_id", (req, res) => {
   });
 });
 
-// Route for admin to mark COD order as paid
-router.post("/order/mark-paid-cod/:order_id", (req, res) => {
+router.post("/order/mark-paid/:order_id", (req, res) => {
   const connection = req.app.get("dbConnection");
   const order_id = req.params.order_id;
 
-  // Ensure it's a COD order before marking paid, or just update payment_status
+  // Update payment_status to 'Paid' if it's 'Unpaid' or 'Failed'
   const query =
-    "UPDATE orders SET payment_status = 'Paid' WHERE order_id = ? AND payment_method = 'COD'"; // Or remove payment_method check if admin can mark any as paid
+    "UPDATE orders SET payment_status = 'Paid' WHERE order_id = ? AND (payment_status = 'Unpaid' OR payment_status = 'Failed')";
   connection.query(query, [order_id], (err, result) => {
     if (err) {
-      console.error("Error marking COD order as paid:", err);
-      return res.redirect(
-        "/admin/ordersManagement?error=" + encodeURIComponent("Database error.")
-      );
-    }
-    if (result.affectedRows === 0) {
+      console.error("Error marking order as paid:", err);
       return res.redirect(
         "/admin/ordersManagement?error=" +
-          encodeURIComponent("Order not found or not a COD order.")
+          encodeURIComponent("Database error while marking order as paid.")
       );
     }
-    res.redirect(
-      "/admin/ordersManagement?message=" +
-        encodeURIComponent(`Order ${order_id} (COD) marked as Paid.`)
-    );
+    if (result.affectedRows > 0) {
+      res.redirect(
+        "/admin/ordersManagement?message=" +
+          encodeURIComponent(`Order ${order_id} has been marked as Paid.`)
+      );
+    } else {
+      res.redirect(
+        "/admin/ordersManagement?error=" +
+          encodeURIComponent(
+            `Order ${order_id} not found, or its payment status was not 'Unpaid' or 'Failed'.`
+          )
+      );
+    }
   });
 });
 
@@ -910,5 +913,274 @@ router.post(
     }
   }
 );
+
+// Make sure this is after router.use(isAdmin); if you want these routes protected.
+
+// --- Promotion Banner Management ---
+
+// GET /admin/banners - Display Banner Management Page
+router.get("/banners", async (req, res) => {
+  const connection = req.app.get("dbConnection");
+  try {
+    const [banners] = await connection
+      .promise()
+      .query(
+        "SELECT banner_id, alt_text, is_active, sort_order, uploaded_at, updated_at FROM promotion_banners ORDER BY sort_order ASC, uploaded_at DESC"
+      );
+    res.render("admin/bannerManagement", {
+      // We will create this EJS file later
+      adminName: req.cookies.cookuname,
+      page: "banners", // For sidebar active state
+      banners: banners,
+      message: req.query.message || null,
+      error: req.query.error || null,
+    });
+  } catch (err) {
+    console.error("Error fetching banners for management:", err);
+    res.redirect(
+      "/admin/dashboard?error=" +
+        encodeURIComponent("Could not load promotion banners.")
+    );
+  }
+});
+
+// GET /admin/api/banner/:banner_id - Fetch banner data for editing
+router.get("/api/banner/:banner_id", async (req, res) => {
+  const connection = req.app.get("dbConnection");
+  const { banner_id } = req.params;
+  try {
+    const [banners] = await connection
+      .promise()
+      .query(
+        "SELECT banner_id, alt_text, sort_order, is_active FROM promotion_banners WHERE banner_id = ?",
+        [banner_id]
+      );
+    if (banners.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Banner not found." });
+    }
+    res.json({ success: true, banner: banners[0] });
+  } catch (err) {
+    console.error("Error fetching banner for API:", err);
+    res.status(500).json({ success: false, message: "Database error." });
+  }
+});
+
+// POST /admin/banners/upload - Handle new banner upload
+router.post("/banners/upload", async (req, res) => {
+  const connection = req.app.get("dbConnection");
+  const { alt_text, sort_order, is_active } = req.body;
+
+  if (!req.files || !req.files.banner_image) {
+    return res.redirect(
+      "/admin/banners?error=" + encodeURIComponent("Banner image is required.")
+    );
+  }
+
+  const bannerImage = req.files.banner_image;
+  const imageBuffer = bannerImage.data;
+  const imageMimeType = bannerImage.mimetype;
+
+  // Basic validation (example: size and type)
+  const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+  if (bannerImage.size > MAX_SIZE) {
+    return res.redirect(
+      "/admin/banners?error=" +
+        encodeURIComponent("Image file is too large (max 5MB).")
+    );
+  }
+  if (!ALLOWED_TYPES.includes(imageMimeType)) {
+    return res.redirect(
+      "/admin/banners?error=" +
+        encodeURIComponent("Invalid image file type. Allowed: JPG, PNG, WEBP.")
+    );
+  }
+
+  try {
+    const query =
+      "INSERT INTO promotion_banners (image_blob, image_mimetype, alt_text, sort_order, is_active) VALUES (?, ?, ?, ?, ?)";
+    await connection
+      .promise()
+      .query(query, [
+        imageBuffer,
+        imageMimeType,
+        alt_text || null,
+        parseInt(sort_order) || 0,
+        is_active === "on" || is_active === "true" ? 1 : 0,
+      ]);
+    res.redirect(
+      "/admin/banners?message=" +
+        encodeURIComponent("Banner uploaded successfully!")
+    );
+  } catch (err) {
+    console.error("Error uploading banner:", err);
+    if (err.code === "ER_NET_PACKET_TOO_LARGE") {
+      return res.redirect(
+        "/admin/banners?error=" +
+          encodeURIComponent("Image file is too large for database.")
+      );
+    }
+    res.redirect(
+      "/admin/banners?error=" +
+        encodeURIComponent("Database error uploading banner.")
+    );
+  }
+});
+
+// POST /admin/banners/edit/:banner_id - Handle banner update
+router.post("/banners/edit/:banner_id", async (req, res) => {
+  const connection = req.app.get("dbConnection");
+  const { banner_id } = req.params;
+  const { alt_text, sort_order, is_active } = req.body;
+
+  let imageBuffer = null;
+  let imageMimeType = null;
+  let updateImage = false;
+
+  if (
+    req.files &&
+    req.files.banner_image_edit &&
+    req.files.banner_image_edit.data
+  ) {
+    const bannerImage = req.files.banner_image_edit;
+    // Basic validation (example: size and type)
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+    if (bannerImage.size > 0) {
+      // Process only if a file is actually uploaded
+      if (bannerImage.size > MAX_SIZE) {
+        return res.redirect(
+          "/admin/banners?error=" +
+            encodeURIComponent("Updated image file is too large (max 5MB).")
+        );
+      }
+      if (!ALLOWED_TYPES.includes(bannerImage.mimetype)) {
+        return res.redirect(
+          "/admin/banners?error=" +
+            encodeURIComponent(
+              "Invalid updated image file type. Allowed: JPG, PNG, WEBP."
+            )
+        );
+      }
+      imageBuffer = bannerImage.data;
+      imageMimeType = bannerImage.mimetype;
+      updateImage = true;
+    }
+  }
+
+  try {
+    let querySetParts = ["alt_text = ?", "sort_order = ?", "is_active = ?"];
+    let queryParams = [
+      alt_text || null,
+      parseInt(sort_order) || 0,
+      is_active === "on" || is_active === "true" ? 1 : 0,
+    ];
+
+    if (updateImage) {
+      querySetParts.push("image_blob = ?");
+      querySetParts.push("image_mimetype = ?");
+      queryParams.push(imageBuffer);
+      queryParams.push(imageMimeType);
+    }
+    queryParams.push(banner_id);
+
+    const query = `UPDATE promotion_banners SET ${querySetParts.join(
+      ", "
+    )} WHERE banner_id = ?`;
+    const [result] = await connection.promise().query(query, queryParams);
+
+    if (result.affectedRows === 0) {
+      return res.redirect(
+        "/admin/banners?error=" +
+          encodeURIComponent("Banner not found or no changes made.")
+      );
+    }
+    res.redirect(
+      "/admin/banners?message=" +
+        encodeURIComponent("Banner updated successfully!")
+    );
+  } catch (err) {
+    console.error("Error updating banner:", err);
+    if (err.code === "ER_NET_PACKET_TOO_LARGE") {
+      return res.redirect(
+        "/admin/banners?error=" +
+          encodeURIComponent("Updated image file is too large for database.")
+      );
+    }
+    res.redirect(
+      "/admin/banners?error=" +
+        encodeURIComponent("Database error updating banner.")
+    );
+  }
+});
+
+// POST /admin/banners/toggle-active/:banner_id - Toggle active status
+router.post("/banners/toggle-active/:banner_id", async (req, res) => {
+  const connection = req.app.get("dbConnection");
+  const { banner_id } = req.params;
+  try {
+    // First, get the current status
+    const [currentStatusRows] = await connection
+      .promise()
+      .query("SELECT is_active FROM promotion_banners WHERE banner_id = ?", [
+        banner_id,
+      ]);
+
+    if (currentStatusRows.length === 0) {
+      return res.redirect(
+        "/admin/banners?error=" + encodeURIComponent("Banner not found.")
+      );
+    }
+
+    const newStatus = !currentStatusRows[0].is_active; // Toggle the status
+
+    await connection
+      .promise()
+      .query("UPDATE promotion_banners SET is_active = ? WHERE banner_id = ?", [
+        newStatus,
+        banner_id,
+      ]);
+    res.redirect(
+      "/admin/banners?message=" + encodeURIComponent("Banner status updated.")
+    );
+  } catch (err) {
+    console.error("Error toggling banner status:", err);
+    res.redirect(
+      "/admin/banners?error=" +
+        encodeURIComponent("Database error updating banner status.")
+    );
+  }
+});
+
+// POST /admin/banners/delete/:banner_id - Delete a banner
+router.post("/banners/delete/:banner_id", async (req, res) => {
+  const connection = req.app.get("dbConnection");
+  const { banner_id } = req.params;
+  try {
+    const [result] = await connection
+      .promise()
+      .query("DELETE FROM promotion_banners WHERE banner_id = ?", [banner_id]);
+    if (result.affectedRows === 0) {
+      return res.redirect(
+        "/admin/banners?error=" +
+          encodeURIComponent("Banner not found for deletion.")
+      );
+    }
+    res.redirect(
+      "/admin/banners?message=" +
+        encodeURIComponent("Banner deleted successfully.")
+    );
+  } catch (err) {
+    console.error("Error deleting banner:", err);
+    res.redirect(
+      "/admin/banners?error=" +
+        encodeURIComponent("Database error deleting banner.")
+    );
+  }
+});
 
 module.exports = router;

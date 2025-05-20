@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt"); // Import bcrypt
 const saltRounds = 10; // Define salt rounds
-const crypto = require("crypto"); // Import crypto for token generation
+const crypto = require("crypto");
+const { transporter } = require("./indexRoutes"); // Added import for transporter
 
 // Middleware to check if user is authenticated
 // This should be the same as the one in app.js or imported from a shared middleware file
@@ -390,7 +391,7 @@ async function setOrderDeliveredUser(req, res) {
   try {
     // Verify the order belongs to the user and is in a state that can be marked delivered by user (e.g., 'Shipped')
     const checkOrderQuery =
-      "SELECT order_id FROM orders WHERE order_id = ? AND user_id = ? AND order_status = 'Shipped'"; // Or 'Processing' if applicable
+      "SELECT order_id FROM orders WHERE order_id = ? AND user_id = ? AND order_status = 'Dispatched'"; // Or 'Processing' if applicable
     connection.query(
       checkOrderQuery,
       [orderId, userId],
@@ -418,7 +419,28 @@ async function setOrderDeliveredUser(req, res) {
             });
           }
           if (result.affectedRows > 0) {
-            res.json({ success: true, message: "Order marked as delivered." });
+            // Update dispatch_status in order_dispatch table to 'Delivered'
+            // This preserves the original dispatch_datetime and dispatched_by_admin_id
+            const dispatchUpdateQuery =
+              "UPDATE order_dispatch SET dispatch_status = 'Delivered' WHERE order_id = ?";
+            connection.query(
+              dispatchUpdateQuery,
+              [orderId],
+              (dispatchErr, dispatchResult) => {
+                if (dispatchErr) {
+                  console.error(
+                    "Error updating order_dispatch status for user-delivered order:",
+                    dispatchErr
+                  );
+                  // Log error, but proceed with redirect as order status update was successful
+                }
+                // Optionally, you could check dispatchResult.affectedRows here if needed
+                res.redirect(
+                  "/orders?message=" +
+                    encodeURIComponent("Order marked as delivered.")
+                );
+              }
+            );
           } else {
             res.status(404).json({
               success: false,
@@ -454,32 +476,63 @@ router.post(
         );
       }
       const userEmail = userDataResults[0].user_email;
-      const unsubscribeToken = crypto.randomBytes(32).toString("hex");
+      const unsubscribeToken = crypto.randomBytes(32).toString("hex"); // Token for new subscriptions/re-subscriptions
 
-      const [existingSubscriptions] = await connection
-        .promise()
-        .query(
-          "SELECT subscription_id FROM email_subscriptions WHERE email = ?",
-          [userEmail]
-        );
+      const [existingSubscriptions] = await connection.promise().query(
+        "SELECT subscription_id, is_subscribed FROM email_subscriptions WHERE email = ?", // Fetch is_subscribed
+        [userEmail]
+      );
 
       if (existingSubscriptions.length > 0) {
-        // Update existing subscription
-        const subscriptionId = existingSubscriptions[0].subscription_id;
-        await connection
-          .promise()
-          .query(
-            "UPDATE email_subscriptions SET is_subscribed = ?, user_id = ?, unsubscribed_at = ?, unsubscribe_token = IF(? = 1, ?, unsubscribe_token), subscribed_at = IF(? = 1 AND is_subscribed = 0, NOW(), subscribed_at) WHERE subscription_id = ?",
-            [
-              shouldBeSubscribed,
-              userId,
-              shouldBeSubscribed ? null : new Date(),
-              shouldBeSubscribed,
-              unsubscribeToken,
-              shouldBeSubscribed,
-              subscriptionId,
-            ]
+        const subscription = existingSubscriptions[0];
+        const subscriptionId = subscription.subscription_id;
+        const wasPreviouslySubscribed = subscription.is_subscribed;
+
+        if (shouldBeSubscribed) {
+          // User wants to be subscribed
+          await connection
+            .promise()
+            .query(
+              "UPDATE email_subscriptions SET is_subscribed = 1, user_id = ?, unsubscribed_at = NULL, unsubscribe_token = ?, subscribed_at = IF(? = 0, NOW(), subscribed_at) WHERE subscription_id = ?",
+              [
+                userId,
+                unsubscribeToken, // New token for active subscription
+                wasPreviouslySubscribed, // Check if it's a re-subscription
+                subscriptionId,
+              ]
+            );
+
+          if (!wasPreviouslySubscribed) {
+            // This was a re-subscription, send "Welcome Back" email
+            const mailOptionsResubscribe = {
+              from: `"PizzazzPizza" <${process.env.GMAIL_USER}>`,
+              to: userEmail,
+              subject: "Welcome Back to PizzazzPizza Promotions!",
+              html: `<p>Welcome back!</p><p>You have been successfully re-subscribed to PizzazzPizza promotions.</p><p>You'll continue to be the first to know about our latest deals and offers.</p><p>To unsubscribe at any time, click here: ${
+                req.protocol
+              }://${req.get(
+                "host"
+              )}/unsubscribe-promotions?token=${unsubscribeToken}</p>`,
+            };
+            try {
+              await transporter.sendMail(mailOptionsResubscribe);
+              console.log(
+                `Re-subscription email sent to ${userEmail} from settings.`
+              );
+            } catch (emailError) {
+              console.error(
+                `Error sending re-subscription email to ${userEmail} from settings:`,
+                emailError
+              );
+            }
+          }
+        } else {
+          // User wants to be unsubscribed
+          await connection.promise().query(
+            "UPDATE email_subscriptions SET is_subscribed = 0, unsubscribed_at = NOW(), unsubscribe_token = NULL WHERE subscription_id = ?", // Set token to NULL
+            [subscriptionId]
           );
+        }
       } else if (shouldBeSubscribed) {
         // Create new subscription if user wants to subscribe and doesn't have one
         await connection
@@ -488,17 +541,40 @@ router.post(
             "INSERT INTO email_subscriptions (email, user_id, is_subscribed, unsubscribe_token, subscribed_at) VALUES (?, ?, 1, ?, NOW())",
             [userEmail, userId, unsubscribeToken]
           );
+
+        // Send confirmation email for new subscription
+        const mailOptions = {
+          from: `"PizzazzPizza" <${process.env.GMAIL_USER}>`,
+          to: userEmail,
+          subject: "Subscription Confirmed - PizzazzPizza Promotions",
+          html: `<p>Thank you for subscribing to PizzazzPizza promotions!</p><p>You'll be the first to know about our latest deals and offers.</p><p>To unsubscribe at any time, click here: ${
+            req.protocol
+          }://${req.get(
+            "host"
+          )}/unsubscribe-promotions?token=${unsubscribeToken}</p>`,
+        };
+        try {
+          await transporter.sendMail(mailOptions);
+          console.log(
+            `Subscription confirmation email sent to ${userEmail} from settings.`
+          );
+        } catch (emailError) {
+          console.error(
+            `Error sending subscription confirmation email to ${userEmail} from settings:`,
+            emailError
+          );
+        }
       }
 
       const message = shouldBeSubscribed
         ? "Subscribed to promotions successfully."
         : "Unsubscribed from promotions successfully.";
-      res.redirect("/settings?success=" + encodeURIComponent(message));
+      res.redirect("/settings?success=" + encodeURIComponent(message)); // Redirect to subscriptions tab
     } catch (error) {
       console.error("Error updating promotion subscription:", error);
       res.redirect(
         "/settings?error=" +
-          encodeURIComponent("Failed to update subscription status.")
+          encodeURIComponent("Failed to update subscription status.") // Redirect to subscriptions tab
       );
     }
   }

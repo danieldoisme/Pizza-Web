@@ -337,6 +337,12 @@ function renderConfirmationPage(req, res) {
   // The order ID should ideally be passed from the processPayment redirect or query parameter
   const orderId = req.query.orderId; // Example: /confirmation?orderId=123
 
+  if (!orderId) {
+    // If no orderId is present, redirect to homepage or orders page
+    // as the user might have navigated here directly.
+    return res.redirect("/homepage");
+  }
+
   res.render("confirmation", {
     pageType: "confirmation",
     orderId: orderId, // Pass orderId to the template

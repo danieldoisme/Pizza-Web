@@ -267,6 +267,35 @@ LOCK TABLES `password_reset_tokens` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `promotion_banners`
+--
+
+DROP TABLE IF EXISTS `promotion_banners`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `promotion_banners` (
+  `banner_id` int NOT NULL AUTO_INCREMENT,
+  `image_blob` longblob,
+  `image_mimetype` varchar(50) DEFAULT NULL,
+  `alt_text` varchar(255) DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT '0',
+  `sort_order` int DEFAULT '0',
+  `uploaded_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`banner_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `promotion_banners`
+--
+
+LOCK TABLES `promotion_banners` WRITE;
+/*!40000 ALTER TABLE `promotion_banners` DISABLE KEYS */;
+/*!40000 ALTER TABLE `promotion_banners` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `user_cart_items`
 --
 

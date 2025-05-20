@@ -241,6 +241,25 @@ $(document).ready(function ($) {
     },
   });
 
+  // Initialize Promotion Banner Slider
+  if ($(".promotion-banner-slider").length > 0) {
+    new Swiper(".promotion-banner-slider", {
+      slidesPerView: 1,
+      spaceBetween: 20, // Adjust as needed, or remove if no space is desired
+      loop: true,
+      autoplay: {
+        delay: 5000, // Time in ms between slides
+        disableOnInteraction: false, // Autoplay will not be disabled after user interactions (swipes)
+      },
+      speed: 1000, // Transition speed in ms
+      pagination: {
+        el: ".promotion-banner-slider .swiper-pagination", // Scoped to the banner slider
+        clickable: true,
+      },
+      watchOverflow: true, // Disables navigation/pagination if not enough slides
+    });
+  }
+
   new Swiper(".team-slider", {
     slidesPerView: 3,
     spaceBetween: 30,

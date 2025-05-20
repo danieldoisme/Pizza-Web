@@ -6,58 +6,93 @@ const isAuthenticated = require("../middleware/isAuthenticated");
 function renderHomePage(req, res) {
   const userId = req.cookies.cookuid;
   const userName = req.cookies.cookuname;
-  // item_count is available from res.locals.item_count set by global middleware
   const connection = req.app.get("dbConnection");
 
-  // This check ensures that only users with valid cookies can access the homepage.
-  // If cookies are missing, redirect to signin.
   if (!userId || !userName) {
     return res.redirect("/signin");
   }
 
-  // Validate user from DB (this logic was in the original app.js function)
   connection.query(
     "SELECT user_id, user_name FROM users WHERE user_id = ? AND user_name = ?",
     [userId, userName],
     function (error, userResults) {
       if (error) {
         console.error("Error fetching user for homepage:", error);
-        // Render homepage with an error message if DB query fails
         return res.status(500).render("homepage", {
           pageType: "homepage",
           items: [],
+          promotionBanners: [], // Add this
           error: "Error loading homepage.",
-          // username, userid, item_count are available via res.locals
         });
       }
       if (userResults.length) {
-        // User validated, now fetch menu items
-        // Fetch all columns needed by homepage.ejs
+        // User validated, now fetch promotion banners first
         connection.query(
-          `SELECT 
-            item_id, item_name, item_type, item_category, item_price, 
-            item_calories, item_serving, item_rating, total_ratings, 
-            item_description_long
-          FROM menu`,
-          function (error, menuResults) {
-            if (error) {
-              console.error("Error fetching menu for homepage:", error);
-              return res.status(500).render("homepage", {
-                pageType: "homepage",
-                items: [],
-                error: "Error loading menu.",
-                // username, userid, item_count are available via res.locals
-              });
+          "SELECT banner_id, alt_text FROM promotion_banners WHERE is_active = 1 ORDER BY sort_order ASC, uploaded_at DESC",
+          function (bannerError, bannerResults) {
+            if (bannerError) {
+              console.error("Error fetching promotion banners:", bannerError);
+              // Continue to render page, but pass empty banners
+              // Now fetch menu items
+              connection.query(
+                `SELECT 
+                  item_id, item_name, item_type, item_category, item_price, 
+                  item_calories, item_serving, item_rating, total_ratings, 
+                  item_description_long
+                FROM menu`,
+                function (menuError, menuResults) {
+                  if (menuError) {
+                    console.error(
+                      "Error fetching menu for homepage:",
+                      menuError
+                    );
+                    return res.status(500).render("homepage", {
+                      pageType: "homepage",
+                      items: [],
+                      promotionBanners: [], // Add this
+                      error: "Error loading menu.",
+                    });
+                  }
+                  res.render("homepage", {
+                    pageType: "homepage",
+                    items: menuResults || [],
+                    promotionBanners: [], // Pass empty if banner fetch failed
+                    error: "Error loading banners.", // Optionally indicate banner error
+                  });
+                }
+              );
+            } else {
+              // Banners fetched successfully, now fetch menu items
+              connection.query(
+                `SELECT 
+                  item_id, item_name, item_type, item_category, item_price, 
+                  item_calories, item_serving, item_rating, total_ratings, 
+                  item_description_long
+                FROM menu`,
+                function (menuError, menuResults) {
+                  if (menuError) {
+                    console.error(
+                      "Error fetching menu for homepage:",
+                      menuError
+                    );
+                    return res.status(500).render("homepage", {
+                      pageType: "homepage",
+                      items: [],
+                      promotionBanners: bannerResults || [], // Pass fetched banners
+                      error: "Error loading menu.",
+                    });
+                  }
+                  res.render("homepage", {
+                    pageType: "homepage",
+                    items: menuResults || [],
+                    promotionBanners: bannerResults || [], // Pass fetched banners
+                  });
+                }
+              );
             }
-            res.render("homepage", {
-              pageType: "homepage",
-              items: menuResults,
-              // username, userid, item_count are available via res.locals
-            });
           }
         );
       } else {
-        // Cookies were present but user not found in DB (e.g., user deleted, or invalid cookie)
         res.clearCookie("cookuid");
         res.clearCookie("cookuname");
         res.clearCookie("usertype");
@@ -241,8 +276,8 @@ async function renderSearchResultsPage(req, res) {
   }
 }
 
-router.get("/item/:itemId", renderItemDetailPage); // No isAuthenticated, so anyone can view
+router.get("/item/:itemId", isAuthenticated, renderItemDetailPage); // No isAuthenticated, so anyone can view
 router.post("/item/:itemId/rate", isAuthenticated, submitItemRating);
-router.get("/search", renderSearchResultsPage); // No isAuthenticated, so anyone can search
+router.get("/search", isAuthenticated, renderSearchResultsPage); // No isAuthenticated, so anyone can search
 
 module.exports = router;

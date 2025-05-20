@@ -175,14 +175,18 @@
                 <h1><%= item.item_name %></h1>
                 <div class="rating-summary d-flex align-items-center mb-3">
                   <div class="stars"><%
-                    const ratingValue = item.avg_rating === null ? 0 : parseFloat(item.avg_rating);
+                    const ratingValue = item.item_rating === null ? 0 : parseFloat(item.item_rating); // Corrected: item.item_rating instead of item.avg_rating
                     const fullStars = Math.floor(ratingValue);
                     const halfStar = (ratingValue - fullStars) >= 0.25 && (ratingValue - fullStars) < 0.75;
                     const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
                     %><% for(let i = 0; i < fullStars; i++) { %><i class="uil uil-star"></i><% } %><%
                     if (halfStar) { %><i class="uil uil-star-half-alt"></i><% } %><%
                     for(let i = 0; i < emptyStars; i++) { %><i class="uil uil-star empty"></i><% } %></div>
-                  <p>(<%= Number(item.avg_rating === null ? 0 : item.avg_rating).toFixed(2) %> based on <%= item.num_ratings || 0 %> review<%= (item.num_ratings || 0) !== 1 ? 's' : '' %>)</p>
+                  <% if (item.total_ratings && item.total_ratings > 0) { %>
+                  <p>(<%= Number(item.item_rating === null ? 0 : item.item_rating).toFixed(1) %> based on <%= item.total_ratings %> review<%= item.total_ratings !== 1 ? 's' : '' %>)</p>
+                  <% } else { %>
+                  <p>(No reviews yet)</p>
+                  <% } %>
                 </div>
                 <p class="price">$<%= parseFloat(item.item_price).toFixed(2) %></p>
                 <p class="description"><%= item.item_description_long || 'Detailed description not available.' %></p>

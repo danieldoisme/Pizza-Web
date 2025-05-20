@@ -229,10 +229,11 @@
                         </button>
                       </form>
                       <% } %>
-                      <% if (order.payment_method === 'COD' && order.payment_status === 'Unpaid' && ['Processing', 'Dispatched', 'Delivered'].includes(order.order_status)) { %>
-                      <form action="/admin/order/mark-paid-cod/<%= order.order_id %>" method="POST" style="margin: 0;">
+                      <%# Updated condition and action for marking as paid %>
+                      <% if ((order.payment_status === 'Unpaid' || order.payment_status === 'Failed') && ['Pending', 'Processing', 'Dispatched', 'Delivered'].includes(order.order_status)) { %>
+                      <form action="/admin/order/mark-paid/<%= order.order_id %>" method="POST" style="margin: 0;">
                         <button type="submit" class="btn btn-sm btn-info">
-                          Mark as Paid (COD)
+                          Mark as Paid
                         </button>
                       </form>
                       <% } %>

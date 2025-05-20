@@ -403,6 +403,11 @@
                 }
                 // --- END: Extract and add PayPal shipping address ---
 
+                formData.append('paymentMethod', 'PayPal');
+
+                // Add paymentId and status from PayPal's response
+                formData.append('paymentId', orderData.id); // PayPal Order ID
+                formData.append('status', orderData.status); // PayPal Order Status (e.g., "COMPLETED")
 
                 // Add items, quantities, and prices from the checkoutItems array
                 const currentItems = JSON.parse('<%- JSON.stringify(items || []) %>');
