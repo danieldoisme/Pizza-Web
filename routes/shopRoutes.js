@@ -34,7 +34,11 @@ function renderHomePage(req, res) {
         // User validated, now fetch menu items
         // Fetch all columns needed by homepage.ejs
         connection.query(
-          "SELECT item_id, item_name, item_type, item_category, item_serving, item_calories, item_price, item_rating, total_ratings, item_img FROM menu",
+          `SELECT 
+            item_id, item_name, item_type, item_category, item_price, 
+            item_calories, item_serving, item_rating, total_ratings, 
+            item_description_long
+          FROM menu`,
           function (error, menuResults) {
             if (error) {
               console.error("Error fetching menu for homepage:", error);
@@ -75,8 +79,13 @@ async function renderItemDetailPage(req, res) {
   // Fetch item ratings from 'item_ratings' table
   // Render an item detail EJS template (e.g., itemDetail.ejs)
   try {
-    const itemQuery =
-      "SELECT *, (SELECT AVG(rating_value) FROM item_ratings WHERE item_id = menu.item_id) as avg_rating, (SELECT COUNT(*) FROM item_ratings WHERE item_id = menu.item_id) as num_ratings FROM menu WHERE item_id = ?";
+    const itemQuery = `
+      SELECT 
+        m.item_id, m.item_name, m.item_type, m.item_category, m.item_price, 
+        m.item_calories, m.item_serving, m.item_rating, m.total_ratings, 
+        m.item_description_long
+      FROM menu m
+      WHERE m.item_id = ?`;
     const reviewsQuery =
       "SELECT ir.*, u.user_name FROM item_ratings ir JOIN users u ON ir.user_id = u.user_id WHERE ir.item_id = ? ORDER BY ir.rating_date DESC";
 
@@ -192,7 +201,10 @@ async function renderSearchResultsPage(req, res) {
   try {
     // Add item_type to the SELECT statement
     const dbQuery = `
-      SELECT item_id, item_name, item_price, item_img, item_category, item_calories, item_type 
+      SELECT 
+        item_id, item_name, item_type, item_category, item_price, 
+        item_calories, item_serving, item_rating, total_ratings, 
+        item_description_long
       FROM menu 
       WHERE item_name LIKE ? OR item_category LIKE ? OR item_description_long LIKE ?
     `;

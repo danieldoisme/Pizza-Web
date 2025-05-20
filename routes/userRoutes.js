@@ -317,8 +317,7 @@ async function renderMyOrdersPage(req, res) {
               oi.quantity, 
               oi.price_per_item, 
               oi.subtotal,
-              m.item_name,
-              m.item_img 
+              m.item_name
             FROM order_items oi
             JOIN menu m ON oi.item_id = m.item_id
             WHERE oi.order_id = ?

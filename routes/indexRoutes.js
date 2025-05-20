@@ -154,7 +154,27 @@ router.post("/subscribe-promotions", async (req, res) => {
             "UPDATE email_subscriptions SET is_subscribed = 1, user_id = ?, subscribed_at = NOW(), unsubscribed_at = NULL, unsubscribe_token = ? WHERE email = ?",
             [userId, unsubscribeToken, email]
           );
-        // Optionally send a "Welcome Back" email
+        // Send a "Welcome Back" email
+        const mailOptionsResubscribe = {
+          from: `"PizzazzPizza" <${process.env.GMAIL_USER}>`,
+          to: email,
+          subject: "Welcome Back to PizzazzPizza Promotions!",
+          html: `<p>Welcome back!</p><p>You have been successfully re-subscribed to PizzazzPizza promotions.</p><p>You'll continue to be the first to know about our latest deals and offers.</p><p>To unsubscribe at any time, click here: ${
+            req.protocol
+          }://${req.get(
+            "host"
+          )}/unsubscribe-promotions?token=${unsubscribeToken}</p>`,
+        };
+        try {
+          await transporter.sendMail(mailOptionsResubscribe);
+          console.log(`Re-subscription email sent to ${email}`);
+        } catch (emailError) {
+          console.error(
+            `Error sending re-subscription email to ${email}:`,
+            emailError
+          );
+          // Continue without breaking, as subscription itself was successful
+        }
         return res.redirect(
           "/?subscription_message=" +
             encodeURIComponent("You have been re-subscribed successfully!")
@@ -176,7 +196,7 @@ router.post("/subscribe-promotions", async (req, res) => {
 
       // Send confirmation email (optional for this phase, but good practice)
       const mailOptions = {
-        from: process.env.GMAIL_USER,
+        from: `"PizzazzPizza" <${process.env.GMAIL_USER}>`,
         to: email,
         subject: "Subscription Confirmed - PizzazzPizza Promotions",
         html: `<p>Thank you for subscribing to PizzazzPizza promotions!</p><p>You'll be the first to know about our latest deals and offers.</p><p>To unsubscribe at any time, click here: ${
@@ -185,7 +205,16 @@ router.post("/subscribe-promotions", async (req, res) => {
           "host"
         )}/unsubscribe-promotions?token=${unsubscribeToken}</p>`,
       };
-      // await transporter.sendMail(mailOptions); // Uncomment to send email
+      try {
+        await transporter.sendMail(mailOptions);
+        console.log(`Subscription confirmation email sent to ${email}`);
+      } catch (emailError) {
+        console.error(
+          `Error sending subscription confirmation email to ${email}:`,
+          emailError
+        );
+        // Continue without breaking, as subscription itself was successful
+      }
 
       return res.redirect(
         "/?subscription_message=" +

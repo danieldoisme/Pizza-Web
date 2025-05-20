@@ -29,18 +29,18 @@ async function renderCart(req, res) {
 
   try {
     const query = `
-      SELECT uc.item_id, uc.quantity, m.item_name, m.item_price, m.item_img 
+      SELECT uc.item_id, uc.quantity, m.item_name, m.item_price
       FROM user_cart_items uc
       JOIN menu m ON uc.item_id = m.item_id
       WHERE uc.user_id = ? AND uc.quantity > 0
-    `; // Selected m.item_img directly
+    `;
     connection.query(query, [user_id], (err, results) => {
       if (err) {
         console.error("Error fetching cart items from database:", err);
         return res.status(500).render("cart", {
           error: "Error loading your cart. Please try again later.",
           items: [],
-          count: 0, // Pass count
+          count: 0,
           total: 0,
           pageType: "cart",
         });
@@ -52,10 +52,7 @@ async function renderCart(req, res) {
         item_price: parseFloat(item.item_price),
         quantity: parseInt(item.quantity),
         subtotal: parseFloat(item.item_price) * parseInt(item.quantity),
-        // Construct the full image path here
-        item_image: item.item_img
-          ? `/images/dish/${item.item_img}`
-          : "/images/dish/default-pizza.jpg",
+        // item_image property is removed, cart.ejs will use item_id
       }));
 
       const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -66,7 +63,7 @@ async function renderCart(req, res) {
 
       res.render("cart", {
         items: cartItems,
-        count: itemCount, // Pass the calculated item count
+        count: itemCount,
         total: totalAmount,
         pageType: "cart",
         error: req.query.message || null,
@@ -77,7 +74,7 @@ async function renderCart(req, res) {
     res.status(500).render("cart", {
       error: "An unexpected error occurred while loading your cart.",
       items: [],
-      count: 0, // Pass count
+      count: 0,
       total: 0,
       pageType: "cart",
     });
@@ -97,11 +94,11 @@ async function getCartAPI(req, res) {
 
   try {
     const query = `
-      SELECT uc.item_id, uc.quantity, m.item_name, m.item_price, m.item_img 
+      SELECT uc.item_id, uc.quantity, m.item_name, m.item_price
       FROM user_cart_items uc
       JOIN menu m ON uc.item_id = m.item_id
       WHERE uc.user_id = ? AND uc.quantity > 0
-    `; // Selected m.item_img directly
+    `; // m.item_img (old filename) is no longer needed here for constructing the path
     connection.query(query, [userId], (err, results) => {
       if (err) {
         console.error("Error fetching cart items for API:", err);
@@ -116,10 +113,7 @@ async function getCartAPI(req, res) {
         item_price: parseFloat(item.item_price),
         quantity: parseInt(item.quantity),
         subtotal: parseFloat(item.item_price) * parseInt(item.quantity),
-        // Construct the full image path here
-        item_image: item.item_img
-          ? `/images/dish/${item.item_img}`
-          : "/images/dish/default-pizza.jpg",
+        item_image: `/images/item-image/${item.item_id}`, // Updated to provide the new dynamic URL
       }));
 
       const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);

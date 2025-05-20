@@ -2002,6 +2002,12 @@ p {
   text-decoration: none !important;
 }
 
+.admin-sidebar ul li a:hover i,
+.admin-sidebar ul li a.active i {
+  /* Add this rule */
+  color: #fff !important; /* Ensure icon color is white and overrides other styles */
+}
+
 .sidebar-logout {
   margin-top: auto;
 }

@@ -1,15 +1,26 @@
 <div class="admin-sidebar">
   <div class="sidebar-header">
     <a href="/admin/dashboard">
-      <img src="/images/logo.svg" style="max-width: 150px; height: auto" alt="PizzazzPizza Logo" />
+      <img src="/images/logo.svg" alt="PizzazzPizza Admin" class="sidebar-logo">
     </a>
     <h5>Admin Panel</h5>
   </div>
-  <ul>
-    <li><a href="/admin/dashboard">Dashboard</a></li>
-    <li><a href="/admin/addFood">Add Food</a></li>
-    <li><a href="/admin/orders">View & Dispatch Orders</a></li>
-    <li><a href="/admin/changePrice">Change Price</a></li>
+  <ul class="sidebar-menu">
+    <li>
+      <a href="/admin/dashboard" class="<%= typeof page !== 'undefined' && page === 'dashboard' ? 'active' : '' %>">
+        <i class="uil uil-estate"></i> Dashboard
+      </a>
+    </li>
+    <li>
+      <a href="/admin/menu" class="<%= typeof page !== 'undefined' && page === 'menu' ? 'active' : '' %>">
+        <i class="uil uil-restaurant"></i> Menu Management
+      </a>
+    </li>
+    <li>
+      <a href="/admin/ordersManagement" class="<%= typeof page !== 'undefined' && page === 'orders' ? 'active' : '' %>">
+        <i class="uil uil-clipboard-notes"></i> Orders Management
+      </a>
+    </li>
   </ul>
   <div class="sidebar-logout">
     <a href="/admin/logout"> Logout </a>

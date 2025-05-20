@@ -30,6 +30,11 @@
     .order-items-table td {
       border-radius: 0px !important;
     }
+
+    .admin-main-content .section {
+      padding-top: 40px;
+      padding-bottom: 40px;
+    }
   </style>
 </head>
 
@@ -44,22 +49,89 @@
               <div class="row">
                 <div class="col-lg-12">
                   <div class="sec-title text-center mb-5">
-                    <h2 class="h2-title">View & Dispatch Orders</h2>
+                    <h2 class="h2-title">View & Manage Orders</h2>
                     <div class="sec-title-shape mb-4">
                       <img src="/images/title-shape.svg" alt="" />
                     </div>
                   </div>
 
-                  <% if (!orders || orders.length === 0) { %>
+                  <!-- Filter Form -->
+                  <div class="filters-container" style="background-color: #f0f0f0; padding: 20px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <form method="GET" action="/admin/ordersManagement" class="row g-3 align-items-center">
+                      <div class="col-md-3">
+                        <label for="order_status_filter" class="form-label fw-bold">Order Status</label>
+                        <select name="order_status_filter" id="order_status_filter" class="form-select form-select-sm">
+                          <option value="">All</option>
+                          <option value="Pending" <%= currentFilters.order_status_filter === 'Pending' ? 'selected' : '' %>>Pending</option>
+                          <option value="Processing" <%= currentFilters.order_status_filter === 'Processing' ? 'selected' : '' %>>Processing</option>
+                          <option value="Dispatched" <%= currentFilters.order_status_filter === 'Dispatched' ? 'selected' : '' %>>Dispatched</option>
+                          <option value="Delivered" <%= currentFilters.order_status_filter === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                          <option value="Cancelled" <%= currentFilters.order_status_filter === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3">
+                        <label for="payment_status_filter" class="form-label fw-bold">Payment Status</label>
+                        <select name="payment_status_filter" id="payment_status_filter" class="form-select form-select-sm">
+                          <option value="">All</option>
+                          <option value="Paid" <%= currentFilters.payment_status_filter === 'Paid' ? 'selected' : '' %>>Paid</option>
+                          <option value="Unpaid" <%= currentFilters.payment_status_filter === 'Unpaid' ? 'selected' : '' %>>Unpaid</option>
+                          <option value="Pending" <%= currentFilters.payment_status_filter === 'Pending' ? 'selected' : '' %>>Pending Payment</option>
+                          <option value="Failed" <%= currentFilters.payment_status_filter === 'Failed' ? 'selected' : '' %>>Failed</option>
+                          <option value="Refunded" <%= currentFilters.payment_status_filter === 'Refunded' ? 'selected' : '' %>>Refunded</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3">
+                        <label for="search_user_filter" class="form-label fw-bold">User (ID or Name)</label>
+                        <input type="text" name="search_user_filter" id="search_user_filter" class="form-control form-control-sm" placeholder="e.g., 123 or John Doe" value="<%= currentFilters.search_user_filter %>">
+                      </div>
+                      <div class="col-md-1">
+                        <label for="limit_filter" class="form-label fw-bold">Per Page</label>
+                        <select name="limit" id="limit_filter" class="form-select form-select-sm">
+                          <option value="10" <%= limit == 10 ? 'selected' : '' %>>10</option>
+                          <option value="25" <%= limit == 25 ? 'selected' : '' %>>25</option>
+                          <option value="50" <%= limit == 50 ? 'selected' : '' %>>50</option>
+                          <option value="100" <%= limit == 100 ? 'selected' : '' %>>100</option>
+                        </select>
+                      </div>
+                      <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary btn-sm w-100 me-2">Filter</button>
+                        <a href="/admin/ordersManagement?limit=<%= limit %>" class="btn btn-outline-secondary btn-sm w-100">Clear</a>
+                      </div>
+                    </form>
+                  </div>
+                  <!-- End Filter Form -->
+
+                  <% if (orders.length === 0) { %>
                   <div class="text-center" style="
                         padding: 20px;
                         background-color: #f8f9fa;
                         border-radius: 8px;
                         margin: 20px 0;
                       ">
-                    <h4>No Orders Are Pending</h4>
+                    <h4>
+                      <% if (totalOrders > 0) { %>
+                      No orders on this page.
+                      <% } else if (currentFilters.order_status_filter || currentFilters.payment_status_filter || currentFilters.search_user_filter) { %>
+                      No orders match your current filter criteria.
+                      <% } else { %>
+                      No Orders Found in the system.
+                      <% } %>
+                    </h4>
+                    <% if (totalOrders > 0 && currentPage > 1) { %>
+                    <%
+                            const firstPageParams = new URLSearchParams();
+                            if (currentFilters.order_status_filter) firstPageParams.set('order_status_filter', currentFilters.order_status_filter);
+                            if (currentFilters.payment_status_filter) firstPageParams.set('payment_status_filter', currentFilters.payment_status_filter);
+                            if (currentFilters.search_user_filter) firstPageParams.set('search_user_filter', currentFilters.search_user_filter);
+                            firstPageParams.set('limit', limit);
+                            firstPageParams.set('page', 1);
+                        %>
+                    <p><a href="/admin/ordersManagement?<%= firstPageParams.toString() %>">Go to first page</a></p>
+                    <% } %>
                   </div>
-                  <% } else { %> <% orders.forEach(function(order, index) { %>
+                  <% } else { %>
+                  <p class="text-muted mb-2">Showing <%= orders.length %> of <%= totalOrders %> order(s).</p>
+                  <% orders.forEach(function(order, index) { %>
                   <div class="order-group admin-order-group" style="
                         margin-bottom: 30px;
                         border: 1px solid #ddd;
@@ -83,20 +155,6 @@
                           ">
                         Order #<%= order.order_id %>
                       </h4>
-                      <div class="dispatch-control" style="text-align: right">
-                        <label for="dispatch_<%= order.order_id %>" style="
-                              margin-right: 8px;
-                              font-weight: bold;
-                              color: #555;
-                              cursor: pointer;
-                            ">Dispatch:</label>
-                        <input type="checkbox" class="dispatch
-                          form-check-input" name="<%= order.order_id %>" id="dispatch_<%= order.order_id %>" value="true" onchange="checkingDispatch()" <% if
-                          (order.order_status !== 'Pending' &&
-                          order.order_status !== 'Processing') { %>disabled<% }
-                          %> style="transform: scale(1.3); vertical-align:
-                          middle; cursor: pointer;" />
-                      </div>
                     </div>
 
                     <div class="order-details-grid" style="
@@ -126,8 +184,7 @@
                           order.payment_method %>
                       </p>
                       <p style="margin: 5px 0">
-                        <strong>Payment Status:</strong><br /><%=
-                          order.payment_status %>
+                        <strong>Payment Status:</strong><br /><span style="font-weight:bold; padding: 3px 8px; border-radius: 4px; color: white; background-color: <%= order.payment_status === 'Paid' ? '#28a745' : (order.payment_status === 'Unpaid' ? '#fd7e14' : (order.payment_status === 'Pending' ? '#ffc107' : (order.payment_status === 'Failed' ? '#dc3545' : (order.payment_status === 'Refunded' ? '#6c757d' : '#adb5bd')))) %>"><%= order.payment_status %></span>
                       </p>
                       <p style="margin: 5px 0">
                         <strong>Status:</strong><br /><span style="font-weight:bold; padding: 3px 8px; border-radius: 4px; color: white; background-color: <%= order.order_status === "Pending" ? "#ffc107" : (order.order_status === "Processing" ? "#007bff" : (order.order_status === "Dispatched" ? "#17a2b8" : (order.order_status === "Delivered" ? "#28a745" : (order.order_status === "Cancelled" ? "#dc3545" : "#6c757d")))) %>"><%= order.order_status %></span>
@@ -162,6 +219,13 @@
                       <form action="/admin/order/set-processing/<%= order.order_id %>" method="POST" style="margin: 0">
                         <button type="submit" class="btn btn-sm btn-primary">
                           Mark as Processing
+                        </button>
+                      </form>
+                      <% } %>
+                      <% if (order.order_status === 'Pending' || order.order_status === 'Processing') { %>
+                      <form action="/admin/order/set-dispatched/<%= order.order_id %>" method="POST" style="margin: 0">
+                        <button type="submit" class="btn btn-sm btn-warning">
+                          Mark as Dispatched
                         </button>
                       </form>
                       <% } %>
@@ -261,15 +325,71 @@
                   </div>
                   <% }); %> <% } %>
 
-                  <div style="
-                        text-align: center;
-                        margin-top: 40px;
-                        margin-bottom: 20px;
-                      ">
-                    <button class="sec-btn" onclick="dispatching()" style="color: white; background: orange">
-                      Dispatch Selected Orders
-                    </button>
+                  <!-- Pagination Controls -->
+                  <% if (totalPages > 0) { %>
+                  <%
+                      function buildQueryString(filters, pageNum, currentLimit) {
+                        const params = new URLSearchParams();
+                        if (filters.order_status_filter) params.set('order_status_filter', filters.order_status_filter);
+                        if (filters.payment_status_filter) params.set('payment_status_filter', filters.payment_status_filter);
+                        if (filters.search_user_filter) params.set('search_user_filter', filters.search_user_filter);
+                        params.set('limit', currentLimit);
+                        if (pageNum) params.set('page', pageNum);
+                        return params.toString();
+                      }
+                    %>
+                  <div class="pagination-container" style="margin-top: 30px; padding-bottom: 20px; text-align: center;">
+                    <nav aria-label="Orders navigation">
+                      <ul class="pagination justify-content-center">
+                        <!-- Previous Button -->
+                        <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                          <a class="page-link" href="/admin/ordersManagement?<%= buildQueryString(currentFilters, currentPage - 1, limit) %>">Previous</a>
+                        </li>
+
+                        <%# Page Numbers Logic %>
+                        <%
+                            const maxPagesToShow = 5; 
+                            let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+                            let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+                            if (endPage - startPage + 1 < maxPagesToShow && startPage > 1) {
+                                startPage = Math.max(1, endPage - maxPagesToShow + 1);
+                            }
+                          %>
+
+                        <% if (startPage > 1) { %>
+                        <li class="page-item">
+                          <a class="page-link" href="/admin/ordersManagement?<%= buildQueryString(currentFilters, 1, limit) %>">1</a>
+                        </li>
+                        <% if (startPage > 2) { %>
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                        <% } %>
+                        <% } %>
+
+                        <% for (let i = startPage; i <= endPage; i++) { %>
+                        <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                          <a class="page-link" href="/admin/ordersManagement?<%= buildQueryString(currentFilters, i, limit) %>"><%= i %></a>
+                        </li>
+                        <% } %>
+
+                        <% if (endPage < totalPages) { %>
+                        <% if (endPage < totalPages - 1) { %>
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                        <% } %>
+                        <li class="page-item">
+                          <a class="page-link" href="/admin/ordersManagement?<%= buildQueryString(currentFilters, totalPages, limit) %>"><%= totalPages %></a>
+                        </li>
+                        <% } %>
+
+                        <!-- Next Button -->
+                        <li class="page-item <%= currentPage >= totalPages ? 'disabled' : '' %>">
+                          <a class="page-link" href="/admin/ordersManagement?<%= buildQueryString(currentFilters, currentPage + 1, limit) %>">Next</a>
+                        </li>
+                      </ul>
+                    </nav>
                   </div>
+                  <% } %>
+                  <!-- End Pagination Controls -->
+
                 </div>
               </div>
             </div>
@@ -278,81 +398,6 @@
       </div>
     </div>
   </div>
-
-  <script>
-    let order_id = [];
-
-    function checkingDispatch() {
-      order_id = []; // Reset the array
-      const checking = document.querySelectorAll(
-        ".dispatch.form-check-input"
-      );
-      for (let index = 0; index < checking.length; index++) {
-        if (checking[index].checked) {
-          order_id.push(checking[index].name);
-        }
-      }
-    }
-
-    function dispatching() {
-      if (order_id.length === 0) {
-        alert("Please select at least one order to dispatch.");
-        return;
-      }
-
-      // Optional: Add a confirmation dialog
-      // if (!confirm(`Are you sure you want to dispatch ${order_id.length} order(s)?`)) {
-      //   return;
-      // }
-
-      const dispatchButton = document.querySelector(
-        'button.sec-btn[onclick="dispatching()"]'
-      );
-      if (dispatchButton) dispatchButton.disabled = true;
-      document.body.style.cursor = "wait";
-
-      fetch("/admin/dispatch_orders", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            order_id_s: order_id
-          }),
-        })
-        .then((response) => {
-          if (response.ok) {
-            // Server handles the redirect on success (e.g., to /admin/orders?success=...).
-            // The browser will follow this redirect.
-            // Consume the response body. For a redirect, it might be the HTML of the new page.
-            return response.text();
-          } else {
-            // Attempt to get a more specific error message from the server response body
-            return response.text().then((text) => {
-              throw new Error(text || `Server error: ${response.status}`);
-            });
-          }
-        })
-        .then((text) => {
-          // This block executes if response.ok was true.
-          // Force a navigation to the orders page with a cache-busting query parameter
-          // to ensure the view is updated with the latest changes.
-          window.location.href = '/admin/orders?t=' + new Date().getTime();
-        })
-        .catch((error) => {
-          console.error("Error dispatching orders:", error);
-          alert(
-            "There was a problem dispatching the orders: " + error.message
-          );
-        })
-        .finally(() => {
-          if (dispatchButton) dispatchButton.disabled = false;
-          document.body.style.cursor = "default";
-          // The page should reload due to the server's redirect on success.
-          // If it didn't, and a manual reload was needed: window.location.reload();
-        });
-    }
-  </script>
 
   <!-- jquery  -->
   <script src="/javascripts/jquery-3.5.1.min.js"></script>

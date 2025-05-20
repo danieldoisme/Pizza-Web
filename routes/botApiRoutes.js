@@ -7,7 +7,7 @@ router.get("/menu-items", (req, res) => {
   const { category, type } = req.query;
 
   let query =
-    "SELECT item_id, item_name, item_price, item_category, item_type, item_description_long, item_calories, item_img FROM menu";
+    "SELECT item_id, item_name, item_price, item_category, item_type, item_description_long, item_calories FROM menu";
   const queryParams = [];
   const conditions = [];
 
@@ -32,27 +32,39 @@ router.get("/menu-items", (req, res) => {
         .status(500)
         .json({ success: false, message: "Error fetching menu items." });
     }
-    res.json({ success: true, items: results });
+    // Add image URLs to each item
+    const itemsWithImages = results.map((item) => ({
+      ...item,
+      item_image_url: `${req.protocol}://${req.get("host")}/images/item-image/${
+        item.item_id
+      }`,
+    }));
+    res.json({ success: true, items: itemsWithImages });
   });
 });
 
 // Endpoint to get details for a specific menu item by name or ID
-router.get("/menu-item/:identifier", (req, res) => {
+router.get("/menu-item/:itemName", (req, res) => {
   const connection = req.app.get("dbConnection");
-  const identifier = req.params.identifier;
-  const isNumericId = /^\d+$/.test(identifier);
+  const itemName = req.params.itemName;
+  const isNumericId = /^\d+$/.test(itemName);
   let query;
   let queryParams;
 
   if (isNumericId) {
     query =
-      "SELECT item_id, item_name, item_price, item_category, item_type, item_description_long, item_calories, item_img FROM menu WHERE item_id = ?";
-    queryParams = [parseInt(identifier)];
+      "SELECT item_id, item_name, item_price, item_category, item_type, item_description_long, item_calories FROM menu WHERE item_id = ?";
+    queryParams = [parseInt(itemName)];
   } else {
     // Using LIKE for more flexible name matching
-    query =
-      "SELECT item_id, item_name, item_price, item_category, item_type, item_description_long, item_calories, item_img FROM menu WHERE item_name LIKE ?";
-    queryParams = [`%${identifier}%`];
+    query = `
+    SELECT 
+      item_id, item_name, item_type, item_category, item_price, 
+      item_calories, item_serving, item_rating, total_ratings, 
+      item_description_long
+    FROM menu 
+    WHERE item_name LIKE ?`;
+    queryParams = [`%${itemName}%`];
   }
 
   connection.query(query, queryParams, (err, results) => {
@@ -67,12 +79,33 @@ router.get("/menu-item/:identifier", (req, res) => {
         .status(404)
         .json({ success: false, message: "Menu item not found." });
     }
-    // If searching by name and multiple items match, Botpress might need to handle disambiguation
-    // For simplicity, returning the first match or all matches if by name
-    res.json({
-      success: true,
-      item: isNumericId || results.length === 1 ? results[0] : results,
-    });
+
+    // Process results to add image URL
+    // If searching by name and multiple items match, Botpress might need to handle disambiguation.
+    // For now, if multiple results by name, we'll add image_url to all.
+    // If by ID, there should be only one.
+    const processedResults = results.map((item) => ({
+      ...item,
+      item_image_url: `${req.protocol}://${req.get("host")}/images/item-image/${
+        item.item_id
+      }`,
+    }));
+
+    if (isNumericId) {
+      // If searched by ID, there should be only one result
+      res.json({ success: true, item: processedResults[0] });
+    } else {
+      // If searched by name, return all matches (or just the first if preferred)
+      // For simplicity, returning the first match if only one, or all if multiple.
+      // The bot might need logic to handle multiple matches.
+      res.json({
+        success: true,
+        item:
+          processedResults.length === 1
+            ? processedResults[0]
+            : processedResults,
+      });
+    }
   });
 });
 

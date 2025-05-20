@@ -11,7 +11,7 @@ async function renderCheckoutPage(req, res) {
 
   try {
     const query = `
-      SELECT uc.item_id, uc.quantity, m.item_name, m.item_price, m.item_img AS item_image 
+      SELECT uc.item_id, uc.quantity, m.item_name, m.item_price 
       FROM user_cart_items uc
       JOIN menu m ON uc.item_id = m.item_id
       WHERE uc.user_id = ? AND uc.quantity > 0

@@ -73,7 +73,7 @@
                   <% items.forEach((item, index) => { %>
                   <tr id="cart-item-row-<%= item.item_id %>">
                     <td><%= index + 1 %></td>
-                    <td><img src="<%= item.item_image || '/images/dish/default-pizza.jpg' %>" alt="<%= item.item_name %>" style="width: 70px; height: 70px; object-fit: cover; border-radius: 5px;"></td>
+                    <td><img src="/images/item-image/<%= item.item_id %>" alt="<%= item.item_name %>" style="width: 70px; height: 70px; object-fit: cover; border-radius: 5px;" onerror="this.onerror=null; this.src='/images/dish/default-pizza.jpg';"></td>
                     <td><a href="/item/<%= item.item_id %>" style="color: #ff8243; text-decoration: none;"><%= item.item_name %></a></td>
                     <td class="item-price" data-price="<%= item.item_price %>">$<%= item.item_price.toFixed(2) %></td>
                     <td>

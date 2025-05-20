@@ -132,12 +132,12 @@
                     <strong>Date:</strong> <%= new
                       Date(order.order_date).toLocaleString() %>
                   </p>
-                  <p><strong>Status:</strong> <%= order.order_status %></p>
+                  <p><strong>Status:</strong> <span style="font-weight:bold; padding: 3px 8px; border-radius: 4px; color: white; background-color: <%= order.order_status === "Pending" ? "#ffc107" : (order.order_status === "Processing" ? "#007bff" : (order.order_status === "Dispatched" ? "#17a2b8" : (order.order_status === "Delivered" ? "#28a745" : (order.order_status === "Cancelled" ? "#dc3545" : "#6c757d")))) %>"><%= order.order_status %></span></p>
                   <p>
                     <strong>Payment Status:</strong>
                     <span style="
-                          font-weight: bold;
-                          color: <%= (order.payment_status === "Paid") ? "green" : (order.payment_status === "Unpaid" ? "orange" : "red") %>;
+                          font-weight: bold; padding: 3px 8px; border-radius: 4px; color: white;
+                          background-color: <%= (order.payment_status === 'Paid') ? '#28a745' : (order.payment_status === 'Unpaid' ? '#fd7e14' : (order.payment_status === 'Pending' ? '#ffc107' : (order.payment_status === 'Failed' ? '#dc3545' : (order.payment_status === 'Refunded' ? '#6c757d' : '#adb5bd')))) %>;
                         "><%= order.payment_status %></span>
                   </p>
                   <p>
@@ -190,12 +190,13 @@
                         order.items.forEach(function(item, itemIndex) { %>
                       <tr style="border-bottom: 1px solid #eee">
                         <td style="padding: 8px">
-                          <img src="/images/dish/<%= item.item_img %>" alt="<%= item.item_name %>" style="
+                          <img src="/images/item-image/<%= item.item_id %>" alt="<%= item.item_name %>" style="
                                 width: 60px;
-                                height: auto;
+                                height: 60px; /* Ensure consistent size */
+                                object-fit: cover; /* Ensure image covers the area */
                                 border-radius: 5px;
                                 border: 1px solid #ddd;
-                              " />
+                              " onerror="this.onerror=null; this.src='/images/dish/default-pizza.jpg';" />
                         </td>
                         <td style="padding: 8px"><%= item.item_name %></td>
                         <td style="padding: 8px; text-align: center">

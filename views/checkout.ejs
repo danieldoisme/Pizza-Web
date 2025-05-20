@@ -315,12 +315,18 @@
       // Initialize PayPal button
       const paypalContainer = document.getElementById('paypal-button-container');
       if (paypalContainer) {
-        // Check if paypal SDK is loaded
         if (typeof paypal !== 'undefined') {
           paypal.Buttons({
-            // Set up the transaction
+            onClick: function(data, actions) {
+              // Called when the buyer clicks a PayPal button (PayPal, Pay Later, Venmo, or Card fields)
+              console.log('PayPal button clicked (funding source: ' + data.fundingSource + '), dispatching resize.');
+              window.dispatchEvent(new Event('resize'));
+              // You can use this to perform validations before PayPal's own flow starts.
+              // If validation fails: return actions.reject();
+              return actions.resolve(); // If validation passes
+            },
             createOrder: function(data, actions) {
-              // Recalculate total inside createOrder as items might change dynamically (though not in this static view)
+              window.dispatchEvent(new Event('resize')); // Also keep here for initial order creation
               const currentItems = JSON.parse('<%- JSON.stringify(items || []) %>');
               const total = currentItems.reduce((sum, item) => sum + (item.subtotal || 0), 0);
 
@@ -345,12 +351,7 @@
             onApprove: function(data, actions) {
               return actions.order.capture().then(function(orderData) {
                 console.log('PayPal Capture result:', orderData);
-
-                // Create FormData object
                 const formData = new FormData();
-                formData.append('paymentMethod', 'PayPal');
-                formData.append('paymentId', orderData.id); // PayPal Order ID
-                formData.append('status', orderData.status); // e.g., 'COMPLETED'
 
                 // --- START: Extract and add PayPal shipping address ---
                 let paypalShippingAddress = null;
@@ -413,30 +414,26 @@
 
                 // Display loading indicator or disable buttons here
                 document.body.style.cursor = 'wait';
-                paypalContainer.style.opacity = '0.5'; // Dim PayPal button area
+                if (paypalContainer) paypalContainer.style.opacity = '0.5';
 
-                // Submit form data to the server
                 fetch('/checkout/process-payment', {
                     method: 'POST',
-                    body: formData // Sending FormData
+                    body: formData
                   })
                   .then(response => {
                     document.body.style.cursor = 'default';
-                    paypalContainer.style.opacity = '1';
+                    if (paypalContainer) paypalContainer.style.opacity = '1';
                     if (response.redirected) {
-                      window.location.href = response.url; // Follow server redirect (e.g., to confirmation)
+                      window.location.href = response.url;
                     } else {
-                      // If no redirect, check response body for success/error
                       return response.json().then(data => {
-                        if (data && data.redirectUrl) { // Handle JSON response with redirect URL
+                        if (data && data.redirectUrl) {
                           window.location.href = data.redirectUrl;
                         } else if (data && !data.success) {
                           alert('Payment processing error: ' + (data.message || 'Unknown server error'));
                         } else if (!response.ok) {
-                          // Handle non-2xx responses that weren't redirects
                           alert(`Server error: ${response.status} ${response.statusText}`);
                         } else {
-                          // Assume success if no redirect and no error message
                           console.log("Payment processed, but no redirect. Response:", data);
                         }
                       });
@@ -444,31 +441,53 @@
                   })
                   .catch(error => {
                     document.body.style.cursor = 'default';
-                    paypalContainer.style.opacity = '1';
+                    if (paypalContainer) paypalContainer.style.opacity = '1';
                     console.error('Fetch Error:', error);
                     alert('An error occurred submitting payment details to the server. Please try again.');
+                  })
+                  .finally(() => {
+                    window.dispatchEvent(new Event('resize'));
                   });
               });
             },
-
-            // Handle errors during PayPal interaction
             onError: function(err) {
               console.error('PayPal Button Error:', err);
               alert('An error occurred with the PayPal payment process. Please check console for details or try again.');
               document.body.style.cursor = 'default';
               if (paypalContainer) paypalContainer.style.opacity = '1';
+              window.dispatchEvent(new Event('resize'));
             },
-
-            // Handle payment cancellation by the user
             onCancel: function(data) {
               console.log('Payment cancelled by user:', data);
               alert('Payment was cancelled.');
               document.body.style.cursor = 'default';
               if (paypalContainer) paypalContainer.style.opacity = '1';
+              window.dispatchEvent(new Event('resize'));
             }
-          }).render('#paypal-button-container').catch(err => {
+          }).render('#paypal-button-container').then(() => {
+            // After buttons are rendered, set up MutationObserver for dynamic content changes
+            if (paypalContainer) {
+              let debounceTimeout;
+              const observer = new MutationObserver((mutationsList, obs) => {
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(() => {
+                  console.log('Mutation observed in PayPal container (debounced), dispatching resize.');
+                  window.dispatchEvent(new Event('resize'));
+                }, 150); // Debounce to avoid excessive calls
+              });
+              observer.observe(paypalContainer, {
+                childList: true, // Observe direct children additions/removals
+                subtree: true, // Observe all descendants
+                attributes: true // Observe attribute changes (e.g., style, class)
+              });
+              // This observer will run until the page is unloaded.
+            }
+          }).catch(err => {
             console.error("Failed to render PayPal Buttons:", err);
             paypalContainer.innerHTML = "<p class='text-danger'>Could not load PayPal buttons. Please try refreshing the page or use Cash on Delivery.</p>";
+          }).finally(() => {
+            // Initial resize after render attempt
+            window.dispatchEvent(new Event('resize'));
           });
         } else {
           console.error("PayPal SDK script not loaded.");

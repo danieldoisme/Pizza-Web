@@ -41,8 +41,40 @@ CREATE TABLE `admin` (
 
 LOCK TABLES `admin` WRITE;
 /*!40000 ALTER TABLE `admin` DISABLE KEYS */;
-INSERT INTO `admin` VALUES (1,'SA','sa@example.com','12312345','0956325921');
+INSERT INTO `admin` VALUES (1,'SA','sa@example.com','$2b$10$CQZxid9ooPeD5Vcp7WZPW.c/avSdvdwQnTec.Wkjfqa2YlTsBtBGq','0987654321');
 /*!40000 ALTER TABLE `admin` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `email_subscriptions`
+--
+
+DROP TABLE IF EXISTS `email_subscriptions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `email_subscriptions` (
+  `subscription_id` int NOT NULL AUTO_INCREMENT,
+  `email` varchar(255) NOT NULL,
+  `user_id` int DEFAULT NULL,
+  `is_subscribed` tinyint(1) DEFAULT '1',
+  `subscribed_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `unsubscribed_at` datetime DEFAULT NULL,
+  `unsubscribe_token` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`subscription_id`),
+  UNIQUE KEY `email_UNIQUE` (`email`),
+  KEY `fk_subscriptions_user_id_idx` (`user_id`),
+  KEY `idx_unsubscribe_token` (`unsubscribe_token`),
+  CONSTRAINT `fk_subscriptions_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `email_subscriptions`
+--
+
+LOCK TABLES `email_subscriptions` WRITE;
+/*!40000 ALTER TABLE `email_subscriptions` DISABLE KEYS */;
+/*!40000 ALTER TABLE `email_subscriptions` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -95,7 +127,8 @@ CREATE TABLE `menu` (
   `item_rating` decimal(3,2) DEFAULT '0.00',
   `total_ratings` int DEFAULT '0',
   `item_description_long` text,
-  `item_img` varchar(255) NOT NULL,
+  `item_img_blob` mediumblob,
+  `item_img_mimetype` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`item_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -106,7 +139,7 @@ CREATE TABLE `menu` (
 
 LOCK TABLES `menu` WRITE;
 /*!40000 ALTER TABLE `menu` DISABLE KEYS */;
-INSERT INTO `menu` VALUES (1,'Classic Margherita','Vegetarian','pizzas','3',240,16.00,0.00,0,NULL,'classic-margherita.jpg'),(2,'Pepperoni Supreme','House Special','pizzas','3',330,18.00,0.00,0,NULL,'pepperoni-supreme.jpg'),(3,'BBQ Chicken','Non-Vegan','pizzas','3',290,17.00,0.00,0,NULL,'bbq-chicken.jpg'),(4,'Mediterranean Veggie','Vegetarian','pizzas','3',260,16.00,0.00,0,NULL,'mediterranean-veggie.jpg'),(5,'Meat Lovers','Non-Vegan','pizzas','3',380,19.00,0.00,0,NULL,'meat-lovers.jpg'),(6,'Hawaiian','Non-Vegan','pizzas','3',285,16.00,0.00,0,NULL,'hawaiian.jpg'),(7,'Buffalo Chicken','Spicy','pizzas','3',295,17.00,0.00,0,NULL,'buffalo-chicken.jpg'),(8,'Mushroom Truffle','Signature','pizzas','3',270,20.00,0.00,0,NULL,'mushroom-truffle.jpg'),(9,'Quattro Formaggi','Vegetarian','pizzas','3',310,17.00,0.00,0,NULL,'quattro-formaggi.jpg'),(10,'Spicy Diavola','Spicy','pizzas','3',325,18.00,0.00,0,NULL,'spicy-diavola.jpg'),(11,'Pesto Chicken','Non-Vegan','pizzas','3',280,17.00,0.00,0,NULL,'pesto-chicken.jpg'),(12,'Prosciutto & Arugula','Signature','pizzas','3',265,20.00,0.00,0,NULL,'prosciutto-arugula.jpg'),(13,'Supreme','Non-Vegan','pizzas','4',350,18.00,0.00,0,NULL,'supreme.jpg'),(14,'White Pizza','Vegetarian','pizzas','3',290,16.00,0.00,0,NULL,'white-pizza.jpg'),(15,'Spinach & Feta','Vegetarian','pizzas','3',250,16.00,0.00,0,NULL,'spinach-feta.jpg'),(16,'Garlic Knots','Vegetarian','appetizers','1',120,6.00,0.00,0,NULL,'garlic-knots.jpg'),(17,'Mozzarella Sticks','Vegetarian','appetizers','1',160,8.00,0.00,0,NULL,'mozzarella-sticks.jpg'),(18,'Buffalo Wings','Spicy','appetizers','1',190,11.00,0.00,0,NULL,'buffalo-wings.jpg'),(19,'Loaded Potato Skins','Non-Vegan','appetizers','1',140,9.00,0.00,0,NULL,'loaded-potato-skins.jpg'),(20,'Caprese Salad','Gluten-Free','appetizers','3',320,8.00,0.00,0,NULL,'caprese-salad.jpg'),(21,'Chocolate Chip Cookie Pizza','Signature','desserts','3',420,9.00,0.00,0,NULL,'chocolate-chip-cookie-pizza.jpg'),(22,'Cannoli','House Special','desserts','2',280,5.00,0.00,0,NULL,'cannoli.jpg'),(23,'Tiramisu','Signature','desserts','2',350,7.00,0.00,0,NULL,'tiramisu.jpg'),(24,'Cinnamon Knots','Vegetarian','desserts','2',190,6.00,0.00,0,NULL,'cinnamon-knots.jpg'),(25,'Nutella Calzone','Contains Nuts','desserts','3',490,8.00,0.00,0,NULL,'nutella-calzone.jpg'),(26,'Classic Cola','Gluten-Free','beverages','1',150,2.00,3.00,1,NULL,'classic-cola.jpg'),(27,'Lemon-Lime Soda','Gluten-Free','beverages','1',140,2.00,4.00,1,NULL,'lemon-lime-soda.jpg'),(28,'Root Beer','Gluten-Free','beverages','1',160,2.00,0.00,0,NULL,'root-beer.jpg'),(29,'Iced Tea','Organic','beverages','1',90,3.00,0.00,0,NULL,'iced-tea.jpg'),(30,'Italian Soda','Locally Sourced','beverages','1',120,3.00,0.00,0,NULL,'italian-soda.jpg');
+INSERT INTO `menu` VALUES (1,'Classic Margherita','Vegetarian','Pizzas','3',240,16.00,0.00,0,NULL,NULL,NULL),(2,'Pepperoni Supreme','House Special','Pizzas','3',330,18.00,0.00,0,NULL,NULL,NULL),(3,'BBQ Chicken','Non-Vegan','Pizzas','3',290,17.00,0.00,0,NULL,NULL,NULL),(4,'Mediterranean Veggie','Vegetarian','Pizzas','3',260,16.00,0.00,0,NULL,NULL,NULL),(5,'Meat Lovers','Non-Vegan','Pizzas','3',380,19.00,0.00,0,NULL,NULL,NULL),(6,'Hawaiian','Non-Vegan','Pizzas','3',285,16.00,0.00,0,NULL,NULL,NULL),(7,'Buffalo Chicken','Spicy','Pizzas','3',295,17.00,0.00,0,NULL,NULL,NULL),(8,'Mushroom Truffle','Signature','Pizzas','3',270,20.00,0.00,0,NULL,NULL,NULL),(9,'Quattro Formaggi','Vegetarian','Pizzas','3',310,17.00,0.00,0,NULL,NULL,NULL),(10,'Spicy Diavola','Spicy','Pizzas','3',325,18.00,0.00,0,NULL,NULL,NULL),(11,'Pesto Chicken','Non-Vegan','Pizzas','3',280,17.00,0.00,0,NULL,NULL,NULL),(12,'Prosciutto & Arugula','Signature','Pizzas','3',265,20.00,0.00,0,NULL,NULL,NULL),(13,'Supreme','Non-Vegan','Pizzas','4',350,18.00,0.00,0,NULL,NULL,NULL),(14,'White Pizza','Vegetarian','Pizzas','3',290,16.00,0.00,0,NULL,NULL,NULL),(15,'Spinach & Feta','Vegetarian','Pizzas','3',250,16.00,0.00,0,NULL,NULL,NULL),(16,'Garlic Knots','Vegetarian','Appetizers','1',120,6.00,0.00,0,NULL,NULL,NULL),(17,'Mozzarella Sticks','Vegetarian','Appetizers','1',160,8.00,0.00,0,NULL,NULL,NULL),(18,'Buffalo Wings','Spicy','Appetizers','1',190,11.00,0.00,0,NULL,NULL,NULL),(19,'Loaded Potato Skins','Non-Vegan','Appetizers','1',140,9.00,0.00,0,NULL,NULL,NULL),(20,'Caprese Salad','Gluten-Free','Appetizers','3',320,8.00,0.00,0,NULL,NULL,NULL),(21,'Chocolate Chip Cookie Pizza','Signature','Desserts','3',420,9.00,0.00,0,NULL,NULL,NULL),(22,'Cannoli','House Special','Desserts','2',280,5.00,0.00,0,NULL,NULL,NULL),(23,'Tiramisu','Signature','Desserts','2',350,7.00,0.00,0,NULL,NULL,NULL),(24,'Cinnamon Knots','Vegetarian','Desserts','2',190,6.00,0.00,0,NULL,NULL,NULL),(25,'Nutella Calzone','Contains Nuts','Desserts','3',490,8.00,0.00,0,NULL,NULL,NULL),(26,'Classic Cola','Gluten-Free','Beverages','1',150,2.00,0.00,0,NULL,NULL,NULL),(27,'Lemon-Lime Soda','Gluten-Free','Beverages','1',140,2.00,0.00,0,NULL,NULL,NULL),(28,'Root Beer','Gluten-Free','Beverages','1',160,2.00,0.00,0,NULL,NULL,NULL),(29,'Iced Tea','Organic','Beverages','1',90,3.00,0.00,0,NULL,NULL,NULL),(30,'Italian Soda','Locally Sourced','Beverages','1',120,3.00,0.00,0,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `menu` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -122,6 +155,7 @@ CREATE TABLE `order_dispatch` (
   `order_id` int NOT NULL,
   `dispatch_datetime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `dispatched_by_admin_id` int DEFAULT NULL,
+  `dispatch_status` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`dispatch_id`),
   UNIQUE KEY `uq_order_dispatch_order_id` (`order_id`),
   KEY `fk_dispatch_order_id` (`order_id`),
@@ -250,7 +284,7 @@ CREATE TABLE `user_cart_items` (
   KEY `fk_user_cart_item_id_idx` (`item_id`),
   CONSTRAINT `fk_user_cart_item_id` FOREIGN KEY (`item_id`) REFERENCES `menu` (`item_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_user_cart_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -287,42 +321,9 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Do Duc Thanh','48 Giai Phong Lane Hai Ba Trung District, Hanoi, 100000, Vietnam','thanhdd@stu.ptit.edu.vn','$2b$10$jXtOSPTM4EdtSnjX8.1s6Oj2z8Nhwk5ej5JV3UZCLZv6g0G5qcAxG','0973586115');
+INSERT INTO `users` VALUES (1,'Do Duc Thanh','48 Giai Phong Lane, Hai Ba Trung District, Hanoi, 100000, Vietnam','thanhdd@stu.ptit.edu.vn','$2b$10$jXtOSPTM4EdtSnjX8.1s6Oj2z8Nhwk5ej5JV3UZCLZv6g0G5qcAxG','0973586115');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Table structure for table `email_subscriptions`
---
-
-DROP TABLE IF EXISTS `email_subscriptions`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `email_subscriptions` (
-  `subscription_id` int NOT NULL AUTO_INCREMENT,
-  `email` varchar(255) NOT NULL,
-  `user_id` int DEFAULT NULL,
-  `is_subscribed` tinyint(1) DEFAULT '1',
-  `subscribed_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `unsubscribed_at` datetime DEFAULT NULL,
-  `unsubscribe_token` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`subscription_id`),
-  UNIQUE KEY `email_UNIQUE` (`email`),
-  KEY `fk_subscriptions_user_id_idx` (`user_id`),
-  KEY `idx_unsubscribe_token` (`unsubscribe_token`),
-  CONSTRAINT `fk_subscriptions_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
--- Dumping data for table `email_subscriptions`
---
-
-LOCK TABLES `email_subscriptions` WRITE;
-/*!40000 ALTER TABLE `email_subscriptions` DISABLE KEYS */;
-/*!40000 ALTER TABLE `email_subscriptions` ENABLE KEYS */;
-UNLOCK TABLES;
-
-
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

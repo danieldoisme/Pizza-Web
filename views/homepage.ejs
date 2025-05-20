@@ -75,7 +75,7 @@
             <div class="col-lg-4 col-sm-6 dish-box-wp <%= items[i].item_category.toLowerCase() %>">
               <div class="dish-box text-center">
                 <div class="dist-img">
-                  <img src="/images/dish/<%= items[i].item_img %>" alt="<%= items[i].item_name %>" />
+                  <img src="/images/item-image/<%= items[i].item_id %>" alt="<%= items[i].item_name %>" onerror="this.onerror=null; this.src='/images/dish/default-pizza.jpg';" />
                 </div>
                 <div class="dish-rating">
                   <%= Number(items[i].item_rating).toFixed(1) %>

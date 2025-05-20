@@ -57,7 +57,9 @@
                 <div class="col-lg-4 col-sm-6 dish-box-wp <%= item.item_category ? item.item_category.toLowerCase().replace(/\s+/g, '-') : '' %>" data-cat="<%= item.item_category ? item.item_category.toLowerCase().replace(/\s+/g, '-') : '' %>">
                   <div class="dish-box text-center">
                     <div class="dist-img">
-                      <img src="/images/dish/<%= item.item_img ? item.item_img : 'default-pizza.jpg' %>" alt="<%= item.item_name %>" />
+                      <a href="/item/<%= item.item_id %>">
+                        <img src="/images/item-image/<%= item.item_id %>" alt="<%= item.item_name %>" onerror="this.onerror=null; this.src='/images/dish/default-pizza.jpg';">
+                      </a>
                     </div>
                     <div class="dish-title">
                       <h3 class="h3-title"><a href="/item/<%= item.item_id %>" class="stretched-link-custom"><%= item.item_name %></a></h3>
@@ -67,7 +69,7 @@
                       <ul>
                         <li>
                           <p>Category</p>
-                          <b><%= item.item_category.toUpperCase() %></b>
+                          <b><%= item.item_category %></b>
                         </li>
                         <li>
                           <p>Type</p>
