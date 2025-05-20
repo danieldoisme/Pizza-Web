@@ -60,11 +60,83 @@
 
     .rating-summary .stars {
       color: #ff8243;
+      /* Default color for filled stars, will be inherited by the orange part of the half-star */
       font-size: 1.5rem;
+      /* This is the target size for all stars */
+    }
+
+    /* Add this rule to align full and empty <i> stars with the custom-half-star */
+    .rating-summary .stars>.uil-star {
+      /* Targets direct <i> children like <i class="uil uil-star"> and <i class="uil uil-star empty"> */
+      vertical-align: middle;
     }
 
     .rating-summary .stars .uil-star.empty {
       color: #e0e0e0;
+      /* Gray for fully empty stars */
+      /* It will also get vertical-align: middle from the rule above */
+    }
+
+    /* Styles for the custom half-star */
+    .rating-summary .stars .custom-half-star {
+      position: relative;
+      /* Establishes a positioning context */
+      display: inline-block;
+      /* Allows it to sit in line with other stars */
+      font-size: inherit;
+      /* Inherit the 1.5rem from .rating-summary .stars */
+      width: 1em;
+      /* Width of one star (will be 1.5rem) */
+      height: 1em;
+      /* Height of one star (will be 1.5rem) */
+      line-height: 1em;
+      /* Helps align icon vertically (will be 1.5rem) */
+      vertical-align: middle;
+      /* This element already has vertical-align: middle */
+      /* Aligns with other stars in the line */
+    }
+
+    /* The gray full star background */
+    .rating-summary .stars .custom-half-star i.gray-star-bg {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      /* Fill the .custom-half-star container */
+      height: 100%;
+      color: #e0e0e0;
+      /* Gray color for this background star */
+      z-index: 1;
+      /* Place it in the background */
+      /* font-size will be inherited from .custom-half-star (1.5rem) */
+    }
+
+    /* The wrapper for the orange clipped star */
+    .rating-summary .stars .custom-half-star .orange-star-clipped-wrapper {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 50%;
+      /* Key: This wrapper is only 50% wide */
+      height: 100%;
+      /* Full height */
+      overflow: hidden;
+      /* Key: Clips its content (the orange star) */
+      z-index: 2;
+      /* Place it in the foreground */
+      /* font-size will be inherited from .custom-half-star (1.5rem) */
+    }
+
+    /* The actual orange star inside the clipped wrapper */
+    .rating-summary .stars .custom-half-star .orange-star-clipped-wrapper i.uil-star {
+      display: inline-block;
+      /* Ensure proper block behavior for width/height */
+      width: 1em;
+      /* It's a full 1em star (will be 1.5rem based on inherited font-size) */
+      height: 1em;
+      /* (will be 1.5rem based on inherited font-size) */
+      /* Color is inherited from .rating-summary .stars (#ff8243) */
+      /* This full orange star will be clipped by its parent wrapper */
     }
 
     .rating-summary p {
@@ -154,6 +226,32 @@
       z-index: 1050;
       min-width: 250px;
     }
+
+    /* REMOVE OR COMMENT OUT THESE CONFLICTING RULES:
+    .custom-half-star {
+      position: relative;
+      display: inline-block;
+      font-size: 2rem; 
+      color: #ff8243;
+    }
+
+    .gray-star-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      color: #e0e0e0;
+      overflow: hidden;
+    }
+
+    .orange-star-clipped-wrapper {
+      position: relative;
+      display: inline-block;
+      color: #ff8243;
+      overflow: hidden;
+    }
+    */
   </style>
 </head>
 
@@ -175,12 +273,12 @@
                 <h1><%= item.item_name %></h1>
                 <div class="rating-summary d-flex align-items-center mb-3">
                   <div class="stars"><%
-                    const ratingValue = item.item_rating === null ? 0 : parseFloat(item.item_rating); // Corrected: item.item_rating instead of item.avg_rating
+                    const ratingValue = item.item_rating === null ? 0 : parseFloat(item.item_rating); 
                     const fullStars = Math.floor(ratingValue);
                     const halfStar = (ratingValue - fullStars) >= 0.25 && (ratingValue - fullStars) < 0.75;
                     const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
                     %><% for(let i = 0; i < fullStars; i++) { %><i class="uil uil-star"></i><% } %><%
-                    if (halfStar) { %><i class="uil uil-star-half-alt"></i><% } %><%
+                    if (halfStar) { %><span class="custom-half-star"><i class="uil uil-star gray-star-bg"></i><span class="orange-star-clipped-wrapper"><i class="uil uil-star"></i></span></span><% } %><%
                     for(let i = 0; i < emptyStars; i++) { %><i class="uil uil-star empty"></i><% } %></div>
                   <% if (item.total_ratings && item.total_ratings > 0) { %>
                   <p>(<%= Number(item.item_rating === null ? 0 : item.item_rating).toFixed(1) %> based on <%= item.total_ratings %> review<%= item.total_ratings !== 1 ? 's' : '' %>)</p>

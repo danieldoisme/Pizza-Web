@@ -25,14 +25,14 @@ DROP TABLE IF EXISTS `admin`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `admin` (
-  `admin_id` int NOT NULL AUTO_INCREMENT,
-  `admin_name` varchar(45) NOT NULL,
-  `admin_email` varchar(45) NOT NULL,
-  `admin_password` varchar(255) NOT NULL,
-  `admin_mobile` varchar(45) NOT NULL,
-  PRIMARY KEY (`admin_id`),
-  UNIQUE KEY `admin_email_UNIQUE` (`admin_email`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+    `admin_id` INT NOT NULL AUTO_INCREMENT,
+    `admin_name` VARCHAR(45) NOT NULL,
+    `admin_email` VARCHAR(45) NOT NULL,
+    `admin_password` VARCHAR(255) NOT NULL,
+    `admin_mobile` VARCHAR(45) NOT NULL,
+    PRIMARY KEY (`admin_id`),
+    UNIQUE KEY `admin_email_UNIQUE` (`admin_email`)
+)  ENGINE=INNODB AUTO_INCREMENT=2 DEFAULT CHARSET=UTF8MB4 COLLATE = UTF8MB4_0900_AI_CI;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -53,19 +53,21 @@ DROP TABLE IF EXISTS `email_subscriptions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `email_subscriptions` (
-  `subscription_id` int NOT NULL AUTO_INCREMENT,
-  `email` varchar(255) NOT NULL,
-  `user_id` int DEFAULT NULL,
-  `is_subscribed` tinyint(1) DEFAULT '1',
-  `subscribed_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `unsubscribed_at` datetime DEFAULT NULL,
-  `unsubscribe_token` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`subscription_id`),
-  UNIQUE KEY `email_UNIQUE` (`email`),
-  KEY `fk_subscriptions_user_id_idx` (`user_id`),
-  KEY `idx_unsubscribe_token` (`unsubscribe_token`),
-  CONSTRAINT `fk_subscriptions_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+    `subscription_id` INT NOT NULL AUTO_INCREMENT,
+    `email` VARCHAR(255) NOT NULL,
+    `user_id` INT DEFAULT NULL,
+    `is_subscribed` TINYINT(1) DEFAULT '1',
+    `subscribed_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `unsubscribed_at` DATETIME DEFAULT NULL,
+    `unsubscribe_token` VARCHAR(255) DEFAULT NULL,
+    PRIMARY KEY (`subscription_id`),
+    UNIQUE KEY `email_UNIQUE` (`email`),
+    KEY `fk_subscriptions_user_id_idx` (`user_id`),
+    KEY `idx_unsubscribe_token` (`unsubscribe_token`),
+    CONSTRAINT `fk_subscriptions_user_id` FOREIGN KEY (`user_id`)
+        REFERENCES `users` (`user_id`)
+        ON DELETE SET NULL ON UPDATE CASCADE
+)  ENGINE=INNODB AUTO_INCREMENT=3 DEFAULT CHARSET=UTF8MB4 COLLATE = UTF8MB4_0900_AI_CI;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -85,19 +87,24 @@ DROP TABLE IF EXISTS `item_ratings`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `item_ratings` (
-  `rating_id` int NOT NULL AUTO_INCREMENT,
-  `item_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `rating_value` int NOT NULL,
-  `review_text` text,
-  `rating_date` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`rating_id`),
-  UNIQUE KEY `uq_user_item_rating` (`user_id`,`item_id`),
-  KEY `fk_itemratings_item_id` (`item_id`),
-  CONSTRAINT `fk_itemratings_item_id` FOREIGN KEY (`item_id`) REFERENCES `menu` (`item_id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_itemratings_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
-  CONSTRAINT `item_ratings_chk_1` CHECK (((`rating_value` >= 1) and (`rating_value` <= 5)))
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+    `rating_id` INT NOT NULL AUTO_INCREMENT,
+    `item_id` INT NOT NULL,
+    `user_id` INT NOT NULL,
+    `rating_value` INT NOT NULL,
+    `review_text` TEXT,
+    `rating_date` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`rating_id`),
+    UNIQUE KEY `uq_user_item_rating` (`user_id` , `item_id`),
+    KEY `fk_itemratings_item_id` (`item_id`),
+    CONSTRAINT `fk_itemratings_item_id` FOREIGN KEY (`item_id`)
+        REFERENCES `menu` (`item_id`)
+        ON DELETE CASCADE,
+    CONSTRAINT `fk_itemratings_user_id` FOREIGN KEY (`user_id`)
+        REFERENCES `users` (`user_id`)
+        ON DELETE CASCADE,
+    CONSTRAINT `item_ratings_chk_1` CHECK (((`rating_value` >= 1)
+        AND (`rating_value` <= 5)))
+)  ENGINE=INNODB AUTO_INCREMENT=4 DEFAULT CHARSET=UTF8MB4 COLLATE = UTF8MB4_0900_AI_CI;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -117,20 +124,20 @@ DROP TABLE IF EXISTS `menu`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `menu` (
-  `item_id` int NOT NULL AUTO_INCREMENT,
-  `item_name` varchar(45) NOT NULL,
-  `item_type` varchar(45) NOT NULL,
-  `item_category` varchar(45) NOT NULL,
-  `item_serving` varchar(45) NOT NULL,
-  `item_calories` int NOT NULL,
-  `item_price` decimal(10,2) NOT NULL,
-  `item_rating` decimal(3,2) DEFAULT '0.00',
-  `total_ratings` int DEFAULT '0',
-  `item_description_long` text,
-  `item_img_blob` mediumblob,
-  `item_img_mimetype` varchar(50) DEFAULT NULL,
-  PRIMARY KEY (`item_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+    `item_id` INT NOT NULL AUTO_INCREMENT,
+    `item_name` VARCHAR(45) NOT NULL,
+    `item_type` VARCHAR(45) NOT NULL,
+    `item_category` VARCHAR(45) NOT NULL,
+    `item_serving` VARCHAR(45) NOT NULL,
+    `item_calories` INT NOT NULL,
+    `item_price` DECIMAL(10 , 2 ) NOT NULL,
+    `item_rating` DECIMAL(3 , 2 ) DEFAULT '0.00',
+    `total_ratings` INT DEFAULT '0',
+    `item_description_long` TEXT,
+    `item_img_blob` MEDIUMBLOB,
+    `item_img_mimetype` VARCHAR(50) DEFAULT NULL,
+    PRIMARY KEY (`item_id`)
+)  ENGINE=INNODB AUTO_INCREMENT=31 DEFAULT CHARSET=UTF8MB4 COLLATE = UTF8MB4_0900_AI_CI;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -139,7 +146,39 @@ CREATE TABLE `menu` (
 
 LOCK TABLES `menu` WRITE;
 /*!40000 ALTER TABLE `menu` DISABLE KEYS */;
-INSERT INTO `menu` VALUES (1,'Classic Margherita','Vegetarian','Pizzas','3',240,16.00,0.00,0,NULL,NULL,NULL),(2,'Pepperoni Supreme','House Special','Pizzas','3',330,18.00,0.00,0,NULL,NULL,NULL),(3,'BBQ Chicken','Non-Vegan','Pizzas','3',290,17.00,0.00,0,NULL,NULL,NULL),(4,'Mediterranean Veggie','Vegetarian','Pizzas','3',260,16.00,0.00,0,NULL,NULL,NULL),(5,'Meat Lovers','Non-Vegan','Pizzas','3',380,19.00,0.00,0,NULL,NULL,NULL),(6,'Hawaiian','Non-Vegan','Pizzas','3',285,16.00,0.00,0,NULL,NULL,NULL),(7,'Buffalo Chicken','Spicy','Pizzas','3',295,17.00,0.00,0,NULL,NULL,NULL),(8,'Mushroom Truffle','Signature','Pizzas','3',270,20.00,0.00,0,NULL,NULL,NULL),(9,'Quattro Formaggi','Vegetarian','Pizzas','3',310,17.00,0.00,0,NULL,NULL,NULL),(10,'Spicy Diavola','Spicy','Pizzas','3',325,18.00,0.00,0,NULL,NULL,NULL),(11,'Pesto Chicken','Non-Vegan','Pizzas','3',280,17.00,0.00,0,NULL,NULL,NULL),(12,'Prosciutto & Arugula','Signature','Pizzas','3',265,20.00,0.00,0,NULL,NULL,NULL),(13,'Supreme','Non-Vegan','Pizzas','4',350,18.00,0.00,0,NULL,NULL,NULL),(14,'White Pizza','Vegetarian','Pizzas','3',290,16.00,0.00,0,NULL,NULL,NULL),(15,'Spinach & Feta','Vegetarian','Pizzas','3',250,16.00,0.00,0,NULL,NULL,NULL),(16,'Garlic Knots','Vegetarian','Appetizers','1',120,6.00,0.00,0,NULL,NULL,NULL),(17,'Mozzarella Sticks','Vegetarian','Appetizers','1',160,8.00,0.00,0,NULL,NULL,NULL),(18,'Buffalo Wings','Spicy','Appetizers','1',190,11.00,0.00,0,NULL,NULL,NULL),(19,'Loaded Potato Skins','Non-Vegan','Appetizers','1',140,9.00,0.00,0,NULL,NULL,NULL),(20,'Caprese Salad','Gluten-Free','Appetizers','3',320,8.00,0.00,0,NULL,NULL,NULL),(21,'Chocolate Chip Cookie Pizza','Signature','Desserts','3',420,9.00,0.00,0,NULL,NULL,NULL),(22,'Cannoli','House Special','Desserts','2',280,5.00,0.00,0,NULL,NULL,NULL),(23,'Tiramisu','Signature','Desserts','2',350,7.00,0.00,0,NULL,NULL,NULL),(24,'Cinnamon Knots','Vegetarian','Desserts','2',190,6.00,0.00,0,NULL,NULL,NULL),(25,'Nutella Calzone','Contains Nuts','Desserts','3',490,8.00,0.00,0,NULL,NULL,NULL),(26,'Classic Cola','Gluten-Free','Beverages','1',150,2.00,0.00,0,NULL,NULL,NULL),(27,'Lemon-Lime Soda','Gluten-Free','Beverages','1',140,2.00,0.00,0,NULL,NULL,NULL),(28,'Root Beer','Gluten-Free','Beverages','1',160,2.00,0.00,0,NULL,NULL,NULL),(29,'Iced Tea','Organic','Beverages','1',90,3.00,0.00,0,NULL,NULL,NULL),(30,'Italian Soda','Locally Sourced','Beverages','1',120,3.00,0.00,0,NULL,NULL,NULL);
+LOCK TABLES `menu` WRITE;
+/*!40000 ALTER TABLE `menu` DISABLE KEYS */;
+INSERT INTO `menu` VALUES 
+(1,'Classic Margherita','Vegetarian','Pizzas','3',240,16.00,0.00,0,'A timeless classic featuring a tangy tomato sauce, fresh mozzarella, fragrant basil, and a drizzle of olive oil on our signature hand-tossed crust. Simple, yet bursting with flavor.',NULL,NULL),
+(2,'Pepperoni Supreme','House Special','Pizzas','3',330,18.00,0.00,0,'Generously topped with spicy pepperoni and a rich blend of cheeses over our classic tomato sauce. A true crowd-pleaser.',NULL,NULL),
+(3,'BBQ Chicken','Non-Vegan','Pizzas','3',290,17.00,0.00,0,'Tender grilled chicken, smoky BBQ sauce, red onions, and cilantro, all baked to perfection with mozzarella and provolone cheeses.',NULL,NULL),
+(4,'Mediterranean Veggie','Vegetarian','Pizzas','3',260,16.00,0.00,0,'A vibrant mix of bell peppers, red onions, olives, fresh tomatoes, and feta cheese on a light pesto base. A taste of the Mediterranean.',NULL,NULL),
+(5,'Meat Lovers','Non-Vegan','Pizzas','3',380,19.00,0.00,0,'A carnivore\'s dream! Loaded with pepperoni, sausage, ham, bacon, and seasoned ground beef on a base of our signature tomato sauce and mozzarella cheese.',NULL,NULL),
+(6,'Hawaiian','Non-Vegan','Pizzas','3',285,16.00,0.00,0,'Sweet pineapple chunks and savory ham on our classic tomato sauce and mozzarella base. A controversial classic that many love!',NULL,NULL),
+(7,'Buffalo Chicken','Spicy','Pizzas','3',295,17.00,0.00,0,'Spicy buffalo sauce base, grilled chicken, red onions, and a cooling ranch drizzle, topped with mozzarella. For those who like it hot!',NULL,NULL),
+(8,'Mushroom Truffle','Signature','Pizzas','3',270,20.00,0.00,0,'An earthy and aromatic pizza with a creamy truffle sauce base, sautéed mushrooms, mozzarella, and a sprinkle of fresh parsley.',NULL,NULL),
+(9,'Quattro Formaggi','Vegetarian','Pizzas','3',310,17.00,0.00,0,'Four cheese delight! A rich blend of mozzarella, provolone, parmesan, and gorgonzola cheeses melted over a light tomato sauce.',NULL,NULL),
+(10,'Spicy Diavola','Spicy','Pizzas','3',325,18.00,0.00,0,'For the spice lovers! Spicy salami, jalapeños, and chili flakes on a fiery arrabbiata sauce base with mozzarella cheese.',NULL,NULL),
+(11,'Pesto Chicken','Non-Vegan','Pizzas','3',280,17.00,0.00,0,'Grilled chicken, creamy pesto sauce, sun-dried tomatoes, and mozzarella cheese. A fresh and flavorful choice.',NULL,NULL),
+(12,'Prosciutto & Arugula','Signature','Pizzas','3',265,20.00,0.00,0,'Thinly sliced prosciutto, fresh arugula, shaved parmesan, and a light balsamic glaze on a white garlic sauce base. Elegant and delicious.',NULL,NULL),
+(13,'Supreme','Non-Vegan','Pizzas','4',350,18.00,0.00,0,'The works! Pepperoni, sausage, mushrooms, onions, green peppers, and black olives on our classic tomato sauce and mozzarella.',NULL,NULL),
+(14,'White Pizza','Vegetarian','Pizzas','3',290,16.00,0.00,0,'A creamy ricotta and garlic sauce base topped with mozzarella, parmesan, and fresh spinach. No tomato sauce needed!',NULL,NULL),
+(15,'Spinach & Feta','Vegetarian','Pizzas','3',250,16.00,0.00,0,'Fresh spinach, crumbled feta cheese, Kalamata olives, and red onions on a light garlic and olive oil base. A healthy and tasty option.',NULL,NULL),
+(16,'Garlic Knots','Vegetarian','Appetizers','1',120,6.00,0.00,0,'Our freshly baked dough tied into delightful knots, brushed with garlic-infused olive oil, and sprinkled with Parmesan cheese and parsley. Served with a side of marinara sauce.',NULL,NULL),
+(17,'Mozzarella Sticks','Vegetarian','Appetizers','1',160,8.00,0.00,0,'Crispy on the outside, gooey on the inside! Served with a side of our classic marinara sauce for dipping.',NULL,NULL),
+(18,'Buffalo Wings','Spicy','Appetizers','1',190,11.00,0.00,0,'Juicy chicken wings tossed in your choice of classic Buffalo, honey BBQ, or spicy garlic parmesan sauce. Served with celery sticks and ranch or blue cheese dressing.',NULL,NULL),
+(19,'Loaded Potato Skins','Non-Vegan','Appetizers','1',140,9.00,0.00,0,'Crispy potato skins loaded with melted cheddar cheese, bacon bits, and a dollop of sour cream. Topped with fresh chives.',NULL,NULL),
+(20,'Caprese Salad','Gluten-Free','Appetizers','3',320,8.00,0.00,0,'Fresh mozzarella slices, ripe tomatoes, and fragrant basil leaves, drizzled with balsamic glaze and extra virgin olive oil. A light and refreshing Italian classic.',NULL,NULL),
+(21,'Chocolate Chip Cookie Pizza','Signature','Desserts','3',420,9.00,0.00,0,'A warm, giant chocolate chip cookie baked in a pizza pan, cut into slices, and perfect for sharing. Served with a scoop of vanilla ice cream for an extra treat (ice cream optional).',NULL,NULL),
+(22,'Cannoli','House Special','Desserts','2',280,5.00,0.00,0,'Sweet and creamy Italian pastry shells filled with a luscious, sweet ricotta cheese and chocolate chip filling. Dusted with powdered sugar.',NULL,NULL),
+(23,'Tiramisu','Signature','Desserts','2',350,7.00,0.00,0,'Classic Italian dessert made with ladyfingers dipped in coffee, layered with a whipped mixture of eggs, sugar, and mascarpone cheese, flavored with cocoa.',NULL,NULL),
+(24,'Cinnamon Knots','Vegetarian','Desserts','2',190,6.00,0.00,0,'Soft, warm dough knots tossed in cinnamon sugar and served with a sweet cream cheese frosting for dipping. A delightful treat.',NULL,NULL),
+(25,'Nutella Calzone','Contains Nuts','Desserts','3',490,8.00,0.00,0,'A warm, folded pizza dough filled with rich Nutella hazelnut spread and dusted with powdered sugar. Pure indulgence!',NULL,NULL),
+(26,'Classic Cola','Gluten-Free','Beverages','1',150,2.00,0.00,0,'The iconic, refreshing carbonated beverage. Perfect to accompany any pizza.',NULL,NULL),
+(27,'Lemon-Lime Soda','Gluten-Free','Beverages','1',140,2.00,0.00,0,'Crisp and refreshing lemon-lime flavored soda to quench your thirst.',NULL,NULL),
+(28,'Root Beer','Gluten-Free','Beverages','1',160,2.00,0.00,0,'A classic American soda with a creamy, sweet flavor. Great with a hearty pizza.',NULL,NULL),
+(29,'Iced Tea','Organic','Beverages','1',90,3.00,0.00,0,'Freshly brewed iced tea, available sweetened or unsweetened. A refreshing choice.',NULL,NULL),
+(30,'Italian Soda','Locally Sourced','Beverages','1',120,3.00,0.00,0,'Sparkling water mixed with your choice of flavored syrup (e.g., raspberry, strawberry, peach). A bubbly and customizable drink.',NULL,NULL);
 /*!40000 ALTER TABLE `menu` ENABLE KEYS */;
 UNLOCK TABLES;
 
