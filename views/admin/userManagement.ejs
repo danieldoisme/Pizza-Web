@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - User Management</title>
+  <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/stylesheets/style.css">
+  <style>
+    .admin-main-content .section {
+      padding-top: 40px;
+      padding-bottom: 40px;
+    }
+
+    .table th,
+    .table td {
+      vertical-align: middle;
+    }
+
+    .action-buttons .btn {
+      margin-right: 5px;
+    }
+
+    .admin-main-content .sec-title.text-center.mb-4 .h2-title {
+      margin-bottom: 0.5rem;
+    }
+
+    .table th a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .table th a:hover {
+      color: #ff8243;
+    }
+
+    .table th .sort-icon {
+      margin-left: 5px;
+      font-size: 0.8em;
+    }
+
+    .pagination {
+      justify-content: center;
+    }
+
+    .pagination .page-item.active .page-link {
+      background-color: #ff8243;
+      border-color: #ff8243;
+      color: white;
+    }
+
+    .pagination .page-link {
+      color: #ff8243;
+    }
+
+    .pagination .page-link:hover {
+      color: #e3702b;
+    }
+
+    .pagination .page-item.disabled .page-link {
+      color: #6c757d;
+    }
+  </style>
+</head>
+
+<body class="admin-active">
+  <%- include('../partials/adminSidebar') %>
+
+  <div class="admin-main-content">
+    <div id="viewport">
+      <div id="js-scroll-content">
+        <section class="section" id="user-management-page" style="background-image: url(/images/menu-bg.png);">
+          <div class="container-fluid">
+            <div class="sec-title text-center mb-4">
+              <h2 class="h2-title">User Management</h2>
+              <div class="sec-title-shape mb-4">
+                <img src="/images/title-shape.svg" alt="Title Shape" />
+              </div>
+            </div>
+
+            <% if (message && message.length > 0) { %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+              <%= message %>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <% } %>
+            <% if (error && error.length > 0) { %>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              <%= error %>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <% } %>
+
+            <!-- Search/Filter Form will go here in Phase 2 -->
+
+            <!-- Search/Filter Form -->
+            <div class="mb-4 card">
+              <div class="card-body">
+                <h5 class="card-title">Filter Users</h5>
+                <form action="/admin/users" method="GET" class="form-inline">
+                  <input type="hidden" name="sortBy" value="<%= sortBy %>">
+                  <input type="hidden" name="sortOrder" value="<%= sortOrder %>">
+                  <div class="form-group mr-2 mb-2">
+                    <label for="search_name" class="sr-only">Name</label>
+                    <input type="text" class="form-control" id="search_name" name="search_name" placeholder="Search by Name" value="<%= typeof searchName !== 'undefined' ? searchName : '' %>">
+                  </div>
+                  <div class="form-group mr-2 mb-2">
+                    <label for="search_email" class="sr-only">Email</label>
+                    <input type="text" class="form-control" id="search_email" name="search_email" placeholder="Search by Email" value="<%= typeof searchEmail !== 'undefined' ? searchEmail : '' %>">
+                  </div>
+                  <button type="submit" class="btn btn-primary mb-2 mr-2">Search</button>
+                  <a href="/admin/users?sortBy=<%= sortBy %>&sortOrder=<%= sortOrder %>" class="btn btn-secondary mb-2">Clear Filters</a>
+                </form>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-striped table-bordered">
+                <thead class="thead-dark">
+                  <tr>
+                    <% const sortLink = (col, display) => { %>
+                    <%   let newSortOrder = 'ASC'; %>
+                    <%   if (sortBy === col && sortOrder === 'ASC') newSortOrder = 'DESC'; %>
+                    <%   const currentParams = new URLSearchParams(req.query); %>
+                    <%   currentParams.set('sortBy', col); %>
+                    <%   currentParams.set('sortOrder', newSortOrder); %>
+                    <%   currentParams.delete('page'); // Reset to page 1 on sort change %>
+                    <th>
+                      <a href="/admin/users?<%= currentParams.toString() %>">
+                        <%= display %>
+                        <% if (sortBy === col) { %>
+                        <i class="uil <%= sortOrder === 'ASC' ? 'uil-arrow-up' : 'uil-arrow-down' %> sort-icon"></i>
+                        <% } %>
+                      </a>
+                    </th>
+                    <% } %>
+
+                    <%- sortLink('user_id', 'ID') %>
+                    <%- sortLink('user_name', 'Name') %>
+                    <%- sortLink('user_email', 'Email') %>
+                    <th>Mobile No.</th>
+                    <th>Address</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (users && users.length > 0) { %>
+                  <% users.forEach(user => { %>
+                  <tr>
+                    <td><%= user.user_id %></td>
+                    <td><%= user.user_name %></td>
+                    <td><%= user.user_email %></td>
+                    <td><%= user.user_mobileno || 'N/A' %></td>
+                    <td><%= user.user_address || 'N/A' %></td>
+                    <td class="action-buttons">
+                      <button class="btn btn-sm btn-info edit-user-btn" data-id="<%= user.user_id %>">
+                        <i class="uil uil-edit"></i> Edit
+                      </button>
+                    </td>
+                  </tr>
+                  <% }) %>
+                  <% } else { %>
+                  <tr>
+                    <td colspan="6" class="text-center">No users found.</td>
+                  </tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+
+            <% if (totalPages > 1) { %>
+            <nav aria-label="User navigation">
+              <ul class="pagination">
+                <% 
+                  const baseParamsSearch = new URLSearchParams(req.query); 
+                  baseParamsSearch.delete('page'); // Remove page to build base for pagination links
+                %>
+
+                <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                  <% const prevParamsSearch = new URLSearchParams(baseParamsSearch); prevParamsSearch.set('page', currentPage - 1); %>
+                  <a class="page-link" href="/admin/users?<%= prevParamsSearch.toString() %>">Previous</a>
+                </li>
+
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                <%   const pageParamsSearch = new URLSearchParams(baseParamsSearch); pageParamsSearch.set('page', i); %>
+                <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                  <a class="page-link" href="/admin/users?<%= pageParamsSearch.toString() %>"><%= i %></a>
+                </li>
+                <% } %>
+
+                <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                  <% const nextParamsSearch = new URLSearchParams(baseParamsSearch); nextParamsSearch.set('page', currentPage + 1); %>
+                  <a class="page-link" href="/admin/users?<%= nextParamsSearch.toString() %>">Next</a>
+                </li>
+              </ul>
+            </nav>
+            <% } %>
+            <% if (totalUsers > 0) { %>
+            <p class="text-center text-muted">Showing <%= users.length %> of <%= totalUsers %> users.</p>
+            <% } %>
+
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit User Modal -->
+  <div class="modal fade" id="editUserModal" tabindex="-1" role="dialog" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <form id="editUserForm" method="POST">
+          <!-- Action will be set by JS -->
+          <div class="modal-body">
+            <input type="hidden" id="editUserId" name="userId">
+            <div class="form-group">
+              <label for="editUserName">Name</label>
+              <input type="text" class="form-control" id="editUserName" name="user_name" required>
+            </div>
+            <div class="form-group">
+              <label for="editUserEmail">Email</label>
+              <input type="email" class="form-control" id="editUserEmail" name="user_email" required>
+            </div>
+            <div class="form-group">
+              <label for="editUserMobile">Mobile Number</label>
+              <input type="tel" class="form-control" id="editUserMobile" name="user_mobileno">
+            </div>
+            <div class="form-group">
+              <label for="editUserAddress">Address</label>
+              <textarea class="form-control" id="editUserAddress" name="user_address" rows="3"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/javascripts/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="/javascripts/main.js"></script>
+  <script>
+    // Clear query parameters from URL after displaying messages
+    if (window.history.replaceState) {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('message') || url.searchParams.has('error')) {
+        url.searchParams.delete('message');
+        url.searchParams.delete('error');
+        window.history.replaceState({
+          path: url.href
+        }, '', url.href);
+      }
+    }
+
+    // Edit User Modal Logic
+    document.addEventListener('DOMContentLoaded', function() {
+      const editUserButtons = document.querySelectorAll('.edit-user-btn');
+      const editUserModal = $('#editUserModal'); // jQuery selector for Bootstrap modal
+      const editUserForm = document.getElementById('editUserForm');
+      const editUserIdField = document.getElementById('editUserId');
+      const editUserNameField = document.getElementById('editUserName');
+      const editUserEmailField = document.getElementById('editUserEmail');
+      const editUserMobileField = document.getElementById('editUserMobile');
+      const editUserAddressField = document.getElementById('editUserAddress');
+
+      editUserButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const userId = this.dataset.id;
+
+          // Fetch user data
+          fetch(`/admin/users/${userId}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                const user = data.user;
+                editUserIdField.value = user.user_id;
+                editUserNameField.value = user.user_name;
+                editUserEmailField.value = user.user_email;
+                editUserMobileField.value = user.user_mobileno || '';
+                editUserAddressField.value = user.user_address || '';
+
+                // Preserve current query params (search, sort, page) in form action
+                const currentQueryParams = new URLSearchParams(window.location.search).toString();
+                editUserForm.action = `/admin/users/update/${user.user_id}${currentQueryParams ? '?' + currentQueryParams : ''}`;
+
+                editUserModal.modal('show');
+              } else {
+                alert('Error: ' + data.message);
+              }
+            })
+            .catch(err => {
+              console.error('Failed to fetch user data:', err);
+              alert('Failed to load user data. Please try again.');
+            });
+        });
+      });
+    });
+  </script>
+</body>
+
+</html>

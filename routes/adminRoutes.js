@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
-const saltRounds = 10;
-const isAdmin = require("../middleware/isAdmin");
+const isAdmin = require("../middleware/isAdmin.js");
+const { body, validationResult } = require("express-validator"); // For input validation
 
 // --- Login/Logout Routes (No Auth Required) ---
 router.get("/login", (req, res) => {
@@ -481,20 +481,23 @@ router.get("/ordersManagement", async (req, res) => {
     countQueryParams.push(payment_status_filter);
   }
   if (search_user_filter) {
-    if (!isNaN(parseInt(search_user_filter))) { // if it's a number, could be user_id
-        whereClauses.push("(u.user_name LIKE ? OR o.user_id = ?)");
-        const searchTerm = `%${search_user_filter}%`;
-        queryParams.push(searchTerm, parseInt(search_user_filter));
-        countQueryParams.push(searchTerm, parseInt(search_user_filter));
-    } else { // otherwise, search by name only
-        whereClauses.push("u.user_name LIKE ?");
-        const searchTerm = `%${search_user_filter}%`;
-        queryParams.push(searchTerm);
-        countQueryParams.push(searchTerm);
+    if (!isNaN(parseInt(search_user_filter))) {
+      // if it's a number, could be user_id
+      whereClauses.push("(u.user_name LIKE ? OR o.user_id = ?)");
+      const searchTerm = `%${search_user_filter}%`;
+      queryParams.push(searchTerm, parseInt(search_user_filter));
+      countQueryParams.push(searchTerm, parseInt(search_user_filter));
+    } else {
+      // otherwise, search by name only
+      whereClauses.push("u.user_name LIKE ?");
+      const searchTerm = `%${search_user_filter}%`;
+      queryParams.push(searchTerm);
+      countQueryParams.push(searchTerm);
     }
   }
 
-  const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+  const whereString =
+    whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
   try {
     // Step 1: Get total count of orders matching filters
@@ -504,13 +507,14 @@ router.get("/ordersManagement", async (req, res) => {
       LEFT JOIN users u ON o.user_id = u.user_id
       ${whereString}`;
 
-    const [countResult] = await connection.promise().query(countQuery, countQueryParams);
+    const [countResult] = await connection
+      .promise()
+      .query(countQuery, countQueryParams);
     const totalOrders = countResult[0].totalOrders;
     const totalPages = Math.ceil(totalOrders / limit);
-    
-    const currentPage = (page > totalPages && totalPages > 0) ? totalPages : page; // Adjust if page is out of bounds
-    const currentOffset = (currentPage - 1) * limit;
 
+    const currentPage = page > totalPages && totalPages > 0 ? totalPages : page; // Adjust if page is out of bounds
+    const currentOffset = (currentPage - 1) * limit;
 
     // Step 2: Fetch paginated and filtered orders with user details
     const ordersQuery = `
@@ -522,7 +526,9 @@ router.get("/ordersManagement", async (req, res) => {
       LIMIT ? OFFSET ?`;
 
     const finalQueryParams = [...queryParams, limit, currentOffset];
-    const [orders] = await connection.promise().query(ordersQuery, finalQueryParams);
+    const [orders] = await connection
+      .promise()
+      .query(ordersQuery, finalQueryParams);
 
     // Step 3: For each order, fetch its items
     const ordersWithItems = [];
@@ -533,7 +539,9 @@ router.get("/ordersManagement", async (req, res) => {
           FROM order_items oi
           JOIN menu m ON oi.item_id = m.item_id
           WHERE oi.order_id = ?`;
-        const [items] = await connection.promise().query(itemsQuery, [order.order_id]);
+        const [items] = await connection
+          .promise()
+          .query(itemsQuery, [order.order_id]);
         ordersWithItems.push({ ...order, items: items });
       }
     }
@@ -550,9 +558,9 @@ router.get("/ordersManagement", async (req, res) => {
       currentFilters: {
         order_status_filter,
         payment_status_filter,
-        search_user_filter
+        search_user_filter,
       },
-      totalOrders: totalOrders
+      totalOrders: totalOrders,
     });
   } catch (err) {
     console.error("Error fetching orders for admin:", err);
@@ -701,5 +709,206 @@ router.post("/order/mark-paid-cod/:order_id", (req, res) => {
     );
   });
 });
+
+// GET /admin/users - Display User Management Page
+router.get("/users", isAdmin, async (req, res) => {
+  const connection = req.app.get("dbConnection");
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+
+  const searchName = req.query.search_name || "";
+  const searchEmail = req.query.search_email || "";
+
+  // Define allowed sortable columns
+  const allowedSortBy = ["user_id", "user_name", "user_email"];
+  let sortBy = req.query.sortBy || "user_name";
+  if (!allowedSortBy.includes(sortBy)) {
+    sortBy = "user_name"; // Fallback to default
+  }
+
+  let sortOrder = req.query.sortOrder || "ASC";
+  if (sortOrder.toUpperCase() !== "ASC" && sortOrder.toUpperCase() !== "DESC") {
+    sortOrder = "ASC"; // Fallback to default
+  }
+
+  let whereClauses = [];
+  let queryParams = [];
+  let countQueryParams = [];
+
+  if (searchName) {
+    whereClauses.push("user_name LIKE ?");
+    queryParams.push(`%${searchName}%`);
+    countQueryParams.push(`%${searchName}%`);
+  }
+  if (searchEmail) {
+    whereClauses.push("user_email LIKE ?");
+    queryParams.push(`%${searchEmail}%`);
+    countQueryParams.push(`%${searchEmail}%`);
+  }
+
+  const whereCondition =
+    whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+  try {
+    // Get total count of users with filters
+    const countQuery = `SELECT COUNT(*) AS totalUsers FROM users ${whereCondition}`;
+    const [countResult] = await connection
+      .promise()
+      .query(countQuery, countQueryParams);
+    const totalUsers = countResult[0].totalUsers;
+    const totalPages = Math.ceil(totalUsers / limit);
+
+    const currentPage =
+      page > totalPages && totalPages > 0 ? totalPages : page < 1 ? 1 : page;
+    const currentOffset = (currentPage - 1) * limit;
+
+    // Get users for the current page with filters and sorting
+    const usersQuery = `
+      SELECT user_id, user_name, user_email, user_mobileno, user_address 
+      FROM users 
+      ${whereCondition}
+      ORDER BY ${connection.escapeId(sortBy)} ${
+      sortOrder === "DESC" ? "DESC" : "ASC"
+    }
+      LIMIT ? 
+      OFFSET ?`;
+    const finalQueryParams = [...queryParams, limit, currentOffset];
+    const [users] = await connection
+      .promise()
+      .query(usersQuery, finalQueryParams);
+
+    res.render("admin/userManagement", {
+      page: "users",
+      users: users,
+      totalUsers: totalUsers,
+      totalPages: totalPages,
+      currentPage: currentPage,
+      limit: limit,
+      sortBy: sortBy,
+      sortOrder: sortOrder,
+      searchName: searchName,
+      searchEmail: searchEmail,
+      message: req.query.message,
+      error: req.query.error,
+      req: req,
+    });
+  } catch (err) {
+    console.error("Error fetching users for management:", err);
+    res.redirect(
+      "/admin/dashboard?error=" + encodeURIComponent("Could not load users.")
+    );
+  }
+});
+
+// GET /admin/users/:userId - Fetch user data for editing
+router.get("/users/:userId", isAdmin, async (req, res) => {
+  const connection = req.app.get("dbConnection");
+  const { userId } = req.params;
+
+  try {
+    const [users] = await connection
+      .promise()
+      .query(
+        "SELECT user_id, user_name, user_email, user_mobileno, user_address FROM users WHERE user_id = ?",
+        [userId]
+      );
+    if (users.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
+    }
+    res.json({ success: true, user: users[0] });
+  } catch (err) {
+    console.error("Error fetching user data for edit:", err);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error fetching user data." });
+  }
+});
+
+// POST /admin/users/update/:userId - Update user details
+router.post(
+  "/users/update/:userId",
+  isAdmin,
+  [
+    // Basic Validation
+    body("user_name")
+      .trim()
+      .notEmpty()
+      .withMessage("Name is required.")
+      .isLength({ min: 2, max: 100 })
+      .withMessage("Name must be between 2 and 100 characters."),
+    body("user_email")
+      .trim()
+      .notEmpty()
+      .withMessage("Email is required.")
+      .isEmail()
+      .withMessage("Invalid email format.")
+      .normalizeEmail(),
+    body("user_mobileno")
+      .optional({ checkFalsy: true })
+      .trim()
+      .isMobilePhone("any", { strictMode: false })
+      .withMessage("Invalid mobile number format."), // Allows empty or valid
+    body("user_address")
+      .optional({ checkFalsy: true })
+      .trim()
+      .isLength({ max: 255 })
+      .withMessage("Address can be up to 255 characters."),
+  ],
+  async (req, res) => {
+    const connection = req.app.get("dbConnection");
+    const { userId } = req.params;
+    const { user_name, user_email, user_mobileno, user_address } = req.body;
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const errorMessages = errors
+        .array()
+        .map((e) => e.msg)
+        .join(" ");
+      // Preserve existing query parameters (like search, sort, page) from the form's action URL
+      const redirectParams = new URLSearchParams(req.query);
+      redirectParams.set("error", `Validation failed: ${errorMessages}`);
+      return res.redirect(`/admin/users?${redirectParams.toString()}`);
+    }
+
+    try {
+      const updateQuery =
+        "UPDATE users SET user_name = ?, user_email = ?, user_mobileno = ?, user_address = ? WHERE user_id = ?";
+      const [result] = await connection
+        .promise()
+        .query(updateQuery, [
+          user_name,
+          user_email,
+          user_mobileno || null,
+          user_address || null,
+          userId,
+        ]);
+
+      if (result.affectedRows === 0) {
+        const redirectParams = new URLSearchParams(req.query);
+        redirectParams.set("error", "User not found or no changes made.");
+        return res.redirect(`/admin/users?${redirectParams.toString()}`);
+      }
+
+      const redirectParams = new URLSearchParams(req.query);
+      redirectParams.set("message", "User updated successfully.");
+      res.redirect(`/admin/users?${redirectParams.toString()}`);
+    } catch (err) {
+      console.error("Error updating user:", err);
+      const redirectParams = new URLSearchParams(req.query);
+      if (err.code === "ER_DUP_ENTRY") {
+        redirectParams.set(
+          "error",
+          "Failed to update user. Email may already be in use."
+        );
+      } else {
+        redirectParams.set("error", "Failed to update user.");
+      }
+      res.redirect(`/admin/users?${redirectParams.toString()}`);
+    }
+  }
+);
 
 module.exports = router;
