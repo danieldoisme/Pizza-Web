@@ -357,7 +357,7 @@
               <div class="kpi-card">
                 <div class="kpi-content-top">
                   <div class="kpi-text">
-                    <p id="totalUsers" style="color: #17a2b8;"><%= data.userStats.totalUsers %></p> <%# Info blue for users %>
+                    <p id="totalUsers" style="color: #17a2b8;"><%= data.totalUsers %></p> <%# Access directly %>
                   </div>
                   <div class="kpi-icon-container"><i class="uil uil-users-alt"></i></div>
                 </div>
@@ -366,7 +366,7 @@
               <div class="kpi-card">
                 <div class="kpi-content-top">
                   <div class="kpi-text">
-                    <p id="newUsersToday" style="color: #17a2b8;"><%= data.userStats.newUsersToday %></p>
+                    <p id="newUsersToday" style="color: #17a2b8;"><%= data.newUsersToday %></p> <%# Access directly %>
                   </div>
                   <div class="kpi-icon-container"><i class="uil uil-user-plus"></i></div>
                 </div>
@@ -400,7 +400,7 @@
                 <h2>Menu Performance</h2>
                 <ul id="menuPerformanceList">
                   <% data.menuPerformance.forEach(item => { %>
-                  <li><span class="item-name"><%= item.itemName %></span> <span class="item-value">Orders: <%= item.orders %>, Rev: <%= item.revenue.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %></span></li>
+                  <li><span class="item-name"><%= item.name %></span> <span class="item-value">Orders: <%= item.orders %>, Rev: <%= item.revenue.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %></span></li>
                   <% }); %>
                 </ul>
               </div>
@@ -436,8 +436,8 @@
         currency: 'USD'
       });
       document.getElementById('unprocessedOrders').textContent = newData.unprocessedOrders;
-      document.getElementById('totalUsers').textContent = newData.userStats.totalUsers;
-      document.getElementById('newUsersToday').textContent = newData.userStats.newUsersToday;
+      document.getElementById('totalUsers').textContent = newData.totalUsers; // Corrected access
+      document.getElementById('newUsersToday').textContent = newData.newUsersToday; // Corrected access
 
       const bestSellersList = document.getElementById('bestSellersList');
       bestSellersList.innerHTML = '';
@@ -451,7 +451,8 @@
       menuPerformanceList.innerHTML = '';
       newData.menuPerformance.forEach(item => {
         const li = document.createElement('li');
-        li.innerHTML = `<span class="item-name">${item.itemName}</span> <span class="item-value">Orders: ${item.orders}, Rev: ${item.revenue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>`;
+        // Ensure 'item.name' is correct, in getLiveDashboardData it's item.name for menuPerformance
+        li.innerHTML = `<span class="item-name">${item.name}</span> <span class="item-value">Orders: ${item.orders}, Rev: ${item.revenue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>`;
         menuPerformanceList.appendChild(li);
       });
     }

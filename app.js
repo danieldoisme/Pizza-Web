@@ -5,9 +5,13 @@ const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const fileUpload = require("express-fileupload");
 const mysql = require("mysql2");
+const cron = require("node-cron"); // 1. Require node-cron
 
 // Initialize Express App
 const app = express();
+
+// Import services
+const statisticsService = require("./services/statisticsService"); // 2. Require your statisticsService
 
 // Import routes
 const indexRoutesModule = require("./routes/indexRoutes.js");
@@ -62,5 +66,29 @@ app.use("/", checkoutRoutes);
 app.use("/api/bot", botApiRoutes);
 app.use("/images", imageRoutes); // Register the image routes under the /images path
 app.use("/admin/statistics", adminStatisticsRoutes); // Register the admin statistics routes
+
+// 3. Setup Cron Job for Daily Statistics Snapshots
+//    Runs every day at 1:05 AM (adjust as needed: second minute hour day-of-month month day-of-week)
+cron.schedule(
+  "5 0 * * *",
+  async () => {
+    console.log(
+      "Running daily statistics snapshot job - " + new Date().toLocaleString()
+    );
+    try {
+      // The 'pool' variable is directly accessible here because it's in the same scope
+      await statisticsService.calculateAndStoreDailySnapshots(pool);
+      console.log("Daily statistics snapshot job completed successfully.");
+    } catch (error) {
+      console.error("Error running daily statistics snapshot job:", error);
+    }
+  },
+  {
+    scheduled: true,
+    timezone: "Asia/Ho_Chi_Minh", // Optional: Set your server's timezone or desired timezone
+  }
+);
+
+console.log("Daily statistics snapshot job scheduled.");
 
 module.exports = app;

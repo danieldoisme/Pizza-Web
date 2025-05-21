@@ -378,6 +378,7 @@ CREATE TABLE `users` (
   `user_email` varchar(45) NOT NULL,
   `user_password` varchar(1000) NOT NULL,
   `user_mobileno` varchar(45) NOT NULL,
+  `user_registration_date` DATETIME DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `user_email_UNIQUE` (`user_email`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -389,11 +390,70 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Do Duc Thanh','48 Giai Phong Lane, Hai Ba Trung District, Hanoi, 100000, Vietnam','thanhdd@stu.ptit.edu.vn','$2b$10$jXtOSPTM4EdtSnjX8.1s6Oj2z8Nhwk5ej5JV3UZCLZv6g0G5qcAxG','0973586115');
+INSERT INTO `users` VALUES (1,'Do Duc Thanh','48 Giai Phong Lane, Hai Ba Trung District, Hanoi, 100000, Vietnam','thanhdd@stu.ptit.edu.vn','$2b$10$jXtOSPTM4EdtSnjX8.1s6Oj2z8Nhwk5ej5JV3UZCLZv6g0G5qcAxG','0973586115', NOW());
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
+--
+-- Table structure for table `admin_dashboard_snapshots`
+--
+
+DROP TABLE IF EXISTS `admin_dashboard_snapshots`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `admin_dashboard_snapshots` (
+  `snapshot_id` INT NOT NULL AUTO_INCREMENT,
+  `snapshot_date` DATE NOT NULL,
+  `total_sales` DECIMAL(12,2) DEFAULT 0.00,
+  `total_orders` INT DEFAULT 0,
+  `average_order_value` DECIMAL(10,2) DEFAULT 0.00,
+  `total_users` INT DEFAULT 0,
+  `new_users_on_date` INT DEFAULT 0,
+  `unprocessed_orders_on_date` INT DEFAULT 0,
+  `order_status_counts_json` JSON DEFAULT NULL,
+  `payment_status_counts_json` JSON DEFAULT NULL,
+  `revenue_trends_weekly_json` JSON DEFAULT NULL,
+  `best_sellers_overall_json` JSON DEFAULT NULL,
+  `menu_performance_overall_json` JSON DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`snapshot_id`),
+  UNIQUE KEY `uq_snapshot_date` (`snapshot_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `sales_dashboard_comparisons`
+--
+
+DROP TABLE IF EXISTS `sales_dashboard_comparisons`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `sales_dashboard_comparisons` (
+  `record_id` INT NOT NULL AUTO_INCREMENT,
+  `record_date` DATE NOT NULL COMMENT 'The date for which these metrics primarily represent "today\'s" view and comparisons are based on.',
+  `kpi_today_sales` DECIMAL(12,2) DEFAULT 0.00,
+  `kpi_today_orders` INT DEFAULT 0,
+  `kpi_today_aov` DECIMAL(10,2) DEFAULT 0.00,
+  `kpi_sameday_lastweek_sales` DECIMAL(12,2) DEFAULT 0.00,
+  `kpi_sameday_lastweek_orders` INT DEFAULT 0,
+  `kpi_sameday_lastweek_aov` DECIMAL(10,2) DEFAULT 0.00,
+  `kpi_mtd_sales` DECIMAL(12,2) DEFAULT 0.00 COMMENT 'Current month-to-date sales as of record_date.',
+  `kpi_mtd_orders` INT DEFAULT 0 COMMENT 'Current month-to-date orders as of record_date.',
+  `kpi_mtd_aov` DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Current month-to-date AOV as of record_date.',
+  `kpi_last_full_month_sales` DECIMAL(12,2) DEFAULT 0.00 COMMENT 'Sales for the full calendar month prior to the month of record_date.',
+  `kpi_last_full_month_orders` INT DEFAULT 0 COMMENT 'Orders for the full calendar month prior to the month of record_date.',
+  `kpi_last_full_month_aov` DECIMAL(10,2) DEFAULT 0.00 COMMENT 'AOV for the full calendar month prior to the month of record_date.',
+  `chart_monthly_current_mtd_daily_sales_json` JSON DEFAULT NULL COMMENT 'Array of {date: "YYYY-MM-DD", sales: value} for current MTD.',
+  `chart_monthly_previous_full_daily_sales_json` JSON DEFAULT NULL COMMENT 'Array of {date: "YYYY-MM-DD", sales: value} for previous full month.',
+  `chart_weekly_current_week_daily_sales_json` JSON DEFAULT NULL COMMENT 'Array of {dayOfWeek: "Mon", sales: value} for the week of record_date.',
+  `chart_weekly_prev_month_sameday_week_daily_sales_json` JSON DEFAULT NULL COMMENT 'Optional: Array for the corresponding week in the previous month.',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`record_id`),
+  UNIQUE KEY `uq_record_date` (`record_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
 /*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
