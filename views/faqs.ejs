@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAQs - PizzazzPizza</title>
+  <!-- icons  -->
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
+  <!-- bootstrap  -->
+  <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
+  <!-- swiper slider  -->
+  <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css" />
+  <!-- fancy box  -->
+  <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css" />
+  <!-- custom css  -->
+  <link rel="stylesheet" href="/stylesheets/style.css" />
+  <style>
+    .faq-section {
+      padding-top: 60px;
+      padding-bottom: 60px;
+    }
+
+    .faq-item {
+      margin-bottom: 20px;
+    }
+
+    .faq-section .h3-title {
+      /* Target h3 within faq-section */
+      color: #333;
+      border-bottom: 2px solid #ff8243;
+      /* Orange bottom border */
+      padding-bottom: 10px;
+      /* Padding below the text, above the border */
+      margin-bottom: 25px;
+      /* Increased margin below the title */
+      margin-top: 40px;
+      /* Add some margin above the title for separation */
+    }
+
+    .faq-section .faq-item:first-of-type .h3-title {
+      /* Remove top margin for the very first section title */
+      margin-top: 0;
+    }
+
+    .faq-question {
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: #ff8243;
+      /* Orange color for questions */
+      cursor: pointer;
+    }
+
+    .faq-answer {
+      margin-top: 5px;
+      font-size: 1rem;
+      line-height: 1.6;
+      display: none;
+      /* Initially hidden */
+    }
+
+    .faq-answer a {
+      color: #007bff;
+      text-decoration: underline;
+    }
+
+    .faq-answer a:hover {
+      color: #0056b3;
+    }
+  </style>
+</head>
+
+<body class="body-fixed">
+  <%- include('partials/header', { pageType: 'faqs' }) %>
+
+  <div id="viewport">
+    <div id="js-scroll-content" class="main-content-top-padding">
+      <section class="faq-section section" style="background-image: url(/images/menu-bg.png);">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-12">
+              <div class="sec-title text-center mb-5">
+                <p class="sec-sub-title mb-3">Help Center</p>
+                <h2 class="h2-title">Frequently Asked <span>Questions</span></h2>
+                <div class="sec-title-shape mb-4">
+                  <img src="/images/title-shape.svg" alt="Title Shape" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row justify-content-center">
+            <div class="col-lg-10">
+              <!-- Account Management -->
+              <div class="faq-item">
+                <h3 class="h3-title" style="color: #333;">Account Management</h3>
+                <div class="faq-question">How do I create an account?</div>
+                <div class="faq-answer">
+                  You can create an account by navigating to the "Sign Up" page, which can be found <a href="/signup">here</a>. You'll need to provide your name, address details, email, mobile number, and create a password.
+                </div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-question">How do I sign in to my account?</div>
+                <div class="faq-answer">
+                  You can sign in on the "Sign In" page, accessible <a href="/signin">here</a>, using your registered email and password.
+                </div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-question">I forgot my password. How can I reset it?</div>
+                <div class="faq-answer">
+                  If you've forgotten your password, you can initiate a password reset process by visiting the <a href="/forgot-password">Forgot Password</a> page.
+                </div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-question">How can I update my profile information (address, mobile number, password)?</div>
+                <div class="faq-answer">
+                  Once signed in, you can update your address, mobile number, and password in the <a href="/settings">Settings</a> section.
+                </div>
+              </div>
+
+              <!-- Orders & Menu -->
+              <div class="faq-item mt-5">
+                <h3 class="h3-title" style="color: #333;">Orders & Menu</h3>
+                <div class="faq-question">How can I view my past orders?</div>
+                <div class="faq-answer">
+                  Registered users can view their order history on the <a href="/orders">My Orders</a> page.
+                </div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-question">How do I search for specific menu items?</div>
+                <div class="faq-answer">
+                  You can use the search bar, typically found in the header, to find menu items. Search results are displayed on the search results page.
+                </div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-question">How does the checkout process work?</div>
+                <div class="faq-answer">
+                  After adding items to your cart, you can proceed to <a href="/checkout">checkout</a>. You'll be able to confirm your order, choose or enter a delivery address, and select a payment method.
+                </div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-question">How long will it take to prepare and deliver my order?</div>
+                <div class="faq-answer">
+                  The <a href="/confirmation">confirmation page</a> mentions that orders are typically prepared in 15 minutes before delivery.
+                </div>
+              </div>
+
+              <!-- Contact & Promotions -->
+              <div class="faq-item mt-5">
+                <h3 class="h3-title" style="color: #333;">Contact & Promotions</h3>
+                <div class="faq-question">How can I contact the restaurant?</div>
+                <div class="faq-answer">
+                  You can send a message to the restaurant through the contact form on the <a href="/contact">Contact</a> page.
+                </div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-question">How do I subscribe to promotions?</div>
+                <div class="faq-answer">
+                  You can subscribe to email promotions by entering your email in the subscription form, often found on the <a href="/">homepage</a>.
+                </div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-question">How can I unsubscribe from promotions?</div>
+                <div class="faq-answer">
+                  Subscription confirmation emails should contain a link to unsubscribe. You can also manage your subscription preferences in your <a href="/settings">account settings</a>.
+                </div>
+              </div>
+
+              <!-- General Information -->
+              <div class="faq-item mt-5">
+                <h3 class="h3-title" style="color: #333;">General Information</h3>
+                <div class="faq-question">What are the restaurant's opening hours?</div>
+                <div class="faq-answer">
+                  The restaurant's open hours are:
+                  <ul>
+                    <li>Mon-Thurs: 9am - 10pm</li>
+                    <li>Fri-Sun: 11am - 10pm</li>
+                  </ul>
+                  This information is also available in the footer of every page.
+                </div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-question">What is the story behind PizzazzPizza?</div>
+                <div class="faq-answer">
+                  You can read about the story of PizzazzPizza on the <a href="/#about">homepage, in the "About" section</a>.
+                </div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-question">Who are the chefs at PizzazzPizza?</div>
+                <div class="faq-answer">
+                  Information about the chefs can be found in the <a href="/#team">"Our Team" section on the homepage</a>.
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <%- include('partials/footer') %>
+    </div>
+  </div>
+
+  <!-- jquery -->
+  <script src="/javascripts/jquery-3.5.1.min.js"></script>
+  <!-- bootstrap -->
+  <script src="/javascripts/bootstrap.min.js"></script>
+  <script src="/javascripts/popper.min.js"></script>
+  <!-- fontawesome -->
+  <script src="/javascripts/font-awesome.min.js"></script>
+  <!-- swiper slider -->
+  <script src="/javascripts/swiper-bundle.min.js"></script>
+  <!-- mixitup -- filter -->
+  <script src="/javascripts/jquery.mixitup.min.js"></script>
+  <!-- fancy box -->
+  <script src="/javascripts/jquery.fancybox.min.js"></script>
+  <!-- parallax -->
+  <script src="/javascripts/parallax.min.js"></script>
+  <!-- gsap -->
+  <script src="/javascripts/gsap.min.js"></script>
+  <!-- scroll trigger -->
+  <script src="/javascripts/ScrollTrigger.min.js"></script>
+  <!-- scroll to plugin -->
+  <script src="/javascripts/ScrollToPlugin.min.js"></script>
+  <!-- smooth scroll -->
+  <script src="/javascripts/smooth-scroll.js"></script>
+  <!-- custom js -->
+  <script src="/javascripts/main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const faqQuestions = document.querySelectorAll('.faq-question');
+      faqQuestions.forEach(question => {
+        question.addEventListener('click', () => {
+          const answer = question.nextElementSibling;
+          if (answer.style.display === 'block') {
+            answer.style.display = 'none';
+          } else {
+            answer.style.display = 'block';
+          }
+          window.dispatchEvent(new Event('resize')); // Update scroll height
+        });
+      });
+    });
+  </script>
+</body>
+
+</html>

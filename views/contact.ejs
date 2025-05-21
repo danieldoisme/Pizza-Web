@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us - PizzazzPizza</title>
+  <!-- icons -->
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+  <!-- bootstrap -->
+  <link rel="stylesheet" href="/stylesheets/bootstrap.min.css">
+  <!-- swiper slider -->
+  <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css">
+  <!-- fancy box -->
+  <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css">
+  <!-- custom css -->
+  <link rel="stylesheet" href="/stylesheets/style.css">
+</head>
+
+<body class="body-fixed">
+  <%- include('partials/header') %>
+
+  <div id="viewport">
+    <div id="js-scroll-content" class="main-content-top-padding">
+      <section class="section" style="background-image: url(/images/menu-bg.png); padding-top: 60px;">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-12 text-center">
+              <div class="sec-title mb-5">
+                <p class="sec-sub-title mb-3">Get in Touch</p>
+                <h2 class="h2-title">Contact Us</h2>
+                <div class="sec-title-shape mb-4">
+                  <img src="/images/title-shape.svg" alt="Title Shape">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <!-- Contact Info -->
+            <div class="col-lg-6 mb-5 mb-lg-0">
+              <div class="contact-info-box">
+                <h3 class="h3-title">Our Information</h3>
+                <p class="mb-4">Feel free to reach out to us through any of the following methods. We look forward to hearing from you!</p>
+                <ul class="list-unstyled">
+                  <li class="mb-3">
+                    <i class="uil uil-map-marker-alt me-2"></i> <strong>Address:</strong> 123 Pizza Street, Flavor Town, FT 54321
+                  </li>
+                  <li class="mb-3">
+                    <i class="uil uil-phone-alt me-2"></i> <strong>Phone:</strong> (123) 456-7890
+                  </li>
+                  <li class="mb-3">
+                    <i class="uil uil-envelope-alt me-2"></i> <strong>Email:</strong> contact@pizzazzpizza.com
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Contact Form -->
+            <div class="col-lg-6">
+              <div class="contact-form-box">
+                <h3 class="h3-title">Send Us a Message</h3>
+                <% if (typeof error !== 'undefined' && error) { %>
+                <div class="alert alert-danger" role="alert">
+                  <%= error %>
+                </div>
+                <% } %>
+                <% if (typeof success !== 'undefined' && success) { %>
+                <div class="alert alert-success" role="alert">
+                  <%= success %>
+                </div>
+                <% } %>
+                <form action="/contact/send" method="POST">
+                  <div class="mb-3">
+                    <label for="contactName" class="form-label">Your Name</label>
+                    <input type="text" class="form-control form-input" id="contactName" name="name" value="<%= typeof formData !== 'undefined' && formData.name ? formData.name : '' %>" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="contactEmail" class="form-label">Your Email</label>
+                    <input type="email" class="form-control form-input" id="contactEmail" name="email" value="<%= typeof formData !== 'undefined' && formData.email ? formData.email : '' %>" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="contactSubject" class="form-label">Subject</label>
+                    <input type="text" class="form-control form-input" id="contactSubject" name="subject" value="<%= typeof formData !== 'undefined' && formData.subject ? formData.subject : '' %>">
+                  </div>
+                  <div class="mb-3">
+                    <label for="contactMessage" class="form-label">Message</label>
+                    <textarea class="form-control form-input" id="contactMessage" name="message" rows="5" required><%= typeof formData !== 'undefined' && formData.message ? formData.message : '' %></textarea>
+                  </div>
+                  <button type="submit" class="sec-btn sec-btn-orange">Send Message</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <%- include('partials/footer') %>
+    </div>
+  </div>
+
+  <!-- jquery -->
+  <script src="/javascripts/jquery-3.5.1.min.js"></script>
+  <!-- bootstrap -->
+  <script src="/javascripts/bootstrap.min.js"></script>
+  <script src="/javascripts/popper.min.js"></script>
+  <!-- fontawesome -->
+  <script src="/javascripts/font-awesome.min.js"></script>
+  <!-- swiper slider -->
+  <script src="/javascripts/swiper-bundle.min.js"></script>
+  <!-- mixitup -- filter -->
+  <script src="/javascripts/jquery.mixitup.min.js"></script>
+  <!-- fancy box -->
+  <script src="/javascripts/jquery.fancybox.min.js"></script>
+  <!-- parallax -->
+  <script src="/javascripts/parallax.min.js"></script>
+  <!-- gsap -->
+  <script src="/javascripts/gsap.min.js"></script>
+  <!-- scroll trigger -->
+  <script src="/javascripts/ScrollTrigger.min.js"></script>
+  <!-- scroll to plugin -->
+  <script src="/javascripts/ScrollToPlugin.min.js"></script>
+  <!-- smooth scroll -->
+  <script src="/javascripts/smooth-scroll.js"></script>
+  <!-- custom js -->
+  <script src="/javascripts/main.js"></script>
+</body>
+
+</html>

@@ -1,202 +1,329 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Settings - PizzazzPizza</title>
-    <!-- icons  -->
-    <link
-      rel="stylesheet"
-      href="https://unicons.iconscout.com/release/v4.0.0/css/line.css"
-    />
-    <!-- bootstrap  -->
-    <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
-    <!-- swiper slider  -->
-    <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css" />
-    <!-- fancy box  -->
-    <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css" />
-    <!-- custom css  -->
-    <link rel="stylesheet" href="/stylesheets/style.css" />
-  </head>
 
-  <body class="body-fixed">
-    <%- include('partials/userNav') %>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings - PizzazzPizza</title>
+  <!-- icons  -->
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
+  <!-- bootstrap  -->
+  <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
+  <!-- swiper slider  -->
+  <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css" />
+  <!-- fancy box  -->
+  <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css" />
+  <!-- custom css  -->
+  <link rel="stylesheet" href="/stylesheets/style.css" />
+  <style>
+    .settings-container .nav-pills .nav-link {
+      color: #495057;
+      border-radius: 0.25rem;
+      margin-bottom: 0.5rem;
+    }
 
-    <div id="viewport">
-      <div id="js-scroll-content">
-        <div class="container settings-container" style="margin-top: 20px">
-          <div class="row">
-            <section class="section col-md-4 col-sm-12" id="address">
-              <div class="container">
-                <div class="row">
-                  <div class="col-lg-12">
-                    <div class="sec-title text-center mb-5">
-                      <h2 class="h2-title">Update Address</h2>
-                      <div class="sec-title-shape mb-4">
-                        <img src="images/title-shape.svg" alt="" />
-                      </div>
-                      <form action="/address" method="post">
-                        <input
-                          type="text"
-                          placeholder="Enter your New Address"
-                          name="address"
-                          required
-                          class="form-input"
-                        /><br /><br />
-                        <input
-                          type="submit"
-                          value="Update Address"
-                          class="sec-btn sec-btn-orange"
-                        /><br />
-                      </form>
-                    </div>
-                  </div>
+    .settings-container .nav-pills .nav-link.active {
+      color: #fff;
+      background-color: #ff8243;
+    }
+
+    .settings-container .nav-pills .nav-link:not(.active):hover {
+      background-color: #ffe0d1;
+      color: #495057;
+    }
+
+    .settings-container .nav-pills .nav-link.active:hover {
+      color: #fff;
+      background-color: #ff8243;
+    }
+
+    .tab-pane {
+      padding: 20px;
+      border: 1px solid #dee2e6;
+      border-radius: 0.25rem;
+    }
+
+    .tabs-background {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 0.25rem;
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+      margin-bottom: 20px;
+    }
+
+    .profile-info-section,
+    .form-section {
+      margin-bottom: 30px;
+    }
+
+    .profile-info-section h5 {
+      color: #ff8243;
+    }
+
+    .settings-container .form-input {
+      margin-bottom: 15px !important;
+    }
+
+    #v-pills-subscriptions .form-check-input[type="checkbox"] {
+      width: 1em;
+      height: 1em;
+      margin-top: 0.25em;
+      margin-right: 0.5em;
+      margin-left: 0;
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+
+<body class="body-fixed">
+  <%- include('partials/userNav') %>
+
+  <div id="viewport">
+    <div id="js-scroll-content">
+      <section class="section repeat-img" id="settings-section" style="background-image: url(/images/menu-bg.png)">
+        <div class="container settings-container" style="margin-top: 20px;">
+          <div class="row mb-4">
+            <div class="col-lg-12">
+              <div class="sec-title text-center">
+                <h2 class="h2-title">Settings</h2>
+                <div class="sec-title-shape mb-4">
+                  <img src="/images/title-shape.svg" alt="Title Shape" />
                 </div>
               </div>
-            </section>
-
-            <section class="section col-md-4 col-sm-12" id="contact">
-              <div class="container">
-                <div class="row">
-                  <div class="col-lg-12">
-                    <div class="sec-title text-center mb-5">
-                      <h2 class="h2-title">Contact Details</h2>
-                      <div class="sec-title-shape mb-4">
-                        <img src="images/title-shape.svg" alt="" />
-                      </div>
-                      <form action="/contact" method="post">
-                        <input
-                          type="text"
-                          placeholder="Enter your New Mobile Number"
-                          name="mobileno"
-                          required
-                          class="form-input"
-                        /><br /><br />
-                        <input
-                          type="submit"
-                          value="Update Contact Number"
-                          class="sec-btn sec-btn-orange"
-                        /><br />
-                      </form>
-                    </div>
-                  </div>
-                </div>
+              <% if (typeof error !== 'undefined' && error && error.trim() !== '') { %>
+              <div class="alert alert-danger text-center" role="alert">
+                <%= error %>
               </div>
-            </section>
-
-            <section class="section col-md-4 col-sm-12" id="password">
-              <div class="container">
-                <div class="row">
-                  <div class="col-lg-12">
-                    <div class="sec-title text-center mb-5">
-                      <h2 class="h2-title">Change Password</h2>
-                      <% if (typeof error !== 'undefined') { %>
-                      <div
-                        class="alert alert-danger"
-                        role="alert"
-                        style="margin-bottom: 20px"
-                      >
-                        <%= error %>
-                      </div>
-                      <% } %> <% if (typeof success !== 'undefined') { %>
-                      <div
-                        class="alert alert-success"
-                        role="alert"
-                        style="margin-bottom: 20px"
-                      >
-                        <%= success %>
-                      </div>
-                      <% } %>
-                      <div class="sec-title-shape mb-4">
-                        <img src="images/title-shape.svg" alt="" />
-                      </div>
-                      <form action="/password" method="post">
-                        <input
-                          type="password"
-                          placeholder="Old Password"
-                          required
-                          class="form-input"
-                          name="old_password"
-                          id="InputOldPassword"
-                        /><br /><br />
-                        <input
-                          type="password"
-                          placeholder="New Password"
-                          required
-                          class="form-input"
-                          name="new_password"
-                          id="InputPassword"
-                          pattern=".{6,}"
-                          title="Minimum 6 character"
-                        /><br /><br />
-                        <input
-                          type="password"
-                          placeholder="Confirm Password"
-                          required
-                          class="form-input"
-                          name="confirmPassword"
-                          id="ConfirmInputPassword"
-                        /><br /><br />
-                        <input
-                          type="submit"
-                          value="Update Password"
-                          class="sec-btn sec-btn-orange"
-                        /><br />
-                      </form>
-                    </div>
-                  </div>
-                </div>
+              <% } %>
+              <% if (typeof success !== 'undefined' && success && success.trim() !== '') { %>
+              <div class="alert alert-success text-center" role="alert">
+                <%= success %>
               </div>
-            </section>
+              <% } %>
+            </div>
           </div>
+
+          <div class="tabs-background">
+            <!-- Added wrapper div -->
+            <div class="row">
+              <div class="col-md-3">
+                <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                  <button class="nav-link active" id="v-pills-profile-tab" data-bs-toggle="pill" data-bs-target="#v-pills-profile" type="button" role="tab" aria-controls="v-pills-profile" aria-selected="true">My Profile</button>
+                  <button class="nav-link" id="v-pills-password-tab" data-bs-toggle="pill" data-bs-target="#v-pills-password" type="button" role="tab" aria-controls="v-pills-password" aria-selected="false">Change Password</button>
+                  <button class="nav-link" id="v-pills-subscriptions-tab" data-bs-toggle="pill" data-bs-target="#v-pills-subscriptions" type="button" role="tab" aria-controls="v-pills-subscriptions" aria-selected="false">Email Subscriptions</button>
+                </div>
+              </div>
+
+              <div class="col-md-9">
+                <div class="tab-content" id="v-pills-tabContent">
+                  <!-- My Profile Tab -->
+                  <div class="tab-pane fade show active" id="v-pills-profile" role="tabpanel" aria-labelledby="v-pills-profile-tab">
+                    <h4 class="h4-title mb-4">Profile Information</h4>
+                    <% if (userData) { %>
+                    <div class="profile-info-section">
+                      <h5>Basic Information</h5>
+                      <p><strong>Name:</strong> <%= userData.user_name %></p>
+                      <p><strong>Email:</strong> <%= userData.user_email %></p>
+                    </div>
+
+                    <div class="profile-info-section">
+                      <h5>Current Contact Details</h5>
+                      <p><strong>Mobile Number:</strong> <%= userData.user_mobileno || 'Not set' %></p>
+                      <p><strong>Address:</strong> <%= userData.user_address || 'Not set' %></p>
+                    </div>
+                    <% } else { %>
+                    <p>Could not load user data.</p>
+                    <% } %>
+
+                    <hr>
+                    <div class="form-section">
+                      <h4 class="h4-title mb-3">Update Contact Number</h4>
+                      <form action="/contact" method="post">
+                        <input type="text" placeholder="Enter your New Mobile Number" name="mobileno" required class="form-input" maxlength="15" /><br />
+                        <input type="submit" value="Update Contact Number" class="sec-btn sec-btn-orange" /><br />
+                      </form>
+                    </div>
+
+                    <hr>
+                    <div class="form-section">
+                      <h4 class="h4-title mb-3">Update Address</h4>
+                      <form action="/address" method="post">
+                        <input type="text" placeholder="Street Address" required class="form-input" name="address_line1" /><br />
+                        <input type="text" placeholder="Apartment, suite, etc. (Optional)" class="form-input" name="address_line2" /><br />
+                        <input type="text" placeholder="City" required class="form-input" name="city" /><br />
+                        <input type="text" placeholder="State/Province" required class="form-input" name="state" /><br />
+                        <input type="text" placeholder="ZIP/Postal Code" required class="form-input" name="postal_code" /><br />
+                        <input type="text" placeholder="Country" required class="form-input" name="country" /><br />
+                        <input type="submit" value="Update Address" class="sec-btn sec-btn-orange" /><br />
+                      </form>
+                    </div>
+                  </div>
+
+                  <!-- Change Password Tab -->
+                  <div class="tab-pane fade" id="v-pills-password" role="tabpanel" aria-labelledby="v-pills-password-tab">
+                    <h4 class="h4-title mb-4">Change Password</h4>
+                    <form action="/password" method="post">
+                      <input type="password" placeholder="Old Password" required class="form-input" name="old_password" id="InputOldPassword" /><br />
+                      <input type="password" placeholder="New Password (min. 6 characters)" required class="form-input" name="new_password" id="InputPassword" pattern=".{6,}" title="Minimum 6 characters" /><br />
+                      <input type="password" placeholder="Confirm New Password" required class="form-input" name="confirmPassword" id="ConfirmInputPassword" /><br />
+                      <input type="submit" value="Update Password" class="sec-btn sec-btn-orange" /><br />
+                    </form>
+                  </div>
+
+                  <!-- Email Subscriptions Tab -->
+                  <div class="tab-pane fade" id="v-pills-subscriptions" role="tabpanel" aria-labelledby="v-pills-subscriptions-tab">
+                    <h4 class="h4-title mb-4">Email Subscriptions</h4>
+                    <p class="mb-4">Manage your email subscription preferences here.</p>
+
+                    <!-- Promotional Emails Section -->
+                    <div class="subscription-section mb-4 p-3 border rounded">
+                      <h5 class="h5-title mb-3">Promotional Emails & Offers</h5>
+                      <% if (typeof promotionSubscription !== 'undefined' && promotionSubscription !== null) { %>
+                      <form action="/settings/update-promotion-subscription" method="POST">
+                        <div class="form-check mb-3">
+                          <input class="form-check-input" type="checkbox" name="subscribe_promotions" id="promoEmails" <%= promotionSubscription.is_subscribed ? 'checked' : '' %>>
+                          <label class="form-check-label" for="promoEmails">
+                            Receive promotional emails and special offers from PizzazzPizza.
+                          </label>
+                        </div>
+                        <button type="submit" class="sec-btn sec-btn-orange">Update Preferences</button>
+                      </form>
+                      <% } else { %>
+                      <form action="/settings/update-promotion-subscription" method="POST">
+                        <div class="form-check mb-3">
+                          <input class="form-check-input" type="checkbox" name="subscribe_promotions" id="promoEmails">
+                          <label class="form-check-label" for="promoEmails">
+                            Receive promotional emails and special offers from PizzazzPizza.
+                          </label>
+                        </div>
+                        <button type="submit" class="sec-btn sec-btn-orange">Update Preferences</button>
+                      </form>
+                      <% } %>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div> <!-- End of wrapper div -->
+
         </div>
-
-        <%- include('partials/footer') %>
-      </div>
+      </section>
+      <%- include('partials/footer') %>
     </div>
+  </div>
 
-    <script>
-      document
-        .querySelector('form[action="/password"]')
-        .addEventListener("submit", function (event) {
-          const newPassword = document.getElementById("InputPassword").value;
-          const confirmPassword = document.getElementById(
-            "ConfirmInputPassword"
-          ).value;
+  <script>
+    // Password confirmation script
+    const passwordForm = document.querySelector('form[action="/password"]');
+    if (passwordForm) {
+      passwordForm.addEventListener("submit", function(event) {
+        const newPassword = document.getElementById("InputPassword").value;
+        const confirmPassword = document.getElementById(
+          "ConfirmInputPassword"
+        ).value;
 
-          if (newPassword !== confirmPassword) {
-            event.preventDefault(); // Stop form submission
-            alert("New password and confirm password do not match");
+        if (newPassword !== confirmPassword) {
+          event.preventDefault(); // Stop form submission
+          alert("New password and confirm password do not match.");
+        }
+        // Minimum length is handled by pattern attribute, but can be double-checked here if needed.
+      });
+    }
+
+    // Logic to activate tab based on URL hash or query param if needed
+    document.addEventListener('DOMContentLoaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const errorParam = urlParams.get('error');
+      const successParam = urlParams.get('success');
+      let activeTabId = 'v-pills-profile-tab'; // Default
+
+      // Heuristic to determine which form might have caused an error/success
+      // This is a simple example; more robust logic might be needed depending on error/success messages
+      if (errorParam || successParam) {
+        if (document.querySelector('form[action="/password"] input[name="old_password"]')) { // Check if password fields are present
+          if ((errorParam && errorParam.toLowerCase().includes('password')) ||
+            (successParam && successParam.toLowerCase().includes('password'))) {
+            activeTabId = 'v-pills-password-tab';
           }
-        });
-    </script>
+        }
+        if (document.querySelector('form[action="/address"] input[name="address_line1"]')) {
+          if ((errorParam && errorParam.toLowerCase().includes('address')) ||
+            (successParam && successParam.toLowerCase().includes('address'))) {
+            activeTabId = 'v-pills-profile-tab'; // Address is on profile tab
+          }
+        }
+        if (document.querySelector('form[action="/contact"] input[name="mobileno"]')) {
+          if ((errorParam && (errorParam.toLowerCase().includes('contact') || errorParam.toLowerCase().includes('mobile'))) ||
+            (successParam && (successParam.toLowerCase().includes('contact') || successParam.toLowerCase().includes('mobile')))) {
+            activeTabId = 'v-pills-profile-tab'; // Contact is on profile tab
+          }
+        }
+        // Add check for subscription messages
+        if (document.querySelector('form[action="/settings/update-promotion-subscription"]')) {
+          if ((errorParam && errorParam.toLowerCase().includes('subscription')) ||
+            (successParam && successParam.toLowerCase().includes('subscription')) ||
+            (errorParam && errorParam.toLowerCase().includes('subscribed')) ||
+            (successParam && successParam.toLowerCase().includes('subscribed'))) {
+            activeTabId = 'v-pills-subscriptions-tab';
+          }
+        }
+      }
 
-    <!-- jquery  -->
-    <script src="/javascripts/jquery-3.5.1.min.js"></script>
-    <!-- bootstrap -->
-    <script src="/javascripts/bootstrap.min.js"></script>
-    <script src="/javascripts/popper.min.js"></script>
-    <!-- fontawesome  -->
-    <script src="/javascripts/font-awesome.min.js"></script>
-    <!-- swiper slider  -->
-    <script src="/javascripts/swiper-bundle.min.js"></script>
-    <!-- mixitup -- filter  -->
-    <script src="/javascripts/jquery.mixitup.min.js"></script>
-    <!-- fancy box  -->
-    <script src="/javascripts/query.fancybox.min.js"></script>
-    <!-- parallax  -->
-    <script src="/javascripts/parallax.min.js"></script>
-    <!-- gsap  -->
-    <script src="/javascripts/gsap.min.js"></script>
-    <!-- scroll trigger  -->
-    <script src="/javascripts/ScrollTrigger.min.js"></script>
-    <!-- scroll to plugin  -->
-    <script src="/javascripts/ScrollToPlugin.min.js"></script>
-    <!-- smooth scroll  -->
-    <script src="/javascripts/smooth-scroll.js"></script>
-    <!-- custom js  -->
-    <script src="/javascripts/main.js"></script>
-    <script src="/javascripts/cart.js"></script>
-  </body>
+      // Activate tab based on URL hash first
+      if (window.location.hash) {
+        const hashTabId = window.location.hash.substring(1) + "-tab"; // e.g. #v-pills-subscriptions -> v-pills-subscriptions-tab
+        const hashTabElement = document.getElementById(hashTabId);
+        if (hashTabElement) {
+          activeTabId = hashTabId;
+        }
+      }
+
+      const activeTabElement = document.getElementById(activeTabId);
+      if (activeTabElement) {
+        // Ensure Bootstrap's Tab component is initialized for the default active tab
+        const tab = new bootstrap.Tab(activeTabElement);
+        tab.show();
+      }
+
+      // Add event listener for tab changes to update scroll height
+      const tabTriggers = document.querySelectorAll('#v-pills-tab button[data-bs-toggle="pill"]');
+      tabTriggers.forEach(tabTrigger => {
+        tabTrigger.addEventListener('shown.bs.tab', function() {
+          // Dispatch a resize event to allow smooth-scroll.js to update page height
+          window.dispatchEvent(new Event('resize'));
+        });
+      });
+    });
+  </script>
+
+  <!-- jquery  -->
+  <script src="/javascripts/jquery-3.5.1.min.js"></script>
+  <!-- bootstrap -->
+  <script src="/javascripts/bootstrap.min.js"></script>
+  <script src="/javascripts/popper.min.js"></script>
+  <!-- fontawesome  -->
+  <script src="/javascripts/font-awesome.min.js"></script>
+  <!-- swiper slider  -->
+  <script src="/javascripts/swiper-bundle.min.js"></script>
+  <!-- mixitup -- filter  -->
+  <script src="/javascripts/jquery.mixitup.min.js"></script>
+  <!-- fancy box  -->
+  <script src="/javascripts/jquery.fancybox.min.js"></script>
+  <!-- parallax  -->
+  <script src="/javascripts/parallax.min.js"></script>
+  <!-- gsap  -->
+  <script src="/javascripts/gsap.min.js"></script>
+  <!-- scroll trigger  -->
+  <script src="/javascripts/ScrollTrigger.min.js"></script>
+  <!-- scroll to plugin  -->
+  <script src="/javascripts/ScrollToPlugin.min.js"></script>
+  <!-- smooth scroll  -->
+  <script src="/javascripts/smooth-scroll.js"></script>
+  <!-- custom js  -->
+  <script src="/javascripts/main.js"></script>
+  <script src="/javascripts/cart.js"></script>
+</body>
+
 </html>

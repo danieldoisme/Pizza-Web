@@ -14,12 +14,7 @@
     <div class="row align-items-center">
       <div class="col-lg-2">
         <div class="header-logo">
-          <a href="/"
-            ><img
-              src="/images/logo.svg"
-              style="max-width: 100%; height: auto"
-              alt="PizzazzPizza Logo"
-          /></a>
+          <a href="/"><img src="/images/logo.svg" style="max-width: 100%; height: auto" alt="PizzazzPizza Logo" /></a>
         </div>
       </div>
       <div class="col-lg-10">
@@ -31,20 +26,19 @@
               <li><a href="/#about">About Us</a></li>
               <li><a href="/#team">Our Chefs</a></li>
               <li><a href="/#testimonials">Testimonials</a></li>
-              <li><a href="/#contact">Contact</a></li>
+              <li><a href="/contact">Contact</a></li>
+              <li><a href="/faqs">FAQs</a></li>
             </ul>
           </nav>
           <div class="header-right">
-            <form action="#" class="header-search-form for-des">
-              <input
-                type="search"
-                class="form-input"
-                placeholder="Search Here..."
-              />
+            <% if ( (typeof pageType === 'undefined') || (pageType !== 'index' && pageType !== 'contact' && pageType !== 'faqs') ) { %>
+            <form action="/search" method="GET" class="header-search-form for-des">
+              <input type="search" name="query" class="form-input" placeholder="Search Menu..." />
               <button type="submit">
                 <i class="uil uil-search"></i>
               </button>
             </form>
+            <% } %>
             <% if (typeof userid !== 'undefined' && userid) { %> <% if (typeof
             isAdmin !== 'undefined' && isAdmin === true) { %>
             <a href="/admin/dashboard" class="header-btn">

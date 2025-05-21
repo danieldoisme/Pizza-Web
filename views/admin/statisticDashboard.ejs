@@ -1,0 +1,636 @@
+<%# filepath: views/admin/statisticDashboard.ejs %>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - PizzazzPizza Admin</title>
+  <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/stylesheets/style.css">
+
+  <style>
+    /* General Admin Page Adjustments */
+    .admin-main-content .section {
+      padding-top: 20px;
+      /* Consistent padding */
+      padding-bottom: 20px;
+      /* Background image from dashboard.ejs will be applied via the section tag's style attribute if needed */
+    }
+
+    /* Light Theme Styles - Reverting from Dark */
+    .admin-main-content {
+      background-color: #f4f6f9;
+      /* Light grey background for the main content area, or keep transparent if section bg is enough */
+      color: #333;
+      /* Default dark text color */
+    }
+
+    /* Ensure section background from style.css or inline style is respected */
+    /* .admin-main-content .section { */
+    /* background-image: url(/images/menu-bg.png); */
+    /* This is set inline in the HTML */
+    /* background-color: transparent; */
+    /* Or a light fallback */
+    /* } */
+
+    /* Content Header */
+    .content-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      padding: 15px 20px;
+      background-color: #fff;
+      /* White background for header */
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      /* Softer shadow */
+      border-bottom: 1px solid #e9ecef;
+      /* Light border */
+    }
+
+    .content-header h1 {
+      margin: 0;
+      font-size: 1.7em;
+      color: #343a40;
+      /* Darker text for heading */
+      font-weight: 500;
+    }
+
+    .content-header .header-actions {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      gap: 12px;
+    }
+
+    .header-actions .btn {
+      font-size: 0.85rem;
+      padding: 0.4rem 0.8rem;
+    }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    @media (min-width: 992px) {
+      .dashboard-grid {
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      }
+    }
+
+    @media (min-width: 1300px) {
+      .dashboard-grid.kpi-focused {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .dashboard-grid.charts-focused {
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      }
+    }
+
+    /* Card Base Styles (Light Theme) */
+    .kpi-card,
+    .chart-card,
+    .table-card {
+      background-color: #fff;
+      /* White card background */
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+      /* Subtle shadow */
+      border: 1px solid #e9ecef;
+      /* Light border */
+      color: #555;
+      /* Default text color for cards */
+      display: flex;
+      flex-direction: column;
+    }
+
+    .kpi-card h2,
+    /* Title of the KPI metric */
+    .chart-card h2,
+    .table-card h2 {
+      margin-top: 0;
+      font-size: 0.9em;
+      /* Adjusted for light theme */
+      color: #6c757d;
+      /* Muted grey for description/title */
+      margin-bottom: 8px;
+      border-bottom: none;
+      padding-bottom: 0;
+      font-weight: 500;
+      /* Slightly bolder for light theme */
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* KPI Card Specific Styling */
+    .kpi-card {
+      justify-content: space-between;
+    }
+
+    .kpi-card .kpi-content-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      width: 100%;
+    }
+
+    .kpi-card .kpi-text p {
+      /* The main KPI value */
+      font-size: 2.2em;
+      font-weight: 600;
+      margin: 0;
+      color: #28a745;
+      /* Green for positive KPIs, or use brand orange */
+      /* color: #ff8c00; */
+      /* Alternative: PizzazzPizza Orange */
+      line-height: 1.1;
+    }
+
+    /* Specific KPI colors if needed */
+    #totalSales {
+      color: #007bff;
+    }
+
+    /* Blue for sales */
+    #totalOrders {
+      color: #ff8c00;
+    }
+
+    /* Orange for orders */
+    #averageOrderValue {
+      color: #6f42c1;
+    }
+
+    /* Purple for AOV */
+
+
+    .kpi-card .kpi-icon-container .uil {
+      font-size: 2.5em;
+      color: #ff8c00;
+      /* PizzazzPizza Orange for icons */
+      opacity: 0.8;
+      /* Slightly more opaque on light bg */
+    }
+
+    .kpi-card h2 {
+      /* Repositioned title for KPI */
+      margin-top: 10px;
+    }
+
+    /* Chart Card Specific Styling */
+    .chart-card {
+      /* height: 380px; */
+      /* Consider making this min-height or slightly larger */
+      min-height: 380px;
+      /* Use min-height to allow growth if content needs it */
+      height: auto;
+      /* Allow height to adjust to content, up to a point */
+      max-height: 450px;
+      /* Prevent excessively tall charts */
+      position: relative;
+      overflow: hidden;
+      /* Keep this to prevent canvas drawing outside bounds */
+      display: flex;
+      /* Added to help manage inner content */
+      flex-direction: column;
+      /* Stack title and canvas */
+    }
+
+    .chart-card h2 {
+      color: #343a40;
+      font-size: 1.0em;
+      /* Slightly smaller if space is tight */
+      border-bottom: 1px solid #e9ecef;
+      padding-bottom: 8px;
+      /* Reduced padding */
+      margin-bottom: 10px;
+      /* Reduced margin */
+      flex-shrink: 0;
+      /* Prevent title from shrinking */
+    }
+
+    .chart-card canvas {
+      max-width: 100%;
+      /* max-height: 100%; */
+      /* Let Chart.js manage height with responsive true and maintainAspectRatio false */
+      flex-grow: 1;
+      /* Allow canvas to take remaining space */
+    }
+
+    .chart-card.chart-large {
+      /* height: 420px; */
+      min-height: 400px;
+      max-height: 500px;
+    }
+
+    /* Specific adjustments for pie/doughnut legends if they are too large */
+    /* You might need to target the specific chart's legend if Chart.js adds unique classes,
+       or adjust options in JavaScript */
+    /* Example:
+    #orderStatusChart + .chartjs-legend ul li,
+    #paymentStatusChart + .chartjs-legend ul li {
+        font-size: 0.8em;
+    }
+    */
+    /* Table Card Specific Styling */
+    .table-card h2 {
+      /* Table titles */
+      color: #343a40;
+      /* Darker title */
+      font-size: 1.1em;
+      border-bottom: 1px solid #e9ecef;
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+    }
+
+    .table-card ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      flex-grow: 1;
+      overflow-y: auto;
+      max-height: 280px;
+    }
+
+    .table-card li {
+      padding: 10px 5px;
+      border-bottom: 1px solid #f1f1f1;
+      /* Lighter border for list items */
+      font-size: 0.9em;
+      color: #555;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .table-card li:last-child {
+      border-bottom: none;
+    }
+
+    .table-card .item-name {
+      font-weight: 500;
+      color: #333;
+      /* Darker item name */
+    }
+
+    .table-card .item-value {
+      color: #ff8c00;
+      /* PizzazzPizza Orange for values */
+      font-weight: 500;
+    }
+
+    /* Bootstrap Button styles are generally fine for light theme */
+    /* .btn-info, .btn-success, etc. will use their default Bootstrap styling */
+    .btn:disabled {
+      opacity: 0.65;
+      /* Default Bootstrap disabled opacity */
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+
+<body class="admin-active">
+  <%- include('../partials/adminSidebar', { page: 'statistics' }) %>
+
+  <div class="admin-main-content">
+    <div id="viewport">
+      <div id="js-scroll-content">
+        <section class="section" id="statistics-dashboard-page" style="background-image: url(/images/menu-bg.png);">
+          <div class="container-fluid">
+
+            <div class="content-header">
+              <h1><%= title %></h1>
+              <div class="header-actions">
+                <button id="refreshDataBtn" class="btn btn-info btn-sm">
+                  <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
+                  Refresh Data
+                </button>
+                <a href="/admin/statistics/dashboard/export" class="btn btn-success btn-sm">Export to Excel</a>
+              </div>
+            </div>
+
+            <div class="dashboard-grid kpi-focused">
+              <div class="kpi-card">
+                <div class="kpi-content-top">
+                  <div class="kpi-text">
+                    <p id="totalSales"><%= data.totalSales.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %></p>
+                  </div>
+                  <div class="kpi-icon-container"><i class="uil uil-usd-circle"></i></div>
+                </div>
+                <h2>Total Sales</h2>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-content-top">
+                  <div class="kpi-text">
+                    <p id="totalOrders"><%= data.totalOrders %></p>
+                  </div>
+                  <div class="kpi-icon-container"><i class="uil uil-shopping-bag"></i></div>
+                </div>
+                <h2>Total Orders</h2>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-content-top">
+                  <div class="kpi-text">
+                    <p id="averageOrderValue"><%= parseFloat(data.averageOrderValue).toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %></p>
+                  </div>
+                  <div class="kpi-icon-container"><i class="uil uil-bill"></i></div>
+                </div>
+                <h2>Average Order Value</h2>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-content-top">
+                  <div class="kpi-text">
+                    <p id="unprocessedOrders" style="color: #dc3545;"><%= data.unprocessedOrders %></p> <%# Red for unprocessed %>
+                  </div>
+                  <div class="kpi-icon-container"><i class="uil uil-clock-eight"></i></div>
+                </div>
+                <h2>Unprocessed Orders</h2>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-content-top">
+                  <div class="kpi-text">
+                    <p id="totalUsers" style="color: #17a2b8;"><%= data.totalUsers %></p> <%# Access directly %>
+                  </div>
+                  <div class="kpi-icon-container"><i class="uil uil-users-alt"></i></div>
+                </div>
+                <h2>Total Users</h2>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-content-top">
+                  <div class="kpi-text">
+                    <p id="newUsersToday" style="color: #17a2b8;"><%= data.newUsersToday %></p> <%# Access directly %>
+                  </div>
+                  <div class="kpi-icon-container"><i class="uil uil-user-plus"></i></div>
+                </div>
+                <h2>New Users Today</h2>
+              </div>
+            </div>
+
+            <div class="dashboard-grid charts-focused" style="margin-top: 20px;">
+              <div class="chart-card chart-large">
+                <h2>Revenue Trends</h2>
+                <canvas id="revenueTrendsChart"></canvas>
+              </div>
+              <div class="chart-card">
+                <h2>Order Statuses</h2>
+                <canvas id="orderStatusChart"></canvas>
+              </div>
+              <div class="chart-card">
+                <h2>Payment Statuses</h2>
+                <canvas id="paymentStatusChart"></canvas>
+              </div>
+
+              <div class="table-card">
+                <h2>Best Sellers</h2>
+                <ul id="bestSellersList">
+                  <% data.bestSellers.forEach(item => { %>
+                  <li><span class="item-name"><%= item.name %></span> <span class="item-value"><%= item.quantity %> sold</span></li>
+                  <% }); %>
+                </ul>
+              </div>
+              <div class="table-card">
+                <h2>Menu Performance</h2>
+                <ul id="menuPerformanceList">
+                  <% data.menuPerformance.forEach(item => { %>
+                  <li><span class="item-name"><%= item.name %></span> <span class="item-value">Orders: <%= item.orders %>, Rev: <%= item.revenue.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %></span></li>
+                  <% }); %>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <script>
+    let dashboardData = <%- JSON.stringify(data || {}) %>;
+    let revenueTrendsChartInstance, orderStatusChartInstance, paymentStatusChartInstance;
+
+    // Chart.js defaults for light theme
+    const chartTextColor = '#555'; // Darker grey for text
+    const chartGridColor = 'rgba(0, 0, 0, 0.08)'; // Lighter grid lines
+    const chartTitleColor = '#333'; // Dark color for legend titles
+
+    function updateKPIs(newData) {
+      document.getElementById('totalSales').textContent = newData.totalSales.toLocaleString('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      });
+      document.getElementById('totalOrders').textContent = newData.totalOrders;
+      document.getElementById('averageOrderValue').textContent = parseFloat(newData.averageOrderValue).toLocaleString('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      });
+      document.getElementById('unprocessedOrders').textContent = newData.unprocessedOrders;
+      document.getElementById('totalUsers').textContent = newData.totalUsers; // Corrected access
+      document.getElementById('newUsersToday').textContent = newData.newUsersToday; // Corrected access
+
+      const bestSellersList = document.getElementById('bestSellersList');
+      bestSellersList.innerHTML = '';
+      newData.bestSellers.forEach(item => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="item-name">${item.name}</span> <span class="item-value">${item.quantity} sold</span>`;
+        bestSellersList.appendChild(li);
+      });
+
+      const menuPerformanceList = document.getElementById('menuPerformanceList');
+      menuPerformanceList.innerHTML = '';
+      newData.menuPerformance.forEach(item => {
+        const li = document.createElement('li');
+        // Ensure 'item.name' is correct, in getLiveDashboardData it's item.name for menuPerformance
+        li.innerHTML = `<span class="item-name">${item.name}</span> <span class="item-value">Orders: ${item.orders}, Rev: ${item.revenue.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>`;
+        menuPerformanceList.appendChild(li);
+      });
+    }
+
+    function renderRevenueTrendsChart(chartData) {
+      const canvas = document.getElementById('revenueTrendsChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (revenueTrendsChartInstance) revenueTrendsChartInstance.destroy();
+      revenueTrendsChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: chartData.labels,
+          datasets: [{
+            label: 'Revenue',
+            data: chartData.data,
+            borderColor: '#ff8c00',
+            backgroundColor: 'rgba(255, 140, 0, 0.15)', // Lighter fill for light theme
+            tension: 0.3,
+            fill: true,
+            pointBackgroundColor: '#ff8c00',
+            pointBorderColor: '#fff', // White border for points
+            pointHoverRadius: 7,
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: '#ff8c00'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: chartTextColor
+              },
+              grid: {
+                color: chartGridColor,
+                drawBorder: false
+              }
+            },
+            x: {
+              ticks: {
+                color: chartTextColor
+              },
+              grid: {
+                color: chartGridColor,
+                drawBorder: false
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              labels: {
+                color: chartTitleColor
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderOrderStatusChart(statusData) {
+      const canvas = document.getElementById('orderStatusChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const labels = Object.keys(statusData);
+      const dataValues = Object.values(statusData);
+      if (orderStatusChartInstance) orderStatusChartInstance.destroy();
+      orderStatusChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Order Statuses',
+            data: dataValues,
+            backgroundColor: ['#ff8c00', '#007bff', '#28a745', '#17a2b8', '#6f42c1', '#fd7e14'], // Keep vibrant colors
+            borderColor: '#fff', // White border for segments on light theme
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: chartTitleColor,
+                boxWidth: 15,
+                padding: 15
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderPaymentStatusChart(statusData) {
+      const canvas = document.getElementById('paymentStatusChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const labels = Object.keys(statusData);
+      const dataValues = Object.values(statusData);
+      if (paymentStatusChartInstance) paymentStatusChartInstance.destroy();
+      paymentStatusChartInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Payment Statuses',
+            data: dataValues,
+            backgroundColor: ['#28a745', '#dc3545', '#ffc107', '#007bff'], // Keep vibrant colors
+            borderColor: '#fff', // White border for segments
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: chartTitleColor,
+                boxWidth: 15,
+                padding: 15
+              }
+            }
+          }
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const refreshButton = document.getElementById('refreshDataBtn');
+      const spinner = refreshButton.querySelector('.spinner-border');
+
+      if (dashboardData && Object.keys(dashboardData).length > 0) {
+        updateKPIs(dashboardData);
+        if (dashboardData.revenueTrends) renderRevenueTrendsChart(dashboardData.revenueTrends);
+        if (dashboardData.orderStatusCounts) renderOrderStatusChart(dashboardData.orderStatusCounts);
+        if (dashboardData.paymentStatusCounts) renderPaymentStatusChart(dashboardData.paymentStatusCounts);
+      } else {
+        console.warn("Dashboard data is empty or not provided on initial load.");
+      }
+
+      if (refreshButton) {
+        refreshButton.addEventListener('click', async () => {
+          try {
+            refreshButton.disabled = true;
+            spinner.style.display = 'inline-block';
+            refreshButton.childNodes[refreshButton.childNodes.length - 1].nodeValue = " Refreshing...";
+
+            // Corrected fetch URL
+            const response = await fetch('/admin/statistics/api/dashboard-data');
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const newData = await response.json();
+            dashboardData = newData;
+
+            updateKPIs(newData);
+            if (newData.revenueTrends) renderRevenueTrendsChart(newData.revenueTrends);
+            if (newData.orderStatusCounts) renderOrderStatusChart(newData.orderStatusCounts);
+            if (newData.paymentStatusCounts) renderPaymentStatusChart(newData.paymentStatusCounts);
+
+          } catch (error) {
+            console.error('Error refreshing dashboard data:', error);
+            alert('Failed to refresh dashboard data. Please check the console for errors.');
+          } finally {
+            refreshButton.disabled = false;
+            spinner.style.display = 'none';
+            refreshButton.childNodes[refreshButton.childNodes.length - 1].nodeValue = " Refresh Data";
+          }
+        });
+      }
+    });
+  </script>
+</body>
+
+</html>

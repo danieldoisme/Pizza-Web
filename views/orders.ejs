@@ -1,313 +1,264 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Orders & Profile - PizzazzPizza</title>
-    <!-- icons  -->
-    <link
-      rel="stylesheet"
-      href="https://unicons.iconscout.com/release/v4.0.0/css/line.css"
-    />
-    <!-- bootstrap  -->
-    <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
-    <!-- swiper slider  -->
-    <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css" />
-    <!-- fancy box  -->
-    <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css" />
-    <!-- custom css  -->
-    <link rel="stylesheet" href="/stylesheets/style.css" />
-    <style>
-      table,
-      th,
-      tr,
-      td {
-        border: 2px solid black;
-        padding: 8px 10px;
-        border-radius: 20px;
-      }
 
-      a {
-        color: white;
-      }
-    </style>
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Orders & Profile - PizzazzPizza</title>
+  <!-- icons  -->
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
+  <!-- bootstrap  -->
+  <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
+  <!-- swiper slider  -->
+  <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css" />
+  <!-- fancy box  -->
+  <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css" />
+  <!-- custom css  -->
+  <link rel="stylesheet" href="/stylesheets/style.css" />
+  <style>
+    table,
+    th,
+    tr,
+    td {
+      border: 2px solid black;
+      padding: 8px 10px;
+      border-radius: 20px;
+    }
 
-  <body class="body-fixed">
-    <header class="site-header">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-2">
-            <div class="header-logo">
-              <a href="/homepage">
-                <img
-                  src="/images/logo.svg"
-                  style="max-width: 100%; height: auto"
-                  alt="PizzazzPizza Logo"
-                />
-              </a>
-            </div>
+    a {
+      color: white;
+    }
+  </style>
+</head>
+
+<body class="body-fixed">
+  <header class="site-header">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-2">
+          <div class="header-logo">
+            <a href="/homepage">
+              <img src="/images/logo.svg" style="max-width: 100%; height: auto" alt="PizzazzPizza Logo" />
+            </a>
           </div>
-          <div class="col-lg-10">
-            <div class="main-navigation">
-              <button class="menu-toggle user-nav-toggle">
-                <span></span><span></span>
-              </button>
-              <div class="header-right">
-                <form action="#" class="header-search-form for-des">
-                  <input
-                    type="search"
-                    class="form-input"
-                    placeholder="Search Here..."
-                  />
-                  <button type="submit">
-                    <i class="uil uil-search"></i>
-                  </button>
-                </form>
-                <a onclick="openMyCart()" class="header-btn header-cart">
-                  <i class="uil uil-shopping-bag"></i>
-                  <span class="cart-number" id="cart-number-count">0</span>
-                </a>
-                <div class="dropdown">
-                  <button
-                    id="usernameDropdownBtn"
-                    class="header-username"
-                    style="color: #ff8243; padding: 4px 8px"
-                  >
-                    <b><i> <%= userDetails.user_name %> </i></b>
-                  </button>
-                  <div id="myDropdown" class="dropdown-content">
-                    <a href="/orders" style="text-decoration: none !important"
-                      >My Orders</a
-                    >
-                    <a href="/settings" style="text-decoration: none !important"
-                      >Settings</a
-                    >
-                    <a href="/logout" style="text-decoration: none !important"
-                      >Sign Out</a
-                    >
-                  </div>
+        </div>
+        <div class="col-lg-10">
+          <div class="main-navigation">
+            <button class="menu-toggle user-nav-toggle">
+              <span></span><span></span>
+            </button>
+            <div class="header-right">
+              <form action="/search" method="GET" class="header-search-form for-des">
+                <input type="search" name="query" class="form-input" placeholder="Search Menu..." />
+                <button type="submit">
+                  <i class="uil uil-search"></i>
+                </button>
+              </form>
+              <a onclick="openMyCart()" class="header-btn header-cart">
+                <i class="uil uil-shopping-bag"></i>
+                <span class="cart-number" id="cart-number-count">0</span>
+              </a>
+              <div class="dropdown">
+                <button id="usernameDropdownBtn" class="header-username" style="color: #ff8243; padding: 4px 8px">
+                  <b><i> <%= userDetails.user_name %> </i></b>
+                </button>
+                <div id="myDropdown" class="dropdown-content">
+                  <a href="/orders" style="text-decoration: none !important">My Orders</a>
+                  <a href="/settings" style="text-decoration: none !important">Settings</a>
+                  <a href="/logout" style="text-decoration: none !important">Sign Out</a>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <div id="viewport">
-      <div id="js-scroll-content">
-        <section
-          class="section"
-          id="orders"
-          style="background-image: url(/images/menu-bg.png)"
-        >
-          <div class="container">
-            <div class="row">
-              <div class="col-lg-12">
-                <div class="sec-title text-center mb-5">
-                  <h4 class="h2-title">My Details</h4>
-                  <div class="sec-title-shape mb-4">
-                    <img src="/images/title-shape.svg" alt="" />
-                  </div>
-                  <div id="myDetails" style="margin-bottom: 30px">
-                    <table>
-                      <thead>
-                        <tr style="border: 0px">
-                          <th style="width: 25%">Name</th>
-                          <th style="width: 30%">Email</th>
-                          <th style="width: 20%">Contact No.</th>
-                          <th style="width: 35%">Address</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <td><%= userDetails.user_name %></td>
-                        <td><%= userDetails.user_email %></td>
-                        <td><%= userDetails.user_mobileno %></td>
-                        <td><%= userDetails.user_address %></td>
-                      </tbody>
-                    </table>
-                  </div>
-                  <h2 class="h2-title">
-                    <%= userDetails.user_name %>'s Orders History
-                  </h2>
-                  <div class="sec-title-shape mb-4">
-                    <img src="/images/title-shape.svg" alt="" />
-                  </div>
+  <div id="viewport">
+    <div id="js-scroll-content">
+      <section class="section" id="orders" style="background-image: url(/images/menu-bg.png)">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-12">
+              <div class="sec-title text-center mb-5">
+                <h4 class="h2-title">My Details</h4>
+                <div class="sec-title-shape mb-4">
+                  <img src="/images/title-shape.svg" alt="" />
+                </div>
+                <div id="myDetails" style="margin-bottom: 30px">
+                  <table>
+                    <thead>
+                      <tr style="border: 0px">
+                        <th style="width: 25%">Name</th>
+                        <th style="width: 30%">Email</th>
+                        <th style="width: 20%">Contact No.</th>
+                        <th style="width: 35%">Address</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <td><%= userDetails.user_name %></td>
+                      <td><%= userDetails.user_email %></td>
+                      <td><%= userDetails.user_mobileno %></td>
+                      <td><%= userDetails.user_address %></td>
+                    </tbody>
+                  </table>
+                </div>
+                <h2 class="h2-title">
+                  <%= userDetails.user_name %>'s Orders History
+                </h2>
+                <div class="sec-title-shape mb-4">
+                  <img src="/images/title-shape.svg" alt="" />
+                </div>
 
-                  <%# Check for errors passed from the server %> <% if (typeof
+                <%# Check for errors passed from the server %> <% if (typeof
                   error !== 'undefined' && error) { %>
-                  <p style="color: red; font-weight: bold"><%= error %></p>
-                  <%# Check if there are any orders %> <% } else if
+                <p style="color: red; font-weight: bold"><%= error %></p>
+                <%# Check if there are any orders %> <% } else if
                   (orders.length === 0) { %>
-                  <p>You haven't placed any orders yet.</p>
-                  <%# Loop through each order %> <% } else { %> <%
+                <p>You haven't placed any orders yet.</p>
+                <%# Loop through each order %> <% } else { %> <%
                   orders.forEach(function(order, orderIndex) { %>
-                  <div
-                    class="order-group"
-                    style="
+                <div class="order-group" style="
                       margin-bottom: 30px;
                       border: 1px solid #ccc;
                       padding: 15px;
                       border-radius: 8px;
                       background-color: rgba(255, 255, 255, 0.1);
-                    "
-                  >
-                    <h4 style="color: #ff8243">Order #<%= order.order_id %></h4>
-                    <p>
-                      <strong>Date:</strong> <%= new
-                      Date(order.order_datetime).toLocaleString() %>
-                    </p>
-                    <p><strong>Status:</strong> <%= order.order_status %></p>
-                    <p>
-                      <strong>Payment Status:</strong>
-                      <span
-                        style="
-                          font-weight: bold;
-                          color: <%= (order.payment_status === "Paid") ? "green" : (order.payment_status === "Unpaid" ? "orange" : "red") %>;
-                        "
-                        ><%= order.payment_status %></span
-                      >
-                    </p>
-                    <p>
-                      <strong>Total Amount:</strong> $<%=
-                      parseInt(order.total_amount) %>
-                    </p>
-                    <p>
-                      <strong>Delivery Address:</strong> <%=
-                      order.delivery_address %>
-                    </p>
-                    <p>
-                      <strong>Payment Method:</strong> <%= order.payment_method
+                    ">
+                  <h4 style="color: #ff8243">Order #<%= order.order_id %></h4>
+                  <p>
+                    <strong>Date:</strong> <%= new
+                      Date(order.order_date).toLocaleString() %>
+                  </p>
+                  <p><strong>Status:</strong> <span style="font-weight:bold; padding: 3px 8px; border-radius: 4px; color: white; background-color: <%= order.order_status === "Pending" ? "#ffc107" : (order.order_status === "Processing" ? "#007bff" : (order.order_status === "Dispatched" ? "#17a2b8" : (order.order_status === "Delivered" ? "#28a745" : (order.order_status === "Cancelled" ? "#dc3545" : "#6c757d")))) %>"><%= order.order_status %></span></p>
+                  <p>
+                    <strong>Payment Status:</strong>
+                    <span style="
+                          font-weight: bold; padding: 3px 8px; border-radius: 4px; color: white;
+                          background-color: <%= (order.payment_status === 'Paid') ? '#28a745' : (order.payment_status === 'Unpaid' ? '#fd7e14' : (order.payment_status === 'Pending' ? '#ffc107' : (order.payment_status === 'Failed' ? '#dc3545' : (order.payment_status === 'Refunded' ? '#6c757d' : '#adb5bd')))) %>;
+                        "><%= order.payment_status %></span>
+                  </p>
+                  <p>
+                    <strong>Total Amount:</strong> $<%=
+                      parseFloat(order.total_amount).toFixed(2) %>
+                  </p>
+                  <p>
+                    <strong>Delivery Address:</strong> <%=
+                      order.shipping_address %>
+                  </p>
+                  <p>
+                    <strong>Payment Method:</strong> <%= order.payment_method
                       %>
-                    </p>
-                    <% if (order.payment_id) { %>
-                    <p><strong>Payment ID:</strong> <%= order.payment_id %></p>
-                    <% } %>
+                  </p>
+                  <% if (order.payment_id) { %>
+                  <p><strong>Payment ID:</strong> <%= order.payment_id %></p>
+                  <% } %>
 
-                    <h5 style="margin-top: 15px; color: #ff8243">
-                      Items in this order:
-                    </h5>
-                    <%# Check if the order has items %> <% if (order.items &&
+                  <h5 style="margin-top: 15px; color: #ff8243">
+                    Items in this order:
+                  </h5>
+                  <%# Check if the order has items %> <% if (order.items &&
                     order.items.length > 0) { %>
-                    <table
-                      class="order-items-table"
-                      style="
+                  <table class="order-items-table" style="
                         width: 100%;
                         margin-top: 10px;
                         border-collapse: collapse;
-                      "
-                    >
-                      <thead>
-                        <tr>
-                          <th
-                            style="width: 15%; padding: 8px; text-align: center"
-                          >
-                            Product
-                          </th>
-                          <th
-                            style="width: 35%; padding: 8px; text-align: center"
-                          >
-                            Name
-                          </th>
-                          <th
-                            style="width: 15%; padding: 8px; text-align: center"
-                          >
-                            Price/Item
-                          </th>
-                          <th
-                            style="width: 10%; padding: 8px; text-align: center"
-                          >
-                            Quantity
-                          </th>
-                          <th
-                            style="width: 25%; padding: 8px; text-align: center"
-                          >
-                            Subtotal
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <%# Loop through items within the current order %> <%
+                      ">
+                    <thead>
+                      <tr>
+                        <th style="width: 15%; padding: 8px; text-align: center">
+                          Product
+                        </th>
+                        <th style="width: 35%; padding: 8px; text-align: center">
+                          Name
+                        </th>
+                        <th style="width: 15%; padding: 8px; text-align: center">
+                          Price
+                        </th>
+                        <th style="width: 10%; padding: 8px; text-align: center">
+                          Quantity
+                        </th>
+                        <th style="width: 25%; padding: 8px; text-align: center">
+                          Subtotal
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <%# Loop through items within the current order %> <%
                         order.items.forEach(function(item, itemIndex) { %>
-                        <tr style="border-bottom: 1px solid #eee">
-                          <td style="padding: 8px">
-                            <img
-                              src="/images/dish/<%= item.item_img %>"
-                              alt="<%= item.item_name %>"
-                              style="
+                      <tr style="border-bottom: 1px solid #eee">
+                        <td style="padding: 8px">
+                          <img src="/images/item-image/<%= item.item_id %>" alt="<%= item.item_name %>" style="
                                 width: 60px;
-                                height: auto;
+                                height: 60px; /* Ensure consistent size */
+                                object-fit: cover; /* Ensure image covers the area */
                                 border-radius: 5px;
                                 border: 1px solid #ddd;
-                              "
-                            />
-                          </td>
-                          <td style="padding: 8px"><%= item.item_name %></td>
-                          <td style="padding: 8px; text-align: center">
-                            $<%= parseInt(item.price_per_item) %>
-                          </td>
-                          <td style="padding: 8px; text-align: center">
-                            <%= item.quantity %>
-                          </td>
-                          <td style="padding: 8px; text-align: center">
-                            $<%= parseInt(item.subtotal) %>
-                          </td>
-                        </tr>
-                        <% }); %>
-                      </tbody>
-                    </table>
-                    <% } else { %>
-                    <p>No item details available for this order.</p>
-                    <% } %> <% if (order.order_status === 'Dispatched') { %>
-                    <form
-                      action="/order/mark-delivered/<%= order.order_id %>"
-                      method="POST"
-                      style="margin-top: 15px"
-                    >
-                      <button type="submit" class="btn btn-success">
-                        Mark as Received
-                      </button>
-                    </form>
-                    <% } %>
-                  </div>
-                  <% }); %> <% } %>
+                              " onerror="this.onerror=null; this.src='/images/dish/default-pizza.jpg';" />
+                        </td>
+                        <td style="padding: 8px"><%= item.item_name %></td>
+                        <td style="padding: 8px; text-align: center">
+                          $<%= parseFloat(item.price_per_item).toFixed(2) %>
+                        </td>
+                        <td style="padding: 8px; text-align: center">
+                          <%= item.quantity %>
+                        </td>
+                        <td style="padding: 8px; text-align: center">
+                          $<%= parseFloat(item.subtotal).toFixed(2) %>
+                        </td>
+                      </tr>
+                      <% }); %>
+                    </tbody>
+                  </table>
+                  <% } else { %>
+                  <p>No item details available for this order.</p>
+                  <% } %> <% if (order.order_status === 'Dispatched') { %>
+                  <form action="/order/mark-delivered/<%= order.order_id %>" method="POST" style="margin-top: 15px">
+                    <button type="submit" class="btn btn-success">
+                      Mark as Received
+                    </button>
+                  </form>
+                  <% } %>
                 </div>
+                <% }); %> <% } %>
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <%- include('partials/footer') %>
-      </div>
+      <%- include('partials/footer') %>
     </div>
+  </div>
 
-    <!-- jquery  -->
-    <script src="/javascripts/jquery-3.5.1.min.js"></script>
-    <!-- bootstrap -->
-    <script src="/javascripts/bootstrap.min.js"></script>
-    <script src="/javascripts/popper.min.js"></script>
-    <!-- fontawesome  -->
-    <script src="/javascripts/font-awesome.min.js"></script>
-    <!-- swiper slider  -->
-    <script src="/javascripts/swiper-bundle.min.js"></script>
-    <!-- mixitup -- filter  -->
-    <script src="/javascripts/jquery.mixitup.min.js"></script>
-    <!-- fancy box  -->
-    <script src="/javascripts/query.fancybox.min.js"></script>
-    <!-- parallax  -->
-    <script src="/javascripts/parallax.min.js"></script>
-    <!-- gsap  -->
-    <script src="/javascripts/gsap.min.js"></script>
-    <!-- scroll trigger  -->
-    <script src="/javascripts/ScrollTrigger.min.js"></script>
-    <!-- scroll to plugin  -->
-    <script src="/javascripts/ScrollToPlugin.min.js"></script>
-    <!-- smooth scroll  -->
-    <script src="/javascripts/smooth-scroll.js"></script>
-    <!-- custom js  -->
-    <script src="/javascripts/main.js"></script>
-    <script src="/javascripts/cart.js"></script>
-  </body>
+  <!-- jquery  -->
+  <script src="/javascripts/jquery-3.5.1.min.js"></script>
+  <!-- bootstrap -->
+  <script src="/javascripts/bootstrap.min.js"></script>
+  <script src="/javascripts/popper.min.js"></script>
+  <!-- fontawesome  -->
+  <script src="/javascripts/font-awesome.min.js"></script>
+  <!-- swiper slider  -->
+  <script src="/javascripts/swiper-bundle.min.js"></script>
+  <!-- mixitup -- filter  -->
+  <script src="/javascripts/jquery.mixitup.min.js"></script>
+  <!-- fancy box  -->
+  <script src="/javascripts/jquery.fancybox.min.js"></script>
+  <!-- parallax  -->
+  <script src="/javascripts/parallax.min.js"></script>
+  <!-- gsap  -->
+  <script src="/javascripts/gsap.min.js"></script>
+  <!-- scroll trigger  -->
+  <script src="/javascripts/ScrollTrigger.min.js"></script>
+  <!-- scroll to plugin  -->
+  <script src="/javascripts/ScrollToPlugin.min.js"></script>
+  <!-- smooth scroll  -->
+  <script src="/javascripts/smooth-scroll.js"></script>
+  <!-- custom js  -->
+  <script src="/javascripts/main.js"></script>
+  <script src="/javascripts/cart.js"></script>
+</body>
+
 </html>

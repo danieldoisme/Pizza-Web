@@ -17,8 +17,8 @@ const scrollerTargetElement = document.querySelector("#js-scroll-content");
 
 // smooth scroll logic for #js-scroll-content
 if (!IS_ADMIN_PAGE && scrollerTargetElement) {
-  var html = document.documentElement;
-  var body = document.body;
+  // var html = document.documentElement;
+  // var body = document.body;
 
   var scroller = {
     target: scrollerTargetElement,
@@ -122,7 +122,13 @@ if (!IS_ADMIN_PAGE && scrollerTargetElement) {
 
 // Scroll to top
 const scrolltotopButton = document.querySelector(".scrolltop");
+
 if (scrolltotopButton) {
+  // Move the button to be a direct child of <body>
+  // This ensures position:fixed works relative to the viewport,
+  // escaping any transformed parent containers like #js-scroll-content.
+  document.body.appendChild(scrolltotopButton);
+
   scrolltotopButton.addEventListener("click", () => {
     const adminMainContent = document.querySelector(".admin-main-content");
     if (
@@ -136,9 +142,55 @@ if (scrolltotopButton) {
         duration: 0.5,
       });
     } else {
-      gsap.to(window, { scrollTo: { y: 0, autoKill: false }, duration: 0.5 });
+      if (typeof gsap !== "undefined" && gsap.plugins.scrollTo) {
+        gsap.to(window, { scrollTo: { y: 0, autoKill: false }, duration: 0.5 });
+      } else if (typeof window.scrollToTop === "function") {
+        window.scrollToTop();
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
     }
   });
+
+  function toggleScrollTopButtonVisibility() {
+    const currentScrollY = window.pageYOffset;
+    const customScrollerActive = !IS_ADMIN_PAGE && !!scrollerTargetElement;
+    // console.log( // Keeping logs for debugging if needed, can be commented out later
+    //   `smooth-scroll.js: toggleScrollTopButtonVisibility. window.pageYOffset: ${currentScrollY}, CustomScrollerActive: ${customScrollerActive}`
+    // );
+
+    if (currentScrollY > 50) {
+      // console.log("smooth-scroll.js: Attempting to show scroll-to-top button.");
+      scrolltotopButton.style.display = "flex";
+    } else {
+      // console.log("smooth-scroll.js: Attempting to hide scroll-to-top button.");
+      scrolltotopButton.style.display = "none";
+    }
+  }
+
+  // Ensure the event listener is added and the initial check is performed reliably
+  if (
+    document.readyState === "complete" ||
+    (document.readyState !== "loading" && !document.documentElement.doScroll)
+  ) {
+    console.log(
+      "smooth-scroll.js: DOM ready or complete. Initializing scroll-to-top visibility logic."
+    );
+    window.addEventListener("scroll", toggleScrollTopButtonVisibility);
+    toggleScrollTopButtonVisibility(); // Initial check
+  } else {
+    document.addEventListener("DOMContentLoaded", function () {
+      console.log(
+        "smooth-scroll.js: DOMContentLoaded. Initializing scroll-to-top visibility logic."
+      );
+      window.addEventListener("scroll", toggleScrollTopButtonVisibility);
+      toggleScrollTopButtonVisibility(); // Initial check
+    });
+  }
+} else {
+  console.warn(
+    "smooth-scroll.js: Scroll-to-top button (.scrolltop) not found. Ensure HTML is loaded before script."
+  );
 }
 
 // Scroll to section

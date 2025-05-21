@@ -14,12 +14,8 @@
             <span></span><span></span>
           </button>
           <div class="header-right">
-            <form action="#" class="header-search-form for-des">
-              <input
-                type="search"
-                class="form-input"
-                placeholder="Search Here..."
-              />
+            <form action="/search" method="GET" class="header-search-form for-des">
+              <input type="search" name="query" class="form-input" placeholder="Search Menu..." />
               <button type="submit">
                 <i class="uil uil-search"></i>
               </button>
@@ -29,23 +25,13 @@
               <span class="cart-number" id="cart-number-count">0</span>
             </a>
             <div class="dropdown">
-              <button
-                id="usernameDropdownBtn"
-                class="header-username"
-                style="color: #ff8243; padding: 4px 8px"
-              >
+              <button id="usernameDropdownBtn" class="header-username" style="color: #ff8243; padding: 4px 8px">
                 <b><i> <%= username %> </i></b>
               </button>
               <div id="myDropdown" class="dropdown-content">
-                <a href="/orders" style="text-decoration: none !important"
-                  >My Orders</a
-                >
-                <a href="/settings" style="text-decoration: none !important"
-                  >Settings</a
-                >
-                <a href="/logout" style="text-decoration: none !important"
-                  >Sign Out</a
-                >
+                <a href="/orders" style="text-decoration: none !important">My Orders</a>
+                <a href="/settings" style="text-decoration: none !important">Settings</a>
+                <a href="/logout" style="text-decoration: none !important">Sign Out</a>
               </div>
             </div>
           </div>

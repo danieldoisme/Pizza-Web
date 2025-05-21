@@ -1,377 +1,333 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Cart - PizzazzPizza</title>
-    <!-- icons  -->
-    <link
-      rel="stylesheet"
-      href="https://unicons.iconscout.com/release/v4.0.0/css/line.css"
-    />
-    <!-- bootstrap  -->
-    <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
-    <!-- swiper slider  -->
-    <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css" />
-    <!-- fancy box  -->
-    <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css" />
-    <!-- custom css  -->
-    <link rel="stylesheet" href="/stylesheets/style.css" />
-    <style>
-      table,
-      th,
-      tr,
-      td {
-        border: 2px solid black;
-        padding: 8px 10px;
-        border-radius: 20px;
-      }
 
-      a {
-        color: white;
-      }
-    </style>
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Cart - PizzazzPizza</title>
+  <!-- icons  -->
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
+  <!-- bootstrap  -->
+  <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
+  <!-- swiper slider  -->
+  <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css" />
+  <!-- fancy box  -->
+  <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css" />
+  <!-- custom css  -->
+  <link rel="stylesheet" href="/stylesheets/style.css" />
+  <style>
+    table,
+    th,
+    tr,
+    td {
+      border: 2px solid black;
+      padding: 8px 10px;
+      border-radius: 20px;
+    }
 
-  <body class="body-fixed">
-    <%- include('partials/userNav') %>
+    a {
+      color: white;
+    }
 
-    <div id="viewport">
-      <div id="js-scroll-content">
-        <section
-          class="section"
-          id="cart"
-          style="background-image: url(/images/menu-bg.png)"
-        >
-          <div class="container">
-            <div class="row">
-              <form action="/checkout" method="POST">
-                <div class="col-lg-12">
-                  <div class="sec-title text-center mb-5">
-                    <h2 class="h2-title">My Cart</h2>
-                    <div class="sec-title-shape mb-4">
-                      <img src="/images/title-shape.svg" alt="" />
-                    </div>
-                    <% let count=0 %> <% let total_price=0 %> <% let
-                    total_items=0 %>
-                    <table id="mycart">
-                      <thead>
-                        <tr>
-                          <th style="width: 5%">#</th>
-                          <th style="width: 10%">Product</th>
-                          <th style="width: 40%">Product Name</th>
-                          <th style="width: 10%">Price</th>
-                          <th style="width: 5%">Quantity</th>
-                          <th style="width: 20%">Sub-Total</th>
-                          <th style="width: 10%">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody id="cart-body">
-                        <% for (let i=0; i < items.length; i++) { %>
-                        <tr
-                          id="cart-row-<%= items[i].item_id %>"
-                          data-row-index="<%= i %>"
-                        >
-                          <% count++ %>
-                          <td class="row-number"><%= i + 1 %></td>
-                          <td>
-                            <img
-                              src="/images/dish/<%= items[i].item_img %>"
-                              alt=""
-                              style="
-                                border-radius: 10%;
-                                border: 2px solid rgb(68, 66, 66);
-                                box-shadow: 4px 4px 8px black;
-                              "
-                            />
-                          </td>
-                          <td><%= items[i].item_name %></td>
-                          <td>
-                            $
-                            <span class="item-price">
-                              <%= items[i].item_price %>
-                            </span>
-                          </td>
-                          <td>
-                            <input
-                              type="number"
-                              style="text-align: center"
-                              class="quantity form-input"
-                              name="quantity_display_<%= i %>"
-                              id="quantity_display_<%= i %>"
-                              value="1"
-                              min="1"
-                              onchange="updateData(this.value,'<%= i %>');"
-                            />
-                          </td>
-                          <td>
-                            $
-                            <span class="price">
-                              <%= items[i].item_price %>
-                            </span>
-                          </td>
-                          <td>
-                            <button
-                              type="button"
-                              class="btn btn-danger btn-sm"
-                              onclick="removeFromCart('<%= items[i].item_id %>', '<%= i %>')"
-                            >
-                              Remove
-                            </button>
-                          </td>
-                          <input
-                            type="hidden"
-                            name="itemid[]"
-                            value="<%= items[i].item_id %>"
-                          />
-                          <input
-                            type="hidden"
-                            name="quantity[]"
-                            id="quantity_hidden_<%= i %>"
-                            value="1"
-                          />
-                          <input
-                            type="hidden"
-                            name="subprice[]"
-                            id="subprice_hidden_<%= i %>"
-                            value="<%= items[i].item_price %>"
-                          />
-                          <% total_price +=items[i].item_price %>
-                        </tr>
-                        <% } %>
-                      </tbody>
-                      <tfoot>
-                        <tr>
-                          <td colspan="4"><strong>Total</strong></td>
-                          <td id="total_quantity"><%= count %></td>
-                          <span
-                            id="inital_quantity"
-                            style="display: hidden"
-                            hidden
-                          >
-                            <%= count %>
-                          </span>
-                          <td id="total_price">$ <%= total_price %></td>
-                          <span
-                            id="inital_price"
-                            style="display: hidden"
-                            hidden
-                          >
-                            <%= total_price %>
-                          </span>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                </div>
-                <br />
-                <br />
-                <% if (count > 0) { %>
-                <button
-                  type="submit"
-                  class="sec-btn sec-btn-orange"
-                  id="buyNowBtn"
-                  style="display: block; margin: 0 auto; width: 20%"
-                >
-                  Buy Now
-                </button>
-                <% } else { %>
-                <button
-                  type="button"
-                  disabled
-                  class="sec-btn"
-                  style="
-                    display: block;
-                    margin: 0 auto;
-                    width: 20%;
-                    color: white;
-                    background: #cccccc;
-                    cursor: not-allowed;
-                  "
-                >
-                  Add items to cart first
-                </button>
-                <% } %>
-                <script>
-                  document.addEventListener("DOMContentLoaded", function () {
-                    const checkoutForm = document.querySelector(
-                      'form[action="/checkout"]'
-                    );
+    #checkout-button-container button.btn-primary:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
 
-                    if (checkoutForm) {
-                      checkoutForm.addEventListener("submit", function (event) {
-                        // We want the form to just submit normally now
-                        // Don't prevent default or clear cart
-                      });
-                    }
-                  });
-                </script>
-              </form>
+<body class="body-fixed">
+  <%- include('partials/userNav') %>
+
+  <div id="viewport">
+    <div id="js-scroll-content">
+      <section class="section" id="cart" style="background-image: url(/images/menu-bg.png)">
+        <div class="container">
+          <div class="sec-title text-center mb-5">
+            <h2 class="h2-title">My Cart</h2>
+            <div class="sec-title-shape mb-4">
+              <img src="/images/title-shape.svg" alt="" />
             </div>
           </div>
-        </section>
 
-        <%- include('partials/footer') %>
-      </div>
+          <% if (typeof error !== 'undefined' && error && error.trim() !== '') { %>
+          <div class="alert alert-danger text-center"><%= error %></div>
+          <% } %>
+
+          <div id="cart-content-wrapper">
+            <% if (items && items.length > 0) { %>
+            <form action="/checkout" method="POST" id="cartForm">
+              <table style="width: 100%; text-align: center; margin-bottom: 20px;">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Product</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Subtotal</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="cart-items-container">
+                  <% items.forEach((item, index) => { %>
+                  <tr id="cart-item-row-<%= item.item_id %>">
+                    <td><%= index + 1 %></td>
+                    <td><img src="/images/item-image/<%= item.item_id %>" alt="<%= item.item_name %>" style="width: 70px; height: 70px; object-fit: cover; border-radius: 5px;" onerror="this.onerror=null; this.src='/images/dish/default-pizza.jpg';"></td>
+                    <td><a href="/item/<%= item.item_id %>" style="color: #ff8243; text-decoration: none;"><%= item.item_name %></a></td>
+                    <td class="item-price" data-price="<%= item.item_price %>">$<%= item.item_price.toFixed(2) %></td>
+                    <td>
+                      <input type="number" class="form-control quantity-input" style="width: 80px; margin: 0 auto; text-align: center;" id="quantity-<%= item.item_id %>" value="<%= item.quantity %>" min="1" data-item-id="<%= item.item_id %>" data-item-price="<%= item.item_price %>" onchange="handleQuantityChange(this)">
+                    </td>
+                    <td class="item-subtotal-display" id="subtotal-<%= item.item_id %>">$<%= item.subtotal.toFixed(2) %></td>
+                    <td>
+                      <button type="button" class="btn btn-danger btn-sm" onclick="removeFromCart('<%= item.item_id %>', 'cart-item-row-<%= item.item_id %>')">
+                        <i class="uil uil-trash-alt"></i> Remove
+                      </button>
+                    </td>
+                  </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+              <div style="text-align: right; margin-bottom: 20px;">
+                <h4>Grand Total: $<span id="cart-grand-total"><%= total.toFixed(2) %></span></h4>
+              </div>
+              <div id="checkout-button-container" style="text-align: center;">
+                <button type="submit" class="btn btn-primary" style="background-color: #ff8243; border-color: #ff8243; padding: 10px 30px; font-size: 1.2em;">
+                  Proceed to Checkout
+                </button>
+              </div>
+            </form>
+            <% } else { %>
+            <div id="cart-items-container" class="text-center" style="padding: 20px;">
+              <p style="font-size: 1.2em; margin-bottom: 15px;">Your cart is currently empty.</p>
+              <img src="/images/empty-plate.jpg" alt="Empty Cart" style="max-width: 200px; margin-bottom: 20px; border-radius: 10px;">
+              <br>
+              <a href="/homepage" class="btn btn-primary" style="background-color: #ff8243; border-color: #ff8243; padding: 10px 25px;">Continue Shopping</a>
+            </div>
+            <div id="checkout-button-container" style="display: none;"></div>
+            <% } %>
+          </div>
+        </div>
+      </section>
+
+      <%- include('partials/footer') %>
     </div>
+  </div>
 
-    <script>
-      function updateData(qty, i) {
-        // Updating Sub Price Display
-        const item_price = document.querySelectorAll(".item-price");
-        const newPrice = parseInt(qty) * parseInt(item_price[i].innerHTML);
-        document.querySelectorAll(".price")[i].innerHTML = newPrice;
-
-        // Update hidden subprice input
-        document.getElementById(`subprice_hidden_${i}`).value = newPrice;
-
-        // Update hidden quantity input
-        document.getElementById(`quantity_hidden_${i}`).value = qty;
-
-        // Updating Total Quantity Display
-        const quantity = document.querySelectorAll(".quantity");
-        let total_qty = parseInt(0);
-        for (let j = 0; j < quantity.length; j++) {
-          total_qty += parseInt(quantity[j].value);
-        }
-        document.getElementById("total_quantity").innerHTML = total_qty;
-
-        // Updating Total Price Display
-        const price = document.querySelectorAll(".price");
-        let total_price = parseInt(0);
-        for (let j = 0; j < price.length; j++) {
-          total_price += parseInt(price[j].innerHTML);
-        }
-        document.getElementById("total_price").innerHTML = "$ " + total_price;
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const cartCounter = document.getElementById("cart-number-count");
+      // 'count' is passed from server to cart.ejs; ensure it's a number for display
+      if (cartCounter && typeof count !== 'undefined') {
+        cartCounter.innerHTML = parseInt(count) || 0;
       }
-    </script>
-    <script>
-      function removeFromCart(itemId, index) {
-        // Get current cart from localStorage
-        let cart = JSON.parse(localStorage.getItem("cart") || "[]");
-        let itemCount = parseInt(localStorage.getItem("item_count") || "0");
+      updatePageTotals(); // Initial call to ensure totals are correct based on rendered items
+    });
 
-        // Remove item from cart array
-        const itemIndex = cart.indexOf(itemId);
-        if (itemIndex > -1) {
-          cart.splice(itemIndex, 1);
-        }
+    function updatePageTotals() {
+      let grandTotal = 0;
+      let totalQuantity = 0;
+      const itemRows = document.querySelectorAll("#cart-items-container tr"); // Only select rows within the tbody
 
-        // Update item count
-        itemCount = Math.max(0, itemCount - 1);
+      itemRows.forEach(row => {
+        const priceText = row.querySelector(".item-price")?.dataset.price;
+        const quantityInput = row.querySelector(".quantity-input");
+        const subtotalDisplay = row.querySelector(".item-subtotal-display");
 
-        // Update localStorage
-        localStorage.setItem("cart", JSON.stringify(cart));
-        localStorage.setItem("item_count", itemCount);
-
-        // Update the cart count display
-        document.getElementById("cart-number-count").innerHTML = itemCount;
-
-        // Remove the row from the table
-        const row = document.getElementById(`cart-row-${itemId}`);
-        if (row) {
-          row.remove();
-        }
-
-        // Update row numbers
-        updateRowNumbers();
-
-        // Recalculate totals
-        updateTotals();
-
-        // Send update to server (optional)
-        updateServerCart(cart, itemCount);
-      }
-
-      function updateRowNumbers() {
-        // Get all remaining rows
-        const rows = document.querySelectorAll("#cart-tbody tr");
-
-        // Update row numbers
-        rows.forEach((row, index) => {
-          const rowNumberCell = row.querySelector(".row-number");
-          if (rowNumberCell) {
-            rowNumberCell.textContent = index + 1;
+        if (priceText && quantityInput && subtotalDisplay) {
+          const price = parseFloat(priceText);
+          const quantity = parseInt(quantityInput.value);
+          if (!isNaN(price) && !isNaN(quantity) && quantity > 0) {
+            const subtotal = price * quantity;
+            subtotalDisplay.textContent = '$' + subtotal.toFixed(2);
+            grandTotal += subtotal;
+            totalQuantity += quantity;
+          } else if (quantity === 0 && subtotalDisplay) {
+            subtotalDisplay.textContent = '$0.00';
           }
-          // Update data attribute for future reference
-          row.setAttribute("data-row-index", index);
-        });
-
-        // Check if cart is empty and update UI accordingly
-        if (rows.length === 0) {
-          // If no items left, reload the page to show "Add items to cart first" button
-          // alternatively you could manipulate the DOM to show/hide buttons
-          location.reload();
         }
-      }
-
-      function updateTotals() {
-        // Updating Total Quantity
-        const quantity = document.querySelectorAll(".quantity");
-        let total_qty = 0;
-        for (let j = 0; j < quantity.length; j++) {
-          total_qty += parseInt(quantity[j].value);
-        }
-        document.getElementById("total_quantity").innerHTML = total_qty;
-
-        // Updating Total Price
-        const price = document.querySelectorAll(".price");
-        let total_price = 0;
-        for (let j = 0; j < price.length; j++) {
-          total_price += parseInt(price[j].innerHTML);
-        }
-        document.getElementById("total_price").innerHTML = "$ " + total_price;
-      }
-
-      function updateServerCart(cart, itemCount) {
-        fetch("/updateCart", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            cart: cart,
-            item_count: itemCount,
-          }),
-        });
-      }
-    </script>
-    <script>
-      // Update the cart count in localStorage to match server count
-      document.addEventListener("DOMContentLoaded", function () {
-        const count = "<%= item_count %>";
-        localStorage.setItem("item_count", count);
-        document.getElementById("cart-number-count").innerHTML = count;
       });
-    </script>
-    <!-- jquery  -->
-    <script src="/javascripts/jquery-3.5.1.min.js"></script>
-    <!-- bootstrap -->
-    <script src="/javascripts/bootstrap.min.js"></script>
-    <script src="/javascripts/popper.min.js"></script>
-    <!-- fontawesome  -->
-    <script src="/javascripts/font-awesome.min.js"></script>
-    <!-- swiper slider  -->
-    <script src="/javascripts/swiper-bundle.min.js"></script>
-    <!-- mixitup -- filter  -->
-    <script src="/javascripts/jquery.mixitup.min.js"></script>
-    <!-- fancy box  -->
-    <script src="/javascripts/query.fancybox.min.js"></script>
-    <!-- parallax  -->
-    <script src="/javascripts/parallax.min.js"></script>
-    <!-- gsap  -->
-    <script src="/javascripts/gsap.min.js"></script>
-    <!-- scroll trigger  -->
-    <script src="/javascripts/ScrollTrigger.min.js"></script>
-    <!-- scroll to plugin  -->
-    <script src="/javascripts/ScrollToPlugin.min.js"></script>
-    <!-- smooth scroll  -->
-    <script src="/javascripts/smooth-scroll.js"></script>
-    <!-- custom js  -->
-    <script src="/javascripts/main.js"></script>
-    <script src="https://app.tudongchat.com/js/chatbox.js"></script>
-    <script>
-      const tudong_chatbox = new TuDongChat("cIrpB0hRUakuJ3KyVB9fp");
-      tudong_chatbox.initial();
-    </script>
-  </body>
+
+      const grandTotalDisplayElement = document.getElementById('cart-grand-total');
+      if (grandTotalDisplayElement) {
+        grandTotalDisplayElement.textContent = grandTotal.toFixed(2);
+      }
+
+      // Update header cart count as well, reflecting changes on this page
+      const cartCounter = document.getElementById("cart-number-count");
+      if (cartCounter) {
+        cartCounter.innerHTML = totalQuantity;
+      }
+      localStorage.setItem('item_count', totalQuantity); // Keep localStorage sync'd
+
+      const cartContentWrapper = document.getElementById('cart-content-wrapper');
+      const cartForm = document.getElementById('cartForm');
+      const emptyCartMessageContainer = document.querySelector("#cart-items-container.text-center"); // More specific selector for empty message
+
+      if (itemRows.length === 0 || totalQuantity === 0) {
+        if (cartForm) cartForm.style.display = 'none'; // Hide form including table and checkout button
+        if (cartContentWrapper && !emptyCartMessageContainer) { // Check if empty message isn't already there
+          cartContentWrapper.innerHTML = '<div class="text-center" style="padding: 20px;"><p style="font-size: 1.2em; margin-bottom: 15px;">Your cart is currently empty.</p><img src="/images/empty-plate.jpg" alt="Empty Cart" style="max-width: 200px; margin-bottom: 20px; border-radius: 10px;"><br><a href="/homepage" class="btn btn-primary" style="background-color: #ff8243; border-color: #ff8243; padding: 10px 25px;">Continue Shopping</a></div>';
+        } else if (emptyCartMessageContainer) {
+          emptyCartMessageContainer.style.display = 'block';
+        }
+      } else {
+        if (cartForm) cartForm.style.display = 'block';
+        if (emptyCartMessageContainer) emptyCartMessageContainer.style.display = 'none';
+      }
+    }
+
+    function removeFromCart(itemId, rowId) {
+      if (!confirm("Are you sure you want to remove this item from your cart?")) {
+        return;
+      }
+
+      fetch('/api/cart/remove', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            itemId: itemId
+          })
+        })
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          if (data.success && typeof data.newItemCount !== 'undefined') {
+            const rowElement = document.getElementById(rowId);
+            if (rowElement) rowElement.remove();
+            updatePageTotals(); // This will update grand total and header count
+          } else {
+            alert('Failed to remove item: ' + (data.message || 'Unknown error'));
+          }
+        })
+        .catch(error => {
+          console.error('Error removing item from cart:', error);
+          alert('Error removing item. Please try again.');
+        });
+    }
+
+    function handleQuantityChange(inputElement) {
+      const itemId = inputElement.dataset.itemId;
+      const itemPrice = parseFloat(inputElement.dataset.itemPrice);
+      const newQuantity = parseInt(inputElement.value);
+
+      if (isNaN(newQuantity) || newQuantity < 0) {
+        alert("Invalid quantity. Quantity must be a positive number.");
+        // Re-fetch cart to reset to a valid state or use a stored old value
+        // For simplicity, we can just call updatePageTotals to reflect current input if it's bad
+        // Or better, fetch the actual current quantity from server if input is invalid.
+        // For now, let's assume user corrects it or it gets handled by min="1"
+        inputElement.value = inputElement.min || 1; // Reset to min if invalid
+        updatePageTotals();
+        return;
+      }
+
+      if (newQuantity === 0) {
+        // If quantity is set to 0, treat as removal
+        removeFromCart(itemId, `cart-item-row-${itemId}`);
+        return;
+      }
+
+      updateQuantity(itemId, newQuantity, itemPrice, inputElement);
+    }
+
+    function updateQuantity(itemId, newQuantity, itemPrice, inputElement) {
+      fetch('/api/cart/update', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            itemId: itemId,
+            newQuantity: newQuantity
+          })
+        })
+        .then(response => {
+          if (!response.ok) {
+            // If server responds with an error, try to parse JSON for a message
+            return response.json().then(errData => {
+              throw {
+                status: response.status,
+                data: errData
+              }; // Throw an object to be caught
+            }).catch(() => {
+              throw {
+                status: response.status,
+                data: {
+                  message: "Failed to update quantity. Server error."
+                }
+              }; // Fallback error
+            });
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.success && typeof data.newItemCount !== 'undefined') {
+            // Server successfully updated quantity
+            const subtotalEl = document.getElementById(`subtotal-${itemId}`);
+            if (subtotalEl) {
+              subtotalEl.textContent = '$' + (itemPrice * newQuantity).toFixed(2);
+            }
+            updatePageTotals(); // This will update grand total and header count
+          } else {
+            // Server indicated failure, or unexpected response
+            alert('Failed to update quantity: ' + (data.message || 'Unknown server error'));
+            // Revert quantity in input if server provides current valid quantity
+            if (inputElement && typeof data.currentQuantityInCart !== 'undefined') {
+              inputElement.value = data.currentQuantityInCart;
+            } else if (inputElement) {
+              // As a fallback, if server doesn't give current quantity, maybe just refresh totals
+              // or ideally, you'd have the old value stored to revert to.
+            }
+            updatePageTotals(); // Refresh totals anyway
+          }
+        })
+        .catch(errorObj => {
+          console.error('Error updating quantity:', errorObj);
+          let alertMessage = 'Error updating quantity. Please try again.';
+          if (errorObj && errorObj.data && errorObj.data.message) {
+            alertMessage = errorObj.data.message;
+          }
+          alert(alertMessage);
+          // Attempt to revert input value or refresh from server if possible
+          // For now, just ensure totals are updated based on current (possibly failed) state
+          if (inputElement && typeof errorObj?.data?.currentQuantityInCart !== 'undefined') {
+            inputElement.value = errorObj.data.currentQuantityInCart;
+          }
+          updatePageTotals();
+        });
+    }
+  </script>
+  <!-- jquery  -->
+  <script src="/javascripts/jquery-3.5.1.min.js"></script>
+  <!-- bootstrap -->
+  <script src="/javascripts/bootstrap.min.js"></script>
+  <script src="/javascripts/popper.min.js"></script>
+  <!-- fontawesome  -->
+  <script src="/javascripts/font-awesome.min.js"></script>
+  <!-- swiper slider  -->
+  <script src="/javascripts/swiper-bundle.min.js"></script>
+  <!-- mixitup -- filter  -->
+  <script src="/javascripts/jquery.mixitup.min.js"></script>
+  <!-- fancy box  -->
+  <script src="/javascripts/jquery.fancybox.min.js"></script>
+  <!-- parallax  -->
+  <script src="/javascripts/parallax.min.js"></script>
+  <!-- gsap  -->
+  <script src="/javascripts/gsap.min.js"></script>
+  <!-- scroll trigger  -->
+  <script src="/javascripts/ScrollTrigger.min.js"></script>
+  <!-- scroll to plugin  -->
+  <script src="/javascripts/ScrollToPlugin.min.js"></script>
+  <!-- smooth scroll  -->
+  <script src="/javascripts/smooth-scroll.js"></script>
+  <!-- custom js  -->
+  <script src="/javascripts/main.js"></script>
+</body>
+
 </html>

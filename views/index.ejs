@@ -356,6 +356,37 @@
         </div>
       </section>
 
+      <!-- Email Subscription Section Starts -->
+      <section class="section" style="background-image: url(/images/menu-bg.png); padding-top: 50px; padding-bottom: 50px;">
+        <div class="container">
+          <div class="row justify-content-center">
+            <div class="col-lg-8">
+              <div class="sec-title text-center mb-5">
+                <p class="sec-sub-title mb-3">Stay Updated</p>
+                <h2 class="h2-title">Subscribe to Our Promotions</h2>
+                <div class="sec-title-shape mb-4">
+                  <img src="/images/title-shape.svg" alt="Title Shape" />
+                </div>
+                <p>Get the latest deals and updates straight to your inbox!</p>
+              </div>
+              <% if (locals.subscription_message) { %>
+              <div class="alert alert-info text-center"><%= locals.subscription_message %></div>
+              <% } %>
+              <% if (locals.subscription_error) { %>
+              <div class="alert alert-danger text-center"><%= locals.subscription_error %></div>
+              <% } %>
+              <form action="/subscribe-promotions" method="POST" class="text-center">
+                <div class="input-group mb-3" style="max-width: 450px; margin: 0 auto;">
+                  <input type="email" name="email" class="form-control form-input" placeholder="Enter your email" required style="height: 58px;">
+                  <button class="sec-btn sec-btn-orange" type="submit" style="height: 58px; line-height: 46px; box-sizing: border-box; padding-top: 6px; padding-bottom: 6px;">Subscribe</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Email Subscription Section Ends -->
+
       <%- include('partials/footer') %>
     </div>
   </div>
@@ -372,7 +403,7 @@
   <!-- mixitup -- filter  -->
   <script src="/javascripts/jquery.mixitup.min.js"></script>
   <!-- fancy box  -->
-  <script src="/javascripts/query.fancybox.min.js"></script>
+  <script src="/javascripts/jquery.fancybox.min.js"></script>
   <!-- parallax  -->
   <script src="/javascripts/parallax.min.js"></script>
   <!-- gsap  -->
@@ -383,9 +414,9 @@
   <script src="/javascripts/ScrollToPlugin.min.js"></script>
   <!-- smooth scroll  -->
   <script src="/javascripts/smooth-scroll.js"></script>
-  <script>
+  <!-- <script>
     var scroll = new SmoothScroll('a[href*="#"]');
-  </script>
+  </script> -->
   <!-- custom js  -->
   <script src="/javascripts/main.js"></script>
 </body>

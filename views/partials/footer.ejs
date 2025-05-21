@@ -7,11 +7,7 @@
             <div class="footer-info">
               <div class="footer-logo">
                 <a href="/">
-                  <img
-                    src="/images/logo.svg"
-                    alt="PizzazzPizza Logo"
-                    style="max-width: 100%; height: auto"
-                  />
+                  <img src="/images/logo.svg" alt="PizzazzPizza Logo" style="max-width: 100%; height: auto" />
                 </a>
               </div>
               <p>You will wonder how you ever lived without us.</p>
@@ -42,11 +38,12 @@
               <div class="footer-menu food-nav-menu">
                 <h3 class="h3-title">LINKS</h3>
                 <ul class="column-2">
-                  <li><a href="/">Home</a></li>
+                  <li><a href="/#">Home</a></li>
                   <li><a href="/#about">About</a></li>
                   <li><a href="/#team">Our Chefs</a></li>
                   <li><a href="/#testimonials">Testimonials</a></li>
-                  <li><a href="/#contact">Contact</a></li>
+                  <li><a href="/contact">Contact</a></li>
+                  <li><a href="/faqs">FAQs</a></li>
                 </ul>
               </div>
               <div class="footer-menu">
@@ -75,9 +72,29 @@
           </div>
         </div>
       </div>
-      <button class="scrolltop" onclick="scrollToTop()">
+      <button class="scrolltop" onclick="scrollToTop()" style="display: none; position: fixed; bottom: 100px; right: 30px; z-index: 2147483647;">
         <i class="uil uil-angle-up"></i>
       </button>
     </div>
   </div>
 </footer>
+
+<script src="https://cdn.botpress.cloud/webchat/v2.5/inject.js"></script>
+<script>
+  window.botpress.init({
+    "botId": "1ba44475-64c1-4cc5-9d39-a4bb2b89d2ae",
+    "configuration": {
+      "website": {},
+      "email": {},
+      "phone": {},
+      "termsOfService": {},
+      "privacyPolicy": {},
+      "color": "#f76b15",
+      "variant": "solid",
+      "themeMode": "light",
+      "fontFamily": "ibm",
+      "radius": 1
+    },
+    "clientId": "eb61a6c4-5ec2-4b26-bdbb-905fad2daed9"
+  });
+</script>

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Menu Management</title>
+  <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/stylesheets/style.css">
+  <style>
+    .admin-main-content .section {
+      padding-top: 40px;
+      padding-bottom: 40px;
+    }
+
+    .modal-body .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .table th,
+    .table td {
+      vertical-align: middle;
+    }
+
+    .action-buttons .btn {
+      margin-right: 5px;
+    }
+
+    #addFoodModal .modal-dialog,
+    #editFoodModal .modal-dialog {
+      max-width: 600px;
+    }
+
+    .admin-main-content .sec-title.text-center.mb-4 .h2-title {
+      margin-bottom: 0.5rem;
+    }
+
+    .table th a {
+      /* Style for sortable headers */
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .table th a:hover {
+      color: #ff8243;
+    }
+
+    .table th .sort-icon {
+      /* For sort arrows */
+      margin-left: 5px;
+      font-size: 0.8em;
+    }
+
+    .pagination {
+      justify-content: center;
+    }
+
+    .pagination .page-item.active .page-link {
+      background-color: #ff8243;
+      border-color: #ff8243;
+      color: white;
+    }
+
+    .pagination .page-link {
+      color: #ff8243;
+    }
+
+    .pagination .page-link:hover {
+      color: #e3702b;
+    }
+
+    .pagination .page-item.disabled .page-link {
+      color: #6c757d;
+    }
+  </style>
+</head>
+
+<body class="admin-active">
+
+  <%- include('../partials/adminSidebar') %>
+
+  <div class="admin-main-content">
+    <div id="viewport">
+      <div id="js-scroll-content">
+        <section class="section" id="menu-management-page" style="background-image: url(/images/menu-bg.png);">
+          <div class="container-fluid">
+            <div class="sec-title text-center mb-4">
+              <h2 class="h2-title">Menu Management</h2>
+              <div class="sec-title-shape mb-4">
+                <img src="/images/title-shape.svg" alt="Title Shape" />
+              </div>
+            </div>
+
+            <% if (message && message.length > 0) { %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+              <%= message %>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <% } %>
+            <% if (error && error.length > 0) { %>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              <%= error %>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <% } %>
+
+            <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#addFoodModal">
+              Add New Food Item
+            </button>
+
+            <div class="table-responsive">
+              <table class="table table-striped table-bordered">
+                <thead class="thead-dark">
+                  <tr>
+                    <% const sortLink = (col, display) => { %>
+                    <% let newSortOrder = 'ASC'; %>
+                    <% if (sortBy === col && sortOrder === 'ASC') newSortOrder = 'DESC'; %>
+                    <% const currentParams = new URLSearchParams({ sortBy: col, sortOrder: newSortOrder, limit: limit }); %>
+                    <% if (currentPage > 1) currentParams.set('page', currentPage); %>
+                    <th>
+                      <a href="/admin/menu?<%= currentParams.toString() %>">
+                        <%= display %>
+                        <% if (sortBy === col) { %>
+                        <i class="uil <%= sortOrder === 'ASC' ? 'uil-arrow-up' : 'uil-arrow-down' %> sort-icon"></i>
+                        <% } %>
+                      </a>
+                    </th>
+                    <% } %>
+
+                    <%- sortLink('item_id', 'ID') %>
+                    <th>Image</th>
+                    <%- sortLink('item_name', 'Name') %>
+                    <%- sortLink('item_type', 'Type') %>
+                    <%- sortLink('item_category', 'Category') %>
+                    <%- sortLink('item_price', 'Price') %>
+                    <%- sortLink('item_calories', 'Calories') %>
+                    <%- sortLink('item_serving', 'Serving') %>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (items && items.length > 0) { %>
+                  <% items.forEach(item => { %>
+                  <tr>
+                    <td><%= item.item_id %></td>
+                    <td>
+                      <img src="/images/item-image/<%= item.item_id %>" alt="<%= item.item_name %>" style="width: 50px; height: 50px; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                      <span style="display:none;" class="text-muted">No Image</span>
+                    </td>
+                    <td><%= item.item_name %></td>
+                    <td><%= item.item_type %></td>
+                    <td><%= item.item_category %></td>
+                    <td>$<%= parseFloat(item.item_price).toFixed(2) %></td>
+                    <td><%= item.item_calories %></td>
+                    <td><%= item.item_serving %></td>
+                    <td class="action-buttons">
+                      <button class="btn btn-sm btn-info edit-btn" data-id="<%= item.item_id %>">Edit</button>
+                      <form action="/admin/deleteFood/<%= item.item_id %>" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this item?');">
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                      </form>
+                    </td>
+                  </tr>
+                  <% }) %>
+                  <% } else { %>
+                  <tr>
+                    <td colspan="9" class="text-center">No menu items found.</td>
+                  </tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+
+            <% if (totalPages > 1) { %>
+            <nav aria-label="Menu item navigation">
+              <ul class="pagination">
+                <% const baseParams = new URLSearchParams({ sortBy: sortBy, sortOrder: sortOrder, limit: limit }); %>
+
+                <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                  <% const prevParams = new URLSearchParams(baseParams); prevParams.set('page', currentPage - 1); %>
+                  <a class="page-link" href="/admin/menu?<%= prevParams.toString() %>" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                  </a>
+                </li>
+
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                <% const pageParams = new URLSearchParams(baseParams); pageParams.set('page', i); %>
+                <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                  <a class="page-link" href="/admin/menu?<%= pageParams.toString() %>"><%= i %></a>
+                </li>
+                <% } %>
+
+                <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                  <% const nextParams = new URLSearchParams(baseParams); nextParams.set('page', currentPage + 1); %>
+                  <a class="page-link" href="/admin/menu?<%= nextParams.toString() %>" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                  </a>
+                </li>
+              </ul>
+            </nav>
+            <% } %>
+            <% if (totalItems > 0) { %>
+            <p class="text-center text-muted">Showing <%= items.length %> of <%= totalItems %> items.</p>
+            <% } %>
+
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Food Modal -->
+  <div class="modal fade" id="addFoodModal" tabindex="-1" role="dialog" aria-labelledby="addFoodModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <form action="/admin/addFood" method="POST" enctype="multipart/form-data">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addFoodModalLabel">Add New Food Item</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="item_name">Name</label>
+              <input type="text" class="form-control" id="item_name" name="item_name" required>
+            </div>
+            <div class="form-group">
+              <label for="item_type">Type (e.g., Vegetarian, Non-Vegan, Spicy)</label>
+              <input type="text" class="form-control" id="item_type" name="item_type" required>
+            </div>
+            <div class="form-group">
+              <label for="item_category">Category (e.g., Pizzas, Appetizers, Desserts, Beverages)</label>
+              <input type="text" class="form-control" id="item_category" name="item_category" required>
+            </div>
+            <div class="form-group">
+              <label for="item_price">Price</label>
+              <input type="number" step="0.01" class="form-control" id="item_price" name="item_price" required>
+            </div>
+            <div class="form-group">
+              <label for="item_calories">Calories</label>
+              <input type="number" class="form-control" id="item_calories" name="item_calories" required>
+            </div>
+            <div class="form-group">
+              <label for="item_serving">Serving (e.g., 1, 2-3, slice)</label>
+              <input type="text" class="form-control" id="item_serving" name="item_serving" required>
+            </div>
+            <div class="form-group">
+              <label for="item_img_upload">Image</label>
+              <input type="file" class="form-control-file" id="item_img_upload" name="item_img" accept="image/png, image/jpeg, image/jpg, image/webp" required>
+            </div>
+            <div class="form-group">
+              <label for="item_description_long">Description (Optional)</label>
+              <textarea class="form-control" id="item_description_long" name="item_description_long" rows="3"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Add Item</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Food Modal -->
+  <div class="modal fade" id="editFoodModal" tabindex="-1" role="dialog" aria-labelledby="editFoodModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <form id="editFoodForm" method="POST" enctype="multipart/form-data">
+          <!-- Add enctype here -->
+          <!-- Action will be set by JS -->
+          <div class="modal-header">
+            <h5 class="modal-title" id="editFoodModalLabel">Edit Food Item</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="edit_item_id" name="item_id"> <!-- Keep this if your JS uses it for form action -->
+            <div class="form-group">
+              <label for="edit_item_name">Name</label>
+              <input type="text" class="form-control" id="edit_item_name" name="item_name" required>
+            </div>
+            <div class="form-group">
+              <label for="edit_item_type">Type</label>
+              <input type="text" class="form-control" id="edit_item_type" name="item_type" required>
+            </div>
+            <div class="form-group">
+              <label for="edit_item_category">Category</label>
+              <input type="text" class="form-control" id="edit_item_category" name="item_category" required>
+            </div>
+            <div class="form-group">
+              <label for="edit_item_price">Price</label>
+              <input type="number" step="0.01" class="form-control" id="edit_item_price" name="item_price" required>
+            </div>
+            <div class="form-group">
+              <label for="edit_item_calories">Calories</label>
+              <input type="number" class="form-control" id="edit_item_calories" name="item_calories" required>
+            </div>
+            <div class="form-group">
+              <label for="edit_item_serving">Serving</label>
+              <input type="text" class="form-control" id="edit_item_serving" name="item_serving" required>
+            </div>
+            <div class="form-group">
+              <label for="edit_item_img">New Image (Optional)</label>
+              <!-- Changed from text input to file input. Name is item_img -->
+              <input type="file" class="form-control-file" id="edit_item_img" name="item_img" accept="image/png, image/jpeg, image/jpg, image/webp">
+              <small class="form-text text-muted">Upload a new image to replace the current one. If no file is chosen, the current image will be kept.</small>
+            </div>
+            <div class="form-group">
+              <label for="edit_item_description_long">Description (Optional)</label>
+              <textarea class="form-control" id="edit_item_description_long" name="item_description_long" rows="3"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Handle Edit Button Click
+      const editButtons = document.querySelectorAll('.edit-btn');
+      const editFoodModal = $('#editFoodModal'); // jQuery selector for Bootstrap modal
+      const editForm = document.getElementById('editFoodForm');
+
+      editButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const itemId = this.dataset.id;
+
+          // Fetch item data from API
+          fetch(`/admin/api/food/${itemId}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                const item = data.item;
+                document.getElementById('edit_item_id').value = item.item_id;
+                document.getElementById('edit_item_name').value = item.item_name;
+                document.getElementById('edit_item_type').value = item.item_type;
+                document.getElementById('edit_item_category').value = item.item_category;
+                document.getElementById('edit_item_price').value = parseFloat(item.item_price).toFixed(2);
+                document.getElementById('edit_item_calories').value = item.item_calories;
+                document.getElementById('edit_item_serving').value = item.item_serving;
+                document.getElementById('edit_item_img').value = '';
+                document.getElementById('edit_item_description_long').value = item.item_description_long || '';
+
+                editForm.action = `/admin/editFood/${item.item_id}`;
+                editFoodModal.modal('show');
+              } else {
+                alert('Error fetching item details: ' + data.message);
+              }
+            })
+            .catch(error => {
+              console.error('Error fetching item details:', error);
+              alert('An error occurred while fetching item details.');
+            });
+        });
+      });
+
+      // Clear query parameters from URL after displaying messages to prevent re-showing on refresh
+      if (window.history.replaceState) {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('message') || url.searchParams.has('error')) {
+          url.searchParams.delete('message');
+          url.searchParams.delete('error');
+          window.history.replaceState({
+            path: url.href
+          }, '', url.href);
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>

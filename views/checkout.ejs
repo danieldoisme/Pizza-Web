@@ -52,7 +52,7 @@
                       <% items.forEach(function(item, index) { %>
                       <input type="hidden" name="itemid[]" value="<%= item.item_id %>">
                       <input type="hidden" name="quantity[]" value="<%= item.quantity %>">
-                      <input type="hidden" name="subprice[]" value="<%= item.subtotal %>">
+                      <input type="hidden" name="subprice[]" value="<%= parseFloat(item.subtotal).toFixed(2) %>">
                       <% }); %>
                       <% } %>
 
@@ -79,10 +79,30 @@
                           </label>
                         </div>
 
-                        <div id="newAddressForm" class="mt-3">
+                        <div id="newAddressForm" class="mt-3" style="display: <%= (!user || !user.address) ? 'block' : 'none' %>;">
                           <div class="mb-3">
-                            <label for="deliveryAddress" class="form-label">New Delivery Address</label>
-                            <textarea class="form-control form-input" id="deliveryAddress" name="newDeliveryAddress" rows="3" placeholder="Enter your delivery address"></textarea>
+                            <label for="new_address_line1" class="form-label">Street Address</label>
+                            <input type="text" class="form-control form-control-sm" id="new_address_line1" name="new_address_line1" placeholder="Street Address">
+                          </div>
+                          <div class="mb-3">
+                            <label for="new_address_line2" class="form-label">Apartment, suite, etc. (Optional)</label>
+                            <input type="text" class="form-control form-control-sm" id="new_address_line2" name="new_address_line2" placeholder="Apartment, suite, etc.">
+                          </div>
+                          <div class="mb-3">
+                            <label for="new_city" class="form-label">City</label>
+                            <input type="text" class="form-control form-control-sm" id="new_city" name="new_city" placeholder="City">
+                          </div>
+                          <div class="mb-3">
+                            <label for="new_state" class="form-label">State/Province</label>
+                            <input type="text" class="form-control form-control-sm" id="new_state" name="new_state" placeholder="State/Province">
+                          </div>
+                          <div class="mb-3">
+                            <label for="new_postal_code" class="form-label">ZIP/Postal Code</label>
+                            <input type="text" class="form-control form-control-sm" id="new_postal_code" name="new_postal_code" placeholder="ZIP/Postal Code">
+                          </div>
+                          <div class="mb-3">
+                            <label for="new_country" class="form-label">Country</label>
+                            <input type="text" class="form-control form-control-sm" id="new_country" name="new_country" placeholder="Country">
                           </div>
                         </div>
                       </div>
@@ -105,9 +125,9 @@
                               <% items.forEach(function(item) { %>
                               <tr>
                                 <td><%= item.item_name %></td>
-                                <td>$<%= item.item_price %></td>
+                                <td>$<%= parseFloat(item.item_price).toFixed(2) %></td>
                                 <td><%= item.quantity %></td>
-                                <td>$<%= item.subtotal %></td>
+                                <td>$<%= parseFloat(item.subtotal).toFixed(2) %></td>
                                 <% totalAmount += item.subtotal; %>
                               </tr>
                               <% }); %>
@@ -120,7 +140,7 @@
                             <tfoot>
                               <tr>
                                 <th colspan="3">Total Amount</th>
-                                <th>$<%= totalAmount %></th>
+                                <th>$<%= parseFloat(totalAmount).toFixed(2) %></th>
                               </tr>
                             </tfoot>
                           </table>
@@ -179,7 +199,7 @@
   <!-- mixitup -- filter  -->
   <script src="/javascripts/jquery.mixitup.min.js"></script>
   <!-- fancy box  -->
-  <script src="/javascripts/query.fancybox.min.js"></script>
+  <script src="/javascripts/jquery.fancybox.min.js"></script>
   <!-- parallax  -->
   <script src="/javascripts/parallax.min.js"></script>
   <!-- gsap  -->
@@ -208,8 +228,12 @@
       const newAddressRadio = document.getElementById('newAddress');
       const newAddressForm = document.getElementById('newAddressForm');
       const userExistingAddress = document.getElementById('userExistingAddress');
-      const deliveryAddress = document.getElementById('deliveryAddress');
+      const newAddressLine1 = document.getElementById('new_address_line1');
+      const newCity = document.getElementById('new_city');
+      const newPostalCode = document.getElementById('new_postal_code');
+      const newCountry = document.getElementById('new_country');
       const codForm = document.getElementById('cod-form');
+      const scrollContentElement = document.getElementById('js-scroll-content'); // Get the scrollable element
 
       // Function to update address form visibility
       function updateAddressFormVisibility() {
@@ -220,6 +244,9 @@
           } else {
             newAddressForm.style.display = 'none';
           }
+
+          // Dispatch a window resize event to trigger the smooth-scroll.js update
+          window.dispatchEvent(new Event('resize'));
         }
       }
 
@@ -237,18 +264,46 @@
         }
 
         // Update form before submission logic (ensure elements exist)
-        if (codForm && newAddressRadio && deliveryAddress && userExistingAddress) {
+        if (codForm && newAddressRadio && userExistingAddress) {
           codForm.addEventListener('submit', function(e) {
-            if (newAddressRadio.checked && deliveryAddress.value.trim() === '') {
-              e.preventDefault();
-              alert('Please enter a delivery address');
+            e.preventDefault(); // Prevent default form submission to handle with fetch
+
+            if (newAddressRadio.checked &&
+              (!newAddressLine1 || newAddressLine1.value.trim() === '' ||
+                !newCity || newCity.value.trim() === '' ||
+                !newPostalCode || newPostalCode.value.trim() === '' ||
+                !newCountry || newCountry.value.trim() === '')) {
+              alert('Please fill in all required new address fields (Street, City, ZIP/Postal Code, Country).');
               return false; // Stop submission
             }
 
-            // Update the hidden field only if 'new address' is checked and filled
-            if (newAddressRadio.checked) {
-              userExistingAddress.value = deliveryAddress.value;
-            }
+            // REMOVE THE PROBLEMATIC LINE:
+            // if (newAddressRadio.checked) {
+            //   userExistingAddress.value = deliveryAddress.value;
+            // }
+
+            const formData = new FormData(codForm);
+            const action = codForm.action;
+            const method = codForm.method;
+
+            fetch(action, {
+                method: method,
+                body: new URLSearchParams(formData) // Properly encode form data
+              })
+              .then(response => response.json())
+              .then(data => {
+                if (data.success && data.redirectUrl) {
+                  window.location.href = data.redirectUrl;
+                } else {
+                  // Handle error or unexpected response
+                  alert('There was an issue processing your order. Please try again.');
+                  console.error('Order processing failed or redirectUrl missing:', data);
+                }
+              })
+              .catch(error => {
+                console.error('Error submitting COD form:', error);
+                alert('An error occurred. Please try again.');
+              });
           });
         } else {
           console.warn("COD form submission logic cannot be fully initialized - elements missing.");
@@ -260,12 +315,18 @@
       // Initialize PayPal button
       const paypalContainer = document.getElementById('paypal-button-container');
       if (paypalContainer) {
-        // Check if paypal SDK is loaded
         if (typeof paypal !== 'undefined') {
           paypal.Buttons({
-            // Set up the transaction
+            onClick: function(data, actions) {
+              // Called when the buyer clicks a PayPal button (PayPal, Pay Later, Venmo, or Card fields)
+              console.log('PayPal button clicked (funding source: ' + data.fundingSource + '), dispatching resize.');
+              window.dispatchEvent(new Event('resize'));
+              // You can use this to perform validations before PayPal's own flow starts.
+              // If validation fails: return actions.reject();
+              return actions.resolve(); // If validation passes
+            },
             createOrder: function(data, actions) {
-              // Recalculate total inside createOrder as items might change dynamically (though not in this static view)
+              window.dispatchEvent(new Event('resize')); // Also keep here for initial order creation
               const currentItems = JSON.parse('<%- JSON.stringify(items || []) %>');
               const total = currentItems.reduce((sum, item) => sum + (item.subtotal || 0), 0);
 
@@ -290,12 +351,7 @@
             onApprove: function(data, actions) {
               return actions.order.capture().then(function(orderData) {
                 console.log('PayPal Capture result:', orderData);
-
-                // Create FormData object
                 const formData = new FormData();
-                formData.append('paymentMethod', 'PayPal');
-                formData.append('paymentId', orderData.id); // PayPal Order ID
-                formData.append('status', orderData.status); // e.g., 'COMPLETED'
 
                 // --- START: Extract and add PayPal shipping address ---
                 let paypalShippingAddress = null;
@@ -316,26 +372,42 @@
                   console.log("PayPal provided shipping address:", paypalShippingAddress);
                   formData.append('paypalShippingAddress', paypalShippingAddress);
                 } else {
-                   // If no address from PayPal, check the address selected/entered on the page
-                   const selectedAddressOption = document.querySelector('input[name="addressOption"]:checked');
-                   let pageAddress = '';
-                   if (selectedAddressOption && selectedAddressOption.value === 'existing') {
-                     const existingAddrInput = document.getElementById('userExistingAddress');
-                     if (existingAddrInput) pageAddress = existingAddrInput.value;
-                   } else {
-                     const newAddrTextarea = document.getElementById('deliveryAddress');
-                     if (newAddrTextarea) pageAddress = newAddrTextarea.value;
-                   }
-                   if (pageAddress && pageAddress.trim() !== '') {
-                     console.log("Using address from page form for PayPal order:", pageAddress);
-                     formData.append('address', pageAddress.trim()); // Send page address if PayPal didn't provide one
-                   } else {
-                     console.warn("No shipping address found from PayPal or page form.");
-                     // Decide how to handle this - maybe alert the user or rely on server validation
-                   }
+                  // If no address from PayPal, check the address selected/entered on the page
+                  const selectedAddressOption = document.querySelector('input[name="addressOption"]:checked');
+                  if (selectedAddressOption && selectedAddressOption.value === 'existing') {
+                    const existingAddrInput = document.getElementById('userExistingAddress');
+                    if (existingAddrInput && existingAddrInput.value.trim() !== '') {
+                      formData.append('address', existingAddrInput.value.trim());
+                    }
+                  } else if (selectedAddressOption && selectedAddressOption.value === 'new') {
+                    // Append individual new address fields
+                    const new_address_line1_val = document.getElementById('new_address_line1') ? document.getElementById('new_address_line1').value.trim() : '';
+                    const new_address_line2_val = document.getElementById('new_address_line2') ? document.getElementById('new_address_line2').value.trim() : '';
+                    const new_city_val = document.getElementById('new_city') ? document.getElementById('new_city').value.trim() : '';
+                    const new_state_val = document.getElementById('new_state') ? document.getElementById('new_state').value.trim() : '';
+                    const new_postal_code_val = document.getElementById('new_postal_code') ? document.getElementById('new_postal_code').value.trim() : '';
+                    const new_country_val = document.getElementById('new_country') ? document.getElementById('new_country').value.trim() : '';
+
+                    if (new_address_line1_val && new_city_val && new_postal_code_val && new_country_val) {
+                      formData.append('new_address_line1', new_address_line1_val);
+                      if (new_address_line2_val) formData.append('new_address_line2', new_address_line2_val);
+                      formData.append('new_city', new_city_val);
+                      if (new_state_val) formData.append('new_state', new_state_val);
+                      formData.append('new_postal_code', new_postal_code_val);
+                      formData.append('new_country', new_country_val);
+                      console.log("Using new address from page form for PayPal order.");
+                    } else {
+                      console.warn("Attempted to use new address from form for PayPal, but required fields are missing.");
+                    }
+                  }
                 }
                 // --- END: Extract and add PayPal shipping address ---
 
+                formData.append('paymentMethod', 'PayPal');
+
+                // Add paymentId and status from PayPal's response
+                formData.append('paymentId', orderData.id); // PayPal Order ID
+                formData.append('status', orderData.status); // PayPal Order Status (e.g., "COMPLETED")
 
                 // Add items, quantities, and prices from the checkoutItems array
                 const currentItems = JSON.parse('<%- JSON.stringify(items || []) %>');
@@ -347,30 +419,26 @@
 
                 // Display loading indicator or disable buttons here
                 document.body.style.cursor = 'wait';
-                paypalContainer.style.opacity = '0.5'; // Dim PayPal button area
+                if (paypalContainer) paypalContainer.style.opacity = '0.5';
 
-                // Submit form data to the server
                 fetch('/checkout/process-payment', {
                     method: 'POST',
-                    body: formData // Sending FormData
+                    body: formData
                   })
                   .then(response => {
                     document.body.style.cursor = 'default';
-                    paypalContainer.style.opacity = '1';
+                    if (paypalContainer) paypalContainer.style.opacity = '1';
                     if (response.redirected) {
-                      window.location.href = response.url; // Follow server redirect (e.g., to confirmation)
+                      window.location.href = response.url;
                     } else {
-                      // If no redirect, check response body for success/error
                       return response.json().then(data => {
-                        if (data && data.redirectUrl) { // Handle JSON response with redirect URL
+                        if (data && data.redirectUrl) {
                           window.location.href = data.redirectUrl;
                         } else if (data && !data.success) {
                           alert('Payment processing error: ' + (data.message || 'Unknown server error'));
                         } else if (!response.ok) {
-                          // Handle non-2xx responses that weren't redirects
                           alert(`Server error: ${response.status} ${response.statusText}`);
                         } else {
-                          // Assume success if no redirect and no error message
                           console.log("Payment processed, but no redirect. Response:", data);
                         }
                       });
@@ -378,31 +446,53 @@
                   })
                   .catch(error => {
                     document.body.style.cursor = 'default';
-                    paypalContainer.style.opacity = '1';
+                    if (paypalContainer) paypalContainer.style.opacity = '1';
                     console.error('Fetch Error:', error);
                     alert('An error occurred submitting payment details to the server. Please try again.');
+                  })
+                  .finally(() => {
+                    window.dispatchEvent(new Event('resize'));
                   });
               });
             },
-
-            // Handle errors during PayPal interaction
             onError: function(err) {
               console.error('PayPal Button Error:', err);
               alert('An error occurred with the PayPal payment process. Please check console for details or try again.');
               document.body.style.cursor = 'default';
               if (paypalContainer) paypalContainer.style.opacity = '1';
+              window.dispatchEvent(new Event('resize'));
             },
-
-            // Handle payment cancellation by the user
             onCancel: function(data) {
               console.log('Payment cancelled by user:', data);
               alert('Payment was cancelled.');
               document.body.style.cursor = 'default';
               if (paypalContainer) paypalContainer.style.opacity = '1';
+              window.dispatchEvent(new Event('resize'));
             }
-          }).render('#paypal-button-container').catch(err => {
+          }).render('#paypal-button-container').then(() => {
+            // After buttons are rendered, set up MutationObserver for dynamic content changes
+            if (paypalContainer) {
+              let debounceTimeout;
+              const observer = new MutationObserver((mutationsList, obs) => {
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(() => {
+                  console.log('Mutation observed in PayPal container (debounced), dispatching resize.');
+                  window.dispatchEvent(new Event('resize'));
+                }, 150); // Debounce to avoid excessive calls
+              });
+              observer.observe(paypalContainer, {
+                childList: true, // Observe direct children additions/removals
+                subtree: true, // Observe all descendants
+                attributes: true // Observe attribute changes (e.g., style, class)
+              });
+              // This observer will run until the page is unloaded.
+            }
+          }).catch(err => {
             console.error("Failed to render PayPal Buttons:", err);
             paypalContainer.innerHTML = "<p class='text-danger'>Could not load PayPal buttons. Please try refreshing the page or use Cash on Delivery.</p>";
+          }).finally(() => {
+            // Initial resize after render attempt
+            window.dispatchEvent(new Event('resize'));
           });
         } else {
           console.error("PayPal SDK script not loaded.");
