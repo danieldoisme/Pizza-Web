@@ -19,6 +19,7 @@ const cartRoutes = require("./routes/cartRoutes.js");
 const checkoutRoutes = require("./routes/checkoutRoutes.js");
 const botApiRoutes = require("./routes/botApiRoutes.js");
 const imageRoutes = require("./routes/imageRoutes.js"); // Import the new image routes
+const adminStatisticsRoutes = require("./routes/adminStatisticsRoutes"); // Adjust path as needed
 
 // Set View Engine and Middleware
 app.set("view engine", "ejs");
@@ -60,5 +61,6 @@ app.use("/", cartRoutes);
 app.use("/", checkoutRoutes);
 app.use("/api/bot", botApiRoutes);
 app.use("/images", imageRoutes); // Register the image routes under the /images path
+app.use("/admin/statistics", adminStatisticsRoutes); // Register the admin statistics routes
 
 module.exports = app;

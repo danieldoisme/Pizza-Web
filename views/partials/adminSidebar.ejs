@@ -6,10 +6,22 @@
     <h5>Admin Panel</h5>
   </div>
   <ul class="sidebar-menu">
-    <li>
-      <a href="/admin/dashboard" class="<%= typeof page !== 'undefined' && page === 'dashboard' ? 'active' : '' %>">
-        <i class="uil uil-estate"></i> Dashboard
+    <li class="has-submenu <%= (typeof page !== 'undefined' && (page === 'dashboard' || page === 'statistics')) ? 'active-parent' : '' %>">
+      <a href="#" class="menu-toggle">
+        <i class="uil uil-estate"></i> Dashboard <i class="uil uil-angle-down submenu-arrow"></i>
       </a>
+      <ul class="submenu" style="display: <%= (typeof page !== 'undefined' && (page === 'dashboard' || page === 'statistics')) ? 'block' : 'none' %>;">
+        <li>
+          <a href="/admin/dashboard" class="<%= typeof page !== 'undefined' && page === 'dashboard' ? 'active' : '' %>">
+            <i class="uil uil-apps"></i> Welcome
+          </a>
+        </li>
+        <li>
+          <a href="/admin/statistics/dashboard" class="<%= typeof page !== 'undefined' && page === 'statistics' ? 'active' : '' %>">
+            <i class="uil uil-graph-bar"></i> Statistics
+          </a>
+        </li>
+      </ul>
     </li>
     <li>
       <a href="/admin/users" class="<%= typeof page !== 'undefined' && page === 'users' ? 'active' : '' %>">
@@ -36,3 +48,123 @@
     <a href="/admin/logout"> Logout </a>
   </div>
 </div>
+
+<style>
+  /* Add some basic styling for the submenu and toggle */
+  .admin-sidebar .sidebar-menu li.has-submenu>a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .admin-sidebar .sidebar-menu .submenu {
+    list-style: none;
+    padding-left: 20px;
+    /* Indent submenu items */
+    /* display: none; */
+    /* Initially hidden, controlled by JS or inline style */
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+  }
+
+  .admin-sidebar .sidebar-menu .submenu.open {
+    /* display: block; */
+    /* Show when open class is added */
+    max-height: 500px;
+    /* Adjust as needed to fit content */
+  }
+
+  .admin-sidebar .sidebar-menu .submenu a {
+    padding-left: 25px;
+    /* Further indent text of submenu items */
+    font-size: 0.9em;
+  }
+
+  .admin-sidebar .sidebar-menu .submenu a i {
+    margin-right: 8px;
+  }
+
+  .admin-sidebar .sidebar-menu .submenu-arrow {
+    transition: transform 0.3s ease;
+  }
+
+  .admin-sidebar .sidebar-menu li.has-submenu.open>a>.submenu-arrow {
+    transform: rotate(180deg);
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('Sidebar DOMContentLoaded. Current page:', '<%= page %>');
+    const menuToggles = document.querySelectorAll('.admin-sidebar .menu-toggle');
+
+    menuToggles.forEach(toggle => {
+      const parentLi = toggle.parentElement;
+      const submenu = toggle.nextElementSibling;
+
+      if (submenu) {
+        // Initial state: Ensure display is 'none' if not meant to be open, then set maxHeight
+        parentLi.classList.remove('open');
+        submenu.classList.remove('open');
+
+        if (submenu.style.display === 'block') { // Set by EJS if child is active
+          console.log('Sidebar INIT: Submenu for page "<%= page %>" should be OPEN.');
+          parentLi.classList.add('open');
+          submenu.classList.add('open');
+          // submenu.style.display = 'block'; // Already set by EJS
+          // Use a short timeout to allow the DOM to update from EJS's display:block
+          setTimeout(() => {
+            submenu.style.maxHeight = submenu.scrollHeight + "px";
+          }, 0); // Minimal timeout
+        } else {
+          console.log('Sidebar INIT: Submenu for page "<%= page %>" should be CLOSED.');
+          submenu.style.display = 'none'; // Explicitly set display none
+          submenu.style.maxHeight = '0';
+        }
+      }
+
+      toggle.addEventListener('click', function(event) {
+        event.preventDefault();
+        console.log('Sidebar CLICK: Toggle clicked. Current page:', '<%= page %>');
+
+        const currentParentLi = this.parentElement;
+        const currentSubmenu = this.nextElementSibling;
+
+        if (!currentParentLi || !currentSubmenu) {
+          console.error('Sidebar CLICK: ParentLi or Submenu not found on click!');
+          return;
+        }
+
+        currentParentLi.classList.toggle('open');
+        currentSubmenu.classList.toggle('open');
+
+        if (currentSubmenu.classList.contains('open')) {
+          console.log('Sidebar CLICK: Toggling to OPEN.');
+          currentSubmenu.style.display = 'block'; // Set display to block BEFORE getting scrollHeight
+          // Use a timeout to allow display:block to take effect before reading scrollHeight
+          setTimeout(() => {
+            console.log('Sidebar CLICK (after timeout): scrollHeight:', currentSubmenu.scrollHeight);
+            if (currentSubmenu.scrollHeight > 0) {
+              currentSubmenu.style.maxHeight = currentSubmenu.scrollHeight + "px";
+            } else {
+              console.warn('Sidebar CLICK: Submenu scrollHeight is 0 even after display:block. Setting default open height.');
+              currentSubmenu.style.maxHeight = "100px"; // Fallback
+            }
+          }, 0); // Minimal timeout
+        } else {
+          console.log('Sidebar CLICK: Toggling to CLOSE.');
+          // When closing, set maxHeight first, then display to none after transition (if desired)
+          // For simplicity with max-height transition, just setting max-height to 0 is often enough
+          // and display:none can be set after the transition via an event listener if needed.
+          currentSubmenu.style.maxHeight = '0';
+          // To ensure it's fully hidden and out of layout after transition:
+          // setTimeout(() => { if (!currentSubmenu.classList.contains('open')) currentSubmenu.style.display = 'none'; }, 300); // Match CSS transition duration
+        }
+        console.log('Sidebar CLICK: parentLi classes:', currentParentLi.className);
+        console.log('Sidebar CLICK: submenu classes:', currentSubmenu.className);
+        console.log('Sidebar CLICK: submenu maxHeight:', currentSubmenu.style.maxHeight);
+      });
+    });
+  });
+</script>
