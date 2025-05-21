@@ -241,7 +241,9 @@ async function processPayment(req, res) {
       const paymentStatusDb =
         paymentMethod === "PayPal" && status === "COMPLETED"
           ? "Paid"
-          : "Unpaid";
+          : paymentMethod === "PayPal" // If PayPal and not COMPLETED
+          ? "Failed" // Set to "Failed"
+          : "Unpaid"; // Default for COD or other non-PayPal scenarios
 
       const orderInsertQuery = `
         INSERT INTO orders (user_id, total_amount, payment_method, shipping_address, order_status, payment_status, notes) 

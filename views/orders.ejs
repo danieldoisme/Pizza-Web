@@ -221,6 +221,15 @@
                     </button>
                   </form>
                   <% } %>
+
+                  <%# NEW: Add Cancel Order Button for User %>
+                  <% if (order.order_status === 'Pending' || order.order_status === 'Processing') { %>
+                  <form action="/order/cancel/<%= order.order_id %>" method="POST" style="margin-top: 10px;">
+                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to cancel this order?');">
+                      Cancel Order
+                    </button>
+                  </form>
+                  <% } %>
                 </div>
                 <% }); %> <% } %>
               </div>

@@ -564,7 +564,7 @@ router.post("/order/set-delivered-admin/:order_id", async (req, res) => {
 
   let transactionConnection;
   try {
-    transactionConnection = await pool.getConnection(); // Get a connection for transaction
+    transactionConnection = await pool.promise().getConnection(); // Changed to use pool.promise().getConnection()
     await transactionConnection.beginTransaction();
 
     const [updateResult] = await transactionConnection.query(
@@ -589,7 +589,16 @@ router.post("/order/set-delivered-admin/:order_id", async (req, res) => {
       );
     }
   } catch (err) {
-    if (transactionConnection) await transactionConnection.rollback();
+    if (transactionConnection) {
+      try {
+        await transactionConnection.rollback();
+      } catch (rollbackError) {
+        console.error(
+          `Error rolling back transaction for order ${order_id} delivery:`,
+          rollbackError
+        );
+      }
+    }
     console.error("Error setting order to delivered:", err);
     res.redirect(
       "/admin/ordersManagement?error=" +
@@ -602,8 +611,7 @@ router.post("/order/set-delivered-admin/:order_id", async (req, res) => {
 
 // NEW ROUTE: Admin to set order to Dispatched
 router.post("/order/set-dispatched/:order_id", async (req, res) => {
-  // Make async
-  const pool = req.app.get("dbConnection"); // Use pool
+  const pool = req.app.get("dbConnection");
   const order_id = req.params.order_id;
   const adminId = req.cookies.cookuid;
 
@@ -614,7 +622,7 @@ router.post("/order/set-dispatched/:order_id", async (req, res) => {
 
   let transactionConnection;
   try {
-    transactionConnection = await pool.getConnection();
+    transactionConnection = await pool.promise().getConnection(); // Changed to use pool.promise().getConnection()
     await transactionConnection.beginTransaction();
 
     const [updateResult] = await transactionConnection.query(
@@ -627,26 +635,42 @@ router.post("/order/set-dispatched/:order_id", async (req, res) => {
       await transactionConnection.commit();
       res.redirect(
         "/admin/ordersManagement?message=" +
-          encodeURIComponent(`Order ${order_id} set to Dispatched.`)
+          encodeURIComponent(
+            `Order #${order_id} has been marked as Dispatched.`
+          )
       );
     } else {
       await transactionConnection.rollback();
       res.redirect(
         "/admin/ordersManagement?error=" +
           encodeURIComponent(
-            `Order ${order_id} could not be set to Dispatched. It may not be in a 'Pending' or 'Processing' state, or was already actioned.`
+            `Order #${order_id} could not be set to Dispatched. It may not be in a 'Pending' or 'Processing' state, or was already actioned.`
           )
       );
     }
   } catch (err) {
-    if (transactionConnection) await transactionConnection.rollback();
-    console.error("Error setting order to dispatched:", err);
+    if (transactionConnection) {
+      try {
+        await transactionConnection.rollback();
+      } catch (rollbackError) {
+        // Log rollback error but proceed to inform user of the main error
+        console.error(
+          `Error rolling back transaction for order ${order_id} dispatch:`,
+          rollbackError
+        );
+      }
+    }
+    console.error(`Error setting order ${order_id} to dispatched:`, err);
     res.redirect(
       "/admin/ordersManagement?error=" +
-        encodeURIComponent("Database error setting status to Dispatched.")
+        encodeURIComponent(
+          `Database error setting order #${order_id} to Dispatched. Please try again.`
+        ) // User-friendly message
     );
   } finally {
-    if (transactionConnection) transactionConnection.release();
+    if (transactionConnection) {
+      transactionConnection.release();
+    }
   }
 });
 
@@ -1147,6 +1171,218 @@ router.post("/banners/delete/:banner_id", async (req, res) => {
     res.redirect(
       "/admin/banners?error=" +
         encodeURIComponent("Database error deleting banner.")
+    );
+  }
+});
+
+// Mark an order as Cancelled
+router.post("/order/set-cancelled/:order_id", async (req, res) => {
+  const { order_id } = req.params;
+  const connection = req.app.get("dbConnection");
+  const redirectUrl =
+    "/admin/ordersManagement" +
+    (req.headers.referer ? "?" + req.headers.referer.split("?")[1] : "");
+  try {
+    const [updateResult] = await connection
+      .promise()
+      .query(
+        "UPDATE orders SET order_status = 'Cancelled' WHERE order_id = ?",
+        [order_id]
+      );
+    if (updateResult.affectedRows > 0) {
+      // Use query parameter for success message
+      return res.redirect(
+        redirectUrl.includes("?")
+          ? `${redirectUrl}&message=${encodeURIComponent(
+              `Order #${order_id} has been marked as Cancelled.`
+            )}`
+          : `${redirectUrl}?message=${encodeURIComponent(
+              `Order #${order_id} has been marked as Cancelled.`
+            )}`
+      );
+    } else {
+      // Use query parameter for error message
+      return res.redirect(
+        redirectUrl.includes("?")
+          ? `${redirectUrl}&error=${encodeURIComponent(
+              `Order #${order_id} not found or no change made.`
+            )}`
+          : `${redirectUrl}?error=${encodeURIComponent(
+              `Order #${order_id} not found or no change made.`
+            )}`
+      );
+    }
+  } catch (error) {
+    console.error("Error marking order as Cancelled:", error);
+    // Use query parameter for error message
+    return res.redirect(
+      redirectUrl.includes("?")
+        ? `${redirectUrl}&error=${encodeURIComponent(
+            "Failed to mark order as Cancelled due to a server error."
+          )}`
+        : `${redirectUrl}?error=${encodeURIComponent(
+            "Failed to mark order as Cancelled due to a server error."
+          )}`
+    );
+  }
+});
+
+// Mark an order's payment as Refunded
+router.post("/order/mark-refunded/:order_id", async (req, res) => {
+  const { order_id } = req.params;
+  const connection = req.app.get("dbConnection");
+  const redirectUrl =
+    "/admin/ordersManagement" +
+    (req.headers.referer ? "?" + req.headers.referer.split("?")[1] : "");
+  try {
+    const [orderRows] = await connection
+      .promise()
+      .query("SELECT payment_status FROM orders WHERE order_id = ?", [
+        order_id,
+      ]);
+    if (orderRows.length === 0) {
+      // Use query parameter for error message
+      return res.redirect(
+        redirectUrl.includes("?")
+          ? `${redirectUrl}&error=${encodeURIComponent(
+              `Order #${order_id} not found.`
+            )}`
+          : `${redirectUrl}?error=${encodeURIComponent(
+              `Order #${order_id} not found.`
+            )}`
+      );
+    }
+
+    const [updateResult] = await connection
+      .promise()
+      .query(
+        "UPDATE orders SET payment_status = 'Refunded' WHERE order_id = ?",
+        [order_id]
+      );
+    if (updateResult.affectedRows > 0) {
+      // Use query parameter for success message
+      return res.redirect(
+        redirectUrl.includes("?")
+          ? `${redirectUrl}&message=${encodeURIComponent(
+              `Order #${order_id} payment has been marked as Refunded.`
+            )}`
+          : `${redirectUrl}?message=${encodeURIComponent(
+              `Order #${order_id} payment has been marked as Refunded.`
+            )}`
+      );
+    } else {
+      // Use query parameter for error message
+      return res.redirect(
+        redirectUrl.includes("?")
+          ? `${redirectUrl}&error=${encodeURIComponent(
+              `Order #${order_id} not found or no change made to payment status.`
+            )}`
+          : `${redirectUrl}?error=${encodeURIComponent(
+              `Order #${order_id} not found or no change made to payment status.`
+            )}`
+      );
+    }
+  } catch (error) {
+    console.error("Error marking order payment as Refunded:", error);
+    // Use query parameter for error message
+    return res.redirect(
+      redirectUrl.includes("?")
+        ? `${redirectUrl}&error=${encodeURIComponent(
+            "Failed to mark order payment as Refunded due to a server error."
+          )}`
+        : `${redirectUrl}?error=${encodeURIComponent(
+            "Failed to mark order payment as Refunded due to a server error."
+          )}`
+    );
+  }
+});
+
+// NEW ROUTE: Admin converts a failed PayPal order to COD
+router.post("/order/convert-to-cod/:order_id", async (req, res) => {
+  const { order_id } = req.params;
+  const connection = req.app.get("dbConnection");
+  const redirectUrl =
+    "/admin/ordersManagement" +
+    (req.headers.referer ? "?" + req.headers.referer.split("?")[1] : "");
+
+  try {
+    // First, verify the order's current payment status and method
+    const [orderRows] = await connection
+      .promise()
+      .query(
+        "SELECT payment_status, payment_method FROM orders WHERE order_id = ?",
+        [order_id]
+      );
+
+    if (orderRows.length === 0) {
+      return res.redirect(
+        redirectUrl.includes("?")
+          ? `${redirectUrl}&error=${encodeURIComponent(
+              `Order #${order_id} not found.`
+            )}`
+          : `${redirectUrl}?error=${encodeURIComponent(
+              `Order #${order_id} not found.`
+            )}`
+      );
+    }
+
+    const currentPaymentStatus = orderRows[0].payment_status;
+    const currentPaymentMethod = orderRows[0].payment_method;
+
+    if (
+      currentPaymentStatus === "Failed" &&
+      currentPaymentMethod === "PayPal"
+    ) {
+      // Update payment_status to "Pending Payment" and payment_method to "COD"
+      const [updateResult] = await connection
+        .promise()
+        .query(
+          "UPDATE orders SET payment_status = 'Pending Payment', payment_method = 'COD' WHERE order_id = ?",
+          [order_id]
+        );
+
+      if (updateResult.affectedRows > 0) {
+        return res.redirect(
+          redirectUrl.includes("?")
+            ? `${redirectUrl}&message=${encodeURIComponent(
+                `Order #${order_id} has been converted to COD (Pending Payment).`
+              )}`
+            : `${redirectUrl}?message=${encodeURIComponent(
+                `Order #${order_id} has been converted to COD (Pending Payment).`
+              )}`
+        );
+      } else {
+        return res.redirect(
+          redirectUrl.includes("?")
+            ? `${redirectUrl}&error=${encodeURIComponent(
+                `Failed to convert Order #${order_id} to COD. No changes made.`
+              )}`
+            : `${redirectUrl}?error=${encodeURIComponent(
+                `Failed to convert Order #${order_id} to COD. No changes made.`
+              )}`
+        );
+      }
+    } else {
+      return res.redirect(
+        redirectUrl.includes("?")
+          ? `${redirectUrl}&error=${encodeURIComponent(
+              `Order #${order_id} cannot be converted to COD. Current payment status: ${currentPaymentStatus}, method: ${currentPaymentMethod}.`
+            )}`
+          : `${redirectUrl}?error=${encodeURIComponent(
+              `Order #${order_id} cannot be converted to COD. Current payment status: ${currentPaymentStatus}, method: ${currentPaymentMethod}.`
+            )}`
+      );
+    }
+  } catch (error) {
+    console.error("Error converting order to COD:", error);
+    return res.redirect(
+      redirectUrl.includes("?")
+        ? `${redirectUrl}&error=${encodeURIComponent(
+            "Server error converting order to COD."
+          )}`
+        : `${redirectUrl}?error=${encodeURIComponent(
+            "Server error converting order to COD."
+          )}`
     );
   }
 });

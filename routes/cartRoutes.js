@@ -141,8 +141,11 @@ async function getCartAPI(req, res) {
 // Add to Cart API
 async function addToCartAPI(req, res) {
   const userId = req.cookies.cookuid;
-  const { itemId, quantity = 1 } = req.body;
+  const { itemId, quantity = 1 } = req.body; // quantity is the amount to add
   const connection = req.app.get("dbConnection");
+
+  const minQuantity = 1; // Minimum quantity for an item in cart (usually 1 when adding)
+  const maxQuantity = 10; // Maximum allowed quantity for any single item in the cart
 
   if (!userId) {
     return res
@@ -154,82 +157,138 @@ async function addToCartAPI(req, res) {
       .status(400)
       .json({ success: false, message: "Item ID is required." });
   }
+
   const addQuantity = parseInt(quantity);
   if (isNaN(addQuantity) || addQuantity <= 0) {
     return res
       .status(400)
-      .json({ success: false, message: "Invalid quantity." });
+      .json({ success: false, message: "Invalid quantity to add." });
   }
 
   try {
-    const checkQuery =
-      "SELECT quantity FROM user_cart_items WHERE user_id = ? AND item_id = ?";
-    connection.query(
-      checkQuery,
-      [userId, itemId],
-      async (checkErr, results) => {
-        if (checkErr) {
-          console.error("Error checking cart for item:", checkErr);
-          return res
-            .status(500)
-            .json({ success: false, message: "Error adding item to cart." });
-        }
-
-        let newItemCount;
-        if (results.length > 0) {
-          const updateQuery =
-            "UPDATE user_cart_items SET quantity = quantity + ? WHERE user_id = ? AND item_id = ?";
-          connection.query(
-            updateQuery,
-            [addQuantity, userId, itemId],
-            async (updateErr) => {
-              if (updateErr) {
-                console.error(
-                  "Error updating item quantity in cart:",
-                  updateErr
-                );
-                return res.status(500).json({
-                  success: false,
-                  message: "Error updating item in cart.",
-                });
-              }
-              newItemCount = await fetchCartCount(connection, userId);
-              res.cookie("item_count", newItemCount, { httpOnly: false });
-              res.json({
-                success: true,
-                message: "Item quantity updated in cart.",
-                newItemCount,
-              });
-            }
-          );
-        } else {
-          const insertQuery =
-            "INSERT INTO user_cart_items (user_id, item_id, quantity) VALUES (?, ?, ?)";
-          connection.query(
-            insertQuery,
-            [userId, itemId, addQuantity],
-            async (insertErr) => {
-              if (insertErr) {
-                console.error("Error inserting new item into cart:", insertErr);
-                return res.status(500).json({
-                  success: false,
-                  message: "Error adding new item to cart.",
-                });
-              }
-              newItemCount = await fetchCartCount(connection, userId);
-              res.cookie("item_count", newItemCount, { httpOnly: false });
-              res.json({
-                success: true,
-                message: "Item added to cart.",
-                newItemCount,
-              });
-            }
-          );
-        }
+    // First, check if the item is valid by looking it up in the menu
+    const checkMenuQuery = "SELECT item_id FROM menu WHERE item_id = ?";
+    connection.query(checkMenuQuery, [itemId], async (menuErr, menuResults) => {
+      if (menuErr) {
+        console.error("Error checking menu item:", menuErr);
+        return res
+          .status(500)
+          .json({ success: false, message: "Error verifying item details." });
       }
-    );
+      if (menuResults.length === 0) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Item to add does not exist." });
+      }
+
+      // Item exists in menu, proceed with cart logic
+      const checkCartQuery =
+        "SELECT quantity FROM user_cart_items WHERE user_id = ? AND item_id = ?";
+      connection.query(
+        checkCartQuery,
+        [userId, itemId],
+        async (checkErr, cartResults) => {
+          if (checkErr) {
+            console.error("Error checking cart for item:", checkErr);
+            return res
+              .status(500)
+              .json({ success: false, message: "Error adding item to cart." });
+          }
+
+          let finalQuantity;
+          let message = "Item added to cart."; // Default message
+
+          if (cartResults.length > 0) {
+            // Item already in cart
+            const currentQuantityInCart = parseInt(cartResults[0].quantity);
+            const potentialNewQuantity = currentQuantityInCart + addQuantity;
+
+            if (potentialNewQuantity > maxQuantity) {
+              finalQuantity = maxQuantity;
+              message = `Item quantity updated. Maximum ${maxQuantity} units allowed; quantity capped.`;
+            } else {
+              finalQuantity = potentialNewQuantity;
+              message = "Item quantity updated in cart.";
+            }
+            if (finalQuantity <= 0) {
+              // Should not happen if addQuantity is > 0
+              finalQuantity = minQuantity; // Or handle as an error/removal
+            }
+
+            const updateQuery =
+              "UPDATE user_cart_items SET quantity = ? WHERE user_id = ? AND item_id = ?";
+            connection.query(
+              updateQuery,
+              [finalQuantity, userId, itemId],
+              async (updateErr) => {
+                if (updateErr) {
+                  console.error(
+                    "Error updating item quantity in cart:",
+                    updateErr
+                  );
+                  return res.status(500).json({
+                    success: false,
+                    message: "Error updating item in cart.",
+                  });
+                }
+                const newItemCount = await fetchCartCount(connection, userId);
+                res.cookie("item_count", newItemCount, { httpOnly: false });
+                res.json({
+                  success: true,
+                  message: message,
+                  newItemCount,
+                  updatedItemId: itemId,
+                  newQuantityInCart: finalQuantity,
+                });
+              }
+            );
+          } else {
+            // Item not in cart, add new
+            if (addQuantity > maxQuantity) {
+              finalQuantity = maxQuantity;
+              message = `Item added to cart. Maximum ${maxQuantity} units allowed; quantity capped.`;
+            } else {
+              finalQuantity = addQuantity;
+            }
+            if (finalQuantity < minQuantity) {
+              // Ensure it's at least minQuantity
+              finalQuantity = minQuantity;
+            }
+
+            const insertQuery =
+              "INSERT INTO user_cart_items (user_id, item_id, quantity) VALUES (?, ?, ?)";
+            connection.query(
+              insertQuery,
+              [userId, itemId, finalQuantity],
+              async (insertErr) => {
+                if (insertErr) {
+                  console.error(
+                    "Error inserting new item into cart:",
+                    insertErr
+                  );
+                  return res.status(500).json({
+                    success: false,
+                    message: "Error adding new item to cart.",
+                  });
+                }
+                const newItemCount = await fetchCartCount(connection, userId);
+                res.cookie("item_count", newItemCount, { httpOnly: false });
+                res.json({
+                  success: true,
+                  message: message,
+                  newItemCount,
+                  addedItemId: itemId,
+                  newQuantityInCart: finalQuantity,
+                });
+              }
+            );
+          }
+        }
+      );
+    });
   } catch (error) {
-    console.error("Server error in addToCartAPI:", error);
+    // Catch synchronous errors or unhandled promise rejections
+    console.error("Server error in addToCartAPI (outer try-catch):", error);
     res
       .status(500)
       .json({ success: false, message: "Server error while adding to cart." });
@@ -242,6 +301,9 @@ async function updateCartAPI(req, res) {
   const { itemId, newQuantity } = req.body;
   const connection = req.app.get("dbConnection");
 
+  const minQuantity = 1;
+  const maxQuantity = 10;
+
   if (!userId) {
     return res
       .status(401)
@@ -253,98 +315,162 @@ async function updateCartAPI(req, res) {
       message: "Item ID and new quantity are required.",
     });
   }
+
   const quantityValue = parseInt(newQuantity);
-  if (isNaN(quantityValue) || quantityValue < 0) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid quantity value." });
+
+  // Validate newQuantity to be between minQuantity and maxQuantity
+  if (
+    isNaN(quantityValue) ||
+    quantityValue < minQuantity ||
+    quantityValue > maxQuantity
+  ) {
+    // Fetch current quantity from DB to send back for client-side input reset
+    const getCurrentQtyQuery =
+      "SELECT quantity FROM user_cart_items WHERE user_id = ? AND item_id = ?";
+    connection.query(getCurrentQtyQuery, [userId, itemId], (err, results) => {
+      let currentQuantityInCart = minQuantity; // Default if item not in cart or error
+
+      if (err) {
+        console.error(
+          "DB error fetching current quantity for validation response:",
+          err
+        );
+      } else if (results.length > 0) {
+        const dbQuantity = results[0].quantity;
+        // If DB quantity is somehow outside valid range, still report a valid number for reset
+        if (dbQuantity >= minQuantity && dbQuantity <= maxQuantity) {
+          currentQuantityInCart = dbQuantity;
+        } else {
+          console.warn(
+            `Item ${itemId} for user ${userId} has an invalid quantity ${dbQuantity} in DB. Reporting ${minQuantity} for reset.`
+          );
+          currentQuantityInCart = minQuantity; // Or maxQuantity if that makes more sense, but min is safer.
+        }
+      }
+      // If results.length is 0, item is not in cart; currentQuantityInCart remains minQuantity.
+
+      return res.status(400).json({
+        success: false,
+        message: `Quantity must be between ${minQuantity} and ${maxQuantity}.`,
+        currentQuantityInCart: currentQuantityInCart,
+      });
+    });
+    return; // Stop further processing
   }
 
+  // If quantityValue is valid (1-10), proceed to update the database
   try {
-    let newItemCount;
-    if (quantityValue === 0) {
-      const deleteQuery =
-        "DELETE FROM user_cart_items WHERE user_id = ? AND item_id = ?";
-      connection.query(
-        deleteQuery,
-        [userId, itemId],
-        async (deleteErr, result) => {
-          if (deleteErr) {
-            console.error(
-              "Error removing item from cart (update to 0):",
-              deleteErr
-            );
-            return res
-              .status(500)
-              .json({ success: false, message: "Error updating cart." });
-          }
-          newItemCount = await fetchCartCount(connection, userId);
-          res.cookie("item_count", newItemCount, { httpOnly: false });
-          if (result.affectedRows > 0) {
-            res.json({
-              success: true,
-              message: "Item removed from cart.",
-              newItemCount,
-            });
-          } else {
-            res.json({
-              success: true,
-              message: "Item not found or already removed.",
-              newItemCount,
-            });
-          }
+    const updateQuery =
+      "UPDATE user_cart_items SET quantity = ? WHERE user_id = ? AND item_id = ?";
+    connection.query(
+      updateQuery,
+      [quantityValue, userId, itemId],
+      async (updateErr, result) => {
+        if (updateErr) {
+          console.error("Error updating item quantity in cart:", updateErr);
+          // Attempt to fetch current quantity for error response
+          const getCurrentQtyQueryOnError =
+            "SELECT quantity FROM user_cart_items WHERE user_id = ? AND item_id = ?";
+          connection.query(
+            getCurrentQtyQueryOnError,
+            [userId, itemId],
+            (err, qtyResults) => {
+              let qtyInCart = quantityValue; // Fallback to the quantity attempted by user
+              if (!err && qtyResults.length > 0) {
+                qtyInCart = qtyResults[0].quantity;
+                // Ensure this is also within bounds for consistency
+                if (qtyInCart < minQuantity || qtyInCart > maxQuantity)
+                  qtyInCart = minQuantity;
+              } else if (err) {
+                console.error(
+                  "DB error fetching current quantity on update error:",
+                  err
+                );
+              }
+              return res.status(500).json({
+                success: false,
+                message: "Error updating cart.",
+                currentQuantityInCart: qtyInCart,
+              });
+            }
+          );
+          return;
         }
-      );
-    } else {
-      const updateQuery =
-        "UPDATE user_cart_items SET quantity = ? WHERE user_id = ? AND item_id = ?";
-      connection.query(
-        updateQuery,
-        [quantityValue, userId, itemId],
-        async (updateErr, result) => {
-          if (updateErr) {
-            console.error("Error updating item quantity in cart:", updateErr);
-            return res
-              .status(500)
-              .json({ success: false, message: "Error updating cart." });
-          }
-          newItemCount = await fetchCartCount(connection, userId);
-          res.cookie("item_count", newItemCount, { httpOnly: false });
-          if (result.affectedRows > 0) {
-            res.json({
-              success: true,
-              message: "Cart updated successfully.",
-              newItemCount,
-            });
-          } else {
-            const checkQuery = "SELECT item_id FROM menu WHERE item_id = ?";
-            connection.query(
-              checkQuery,
-              [itemId],
-              async (itemErr, itemResults) => {
-                if (itemErr || itemResults.length === 0) {
-                  return res.status(404).json({
+
+        const newItemCount = await fetchCartCount(connection, userId);
+        res.cookie("item_count", newItemCount, { httpOnly: false });
+
+        if (result.affectedRows > 0) {
+          res.json({
+            success: true,
+            message: "Cart updated successfully.",
+            newItemCount,
+            updatedItemId: itemId,
+            newQuantity: quantityValue, // The validated and saved quantity
+          });
+        } else {
+          // Item not found in cart for this user, or quantity was already the same.
+          // Check if the item itself is valid in the menu.
+          const checkMenuQuery = "SELECT item_id FROM menu WHERE item_id = ?";
+          connection.query(checkMenuQuery, [itemId], (menuErr, menuResults) => {
+            let responseMessage =
+              "Item not found in cart to update, or quantity was already correct.";
+            let responseStatus = 404;
+            let qtyForClient = minQuantity;
+
+            if (menuErr) {
+              console.error("Error checking menu item:", menuErr);
+              responseMessage = "Error verifying item details.";
+              responseStatus = 500;
+            } else if (menuResults.length === 0) {
+              responseMessage = "Item to update does not exist in menu.";
+              responseStatus = 404; // Item itself is invalid
+            } else {
+              // Item is valid in menu, but not in user's cart for update.
+              // Try to get current quantity if it exists, otherwise default to minQuantity.
+              const getCurrentQtyQueryAgain =
+                "SELECT quantity FROM user_cart_items WHERE user_id = ? AND item_id = ?";
+              connection.query(
+                getCurrentQtyQueryAgain,
+                [userId, itemId],
+                (qErr, qResults) => {
+                  if (!qErr && qResults.length > 0) {
+                    qtyForClient = qResults[0].quantity;
+                    if (
+                      qtyForClient < minQuantity ||
+                      qtyForClient > maxQuantity
+                    )
+                      qtyForClient = minQuantity;
+                  }
+                  return res.status(responseStatus).json({
                     success: false,
-                    message: "Item to update not found in menu.",
-                    newItemCount,
+                    message: responseMessage,
+                    newItemCount, // Cart count might be unchanged but still relevant
+                    currentQuantityInCart: qtyForClient,
                   });
                 }
-                res.status(404).json({
-                  success: false,
-                  message: "Item not found in cart to update.",
-                  newItemCount,
-                });
-              }
-            );
-          }
+              );
+              return; // Return here to avoid double response
+            }
+
+            return res.status(responseStatus).json({
+              success: false,
+              message: responseMessage,
+              newItemCount,
+              currentQuantityInCart: qtyForClient,
+            });
+          });
         }
-      );
-    }
+      }
+    );
   } catch (error) {
-    console.error("Server error in updateCartAPI:", error);
-    res
-      .status(500)
-      .json({ success: false, message: "Server error while updating cart." });
+    // Catch synchronous errors or unhandled promise rejections from fetchCartCount
+    console.error("Server error in updateCartAPI (outer try-catch):", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while updating cart.",
+      currentQuantityInCart: quantityValue, // Fallback to attempted value
+    });
   }
 }
 

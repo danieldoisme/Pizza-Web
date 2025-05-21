@@ -241,30 +241,26 @@ async function renderSearchResultsPage(req, res) {
         item_calories, item_serving, item_rating, total_ratings, 
         item_description_long
       FROM menu 
-      WHERE item_name LIKE ? OR item_category LIKE ? OR item_description_long LIKE ?
+      WHERE item_name LIKE ?
     `;
     const searchPattern = `%${searchTerm}%`;
-    connection.query(
-      dbQuery,
-      [searchPattern, searchPattern, searchPattern],
-      (err, searchResults) => {
-        if (err) {
-          console.error("Error searching items:", err);
-          return res.render("searchResults", {
-            pageType: "search",
-            results: [],
-            query: searchTerm,
-            searchError: "Error performing search.",
-          });
-        }
-        res.render("searchResults", {
+    connection.query(dbQuery, [searchPattern], (err, searchResults) => {
+      if (err) {
+        console.error("Error searching items:", err);
+        return res.render("searchResults", {
           pageType: "search",
-          results: searchResults,
+          results: [],
           query: searchTerm,
-          searchError: null,
+          searchError: "Error performing search.",
         });
       }
-    );
+      res.render("searchResults", {
+        pageType: "search",
+        results: searchResults,
+        query: searchTerm,
+        searchError: null,
+      });
+    });
   } catch (error) {
     console.error("Server error in renderSearchResultsPage:", error);
     res.status(500).render("searchResults", {
