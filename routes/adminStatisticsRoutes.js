@@ -11,9 +11,9 @@ router.use(isAdmin);
 // GET /admin/statistics/dashboard
 router.get("/dashboard", async (req, res) => {
   try {
-    const dbConnection = req.app.get("dbConnection"); // Get DB connection from app
+    const dbConnection = req.app.get("dbConnection"); // Gets the mysql2 pool
     const dashboardData = await statisticsService.getLiveDashboardData(
-      dbConnection
+      dbConnection // Passes the mysql2 pool
     );
 
     if (!dashboardData) {

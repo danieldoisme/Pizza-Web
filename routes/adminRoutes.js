@@ -19,7 +19,7 @@ router.get("/login", (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { admin_email, admin_password } = req.body;
-    const connection = req.app.get("dbConnection");
+    const pool = req.app.get("dbConnection");
 
     if (!admin_email || !admin_password) {
       return res.redirect(
@@ -29,44 +29,34 @@ router.post("/login", async (req, res) => {
     }
 
     const query = "SELECT * FROM admin WHERE admin_email = ?";
-    connection.query(query, [admin_email], async (err, results) => {
-      if (err) {
-        console.error("Error querying admin:", err);
-        return res.redirect(
-          "/admin/login?error=" +
-            encodeURIComponent("Server error during login.")
-        );
-      }
+    const [results] = await pool.promise().query(query, [admin_email]); // Use await and pool.promise()
 
-      if (results.length === 0) {
-        return res.redirect(
-          "/admin/login?error=" +
-            encodeURIComponent("Invalid email or password.")
-        );
-      }
+    if (results.length === 0) {
+      return res.redirect(
+        "/admin/login?error=" + encodeURIComponent("Invalid email or password.")
+      );
+    }
 
-      const admin = results[0];
-      const match = await bcrypt.compare(admin_password, admin.admin_password);
+    const admin = results[0];
+    const match = await bcrypt.compare(admin_password, admin.admin_password);
 
-      if (match) {
-        res.cookie("cookuid", admin.admin_id.toString(), {
-          httpOnly: true,
-          sameSite: "strict",
-          maxAge: 24 * 60 * 60 * 1000, // Example: 1 day
-        });
-        res.cookie("cookuname", admin.admin_name, {
-          httpOnly: true,
-          sameSite: "strict",
-          maxAge: 24 * 60 * 60 * 1000, // Example: 1 day
-        });
-        res.redirect("/admin/dashboard");
-      } else {
-        return res.redirect(
-          "/admin/login?error=" +
-            encodeURIComponent("Invalid email or password.")
-        );
-      }
-    });
+    if (match) {
+      res.cookie("cookuid", admin.admin_id.toString(), {
+        httpOnly: true,
+        sameSite: "strict",
+        maxAge: 24 * 60 * 60 * 1000,
+      });
+      res.cookie("cookuname", admin.admin_name, {
+        httpOnly: true,
+        sameSite: "strict",
+        maxAge: 24 * 60 * 60 * 1000,
+      });
+      res.redirect("/admin/dashboard");
+    } else {
+      return res.redirect(
+        "/admin/login?error=" + encodeURIComponent("Invalid email or password.")
+      );
+    }
   } catch (error) {
     console.error("Admin login error:", error);
     res.redirect(
@@ -100,8 +90,8 @@ router.get("/dashboard", (req, res) => {
 
 // --- Menu Management ---
 // New Main Route for Menu Management Page
-router.get("/menu", (req, res) => {
-  const connection = req.app.get("dbConnection");
+router.get("/menu", async (req, res) => {
+  const pool = req.app.get("dbConnection"); // Use pool
 
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10; // Default 10 items per page
@@ -128,58 +118,57 @@ router.get("/menu", (req, res) => {
   }
 
   const countQuery = "SELECT COUNT(*) AS totalItems FROM menu";
+  // Use pool.escapeId for sortBy to prevent SQL injection
   const dataQuery = `
     SELECT 
       item_id, item_name, item_type, item_category, item_price, 
       item_calories, item_serving, item_rating, total_ratings, 
       item_description_long
     FROM menu 
-    ORDER BY ${connection.escapeId(sortBy)} ${
-    sortOrder === "DESC" ? "DESC" : "ASC"
+    ORDER BY ${pool.escapeId(sortBy)} ${
+    // Use pool.escapeId
+    sortOrder.toUpperCase() === "DESC" ? "DESC" : "ASC" // Ensure sortOrder is sanitized
   }
     LIMIT ? 
     OFFSET ?`;
 
-  connection.query(countQuery, (err, countResult) => {
-    if (err) {
-      console.error("Error fetching menu item count:", err);
-      return res.redirect(
-        "/admin/dashboard?error=" +
-          encodeURIComponent("Could not load menu items.")
-      );
-    }
-
+  try {
+    const [countResult] = await pool.promise().query(countQuery);
     const totalItems = countResult[0].totalItems;
     const totalPages = Math.ceil(totalItems / limit);
 
-    connection.query(dataQuery, [limit, offset], (err, items) => {
-      if (err) {
-        console.error("Error fetching menu items for management:", err);
-        return res.redirect(
-          "/admin/dashboard?error=" +
-            encodeURIComponent("Could not load menu items.")
-        );
-      }
-      res.render("admin/menuManagement", {
-        adminName: req.cookies.cookuname,
-        items: items,
-        message: req.query.message || null,
-        error: req.query.error || null,
-        page: "menu",
-        currentPage: page,
-        totalPages: totalPages,
-        limit: limit,
-        sortBy: sortBy,
-        sortOrder: sortOrder,
-        totalItems: totalItems,
-      });
+    const [items] = await pool.promise().query(dataQuery, [limit, offset]);
+
+    res.render("admin/menuManagement", {
+      adminName: req.cookies.cookuname,
+      items: items,
+      message: req.query.message || null,
+      error: req.query.error || null,
+      page: "menu",
+      currentPage: page,
+      totalPages: totalPages,
+      limit: limit,
+      sortBy: sortBy,
+      sortOrder: sortOrder,
+      totalItems: totalItems,
     });
-  });
+  } catch (err) {
+    console.error("Error fetching menu items for management:", err);
+    // It's generally better to render an error page or send a JSON error
+    // than redirecting with query parameters for errors, but following existing pattern.
+    res.status(500).render("admin/errorAdmin", {
+      // Render an error page
+      adminName: req.cookies.cookuname,
+      error: "Could not load menu items due to a server error.",
+      page: "error",
+    });
+  }
 });
 
 // Adapted POST /admin/addFood
-router.post("/addFood", (req, res) => {
-  const connection = req.app.get("dbConnection");
+router.post("/addFood", async (req, res) => {
+  // Changed to async
+  const pool = req.app.get("dbConnection"); // Changed to pool
   const {
     item_name,
     item_type,
@@ -193,10 +182,8 @@ router.post("/addFood", (req, res) => {
   let imageBuffer = null;
   let imageMimeType = null;
 
-  // Check if a file was uploaded (assuming the input field name is 'item_img')
-  if (req.files && req.files.item_img) {
-    // Changed from req.files.FoodImg
-    const foodImage = req.files.item_img; // Changed from req.files.FoodImg
+  if (req.files && req.files.item_img && req.files.item_img.data) {
+    const foodImage = req.files.item_img;
     imageBuffer = foodImage.data;
     imageMimeType = foodImage.mimetype;
   } else {
@@ -222,69 +209,72 @@ router.post("/addFood", (req, res) => {
 
   const query =
     "INSERT INTO menu (item_name, item_type, item_category, item_serving, item_calories, item_price, item_description_long, item_img_blob, item_img_mimetype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-  connection.query(
-    query,
-    [
-      item_name,
-      item_type,
-      item_category,
-      item_serving,
-      parseInt(item_calories),
-      parseFloat(item_price),
-      item_description_long || null,
-      imageBuffer, // Store the binary data
-      imageMimeType, // Store the MIME type
-    ],
-    (err, result) => {
-      if (err) {
-        console.error("Error adding food item with image blob:", err);
-        // Check for specific errors like 'max_allowed_packet'
-        if (err.code === "ER_NET_PACKET_TOO_LARGE") {
-          return res.redirect(
-            "/admin/menu?error=" +
-              encodeURIComponent(
-                "Image file is too large. Please upload a smaller image."
-              )
-          );
-        }
-        return res.redirect(
-          "/admin/menu?error=" +
-            encodeURIComponent("Database error adding food.")
-        );
-      }
-      res.redirect(
-        "/admin/menu?message=" +
-          encodeURIComponent("Food item added successfully!")
+
+  try {
+    await pool.promise().query(
+      // Changed to await pool.promise().query
+      query,
+      [
+        item_name,
+        item_type,
+        item_category,
+        item_serving,
+        parseInt(item_calories),
+        parseFloat(item_price),
+        item_description_long || null,
+        imageBuffer,
+        imageMimeType,
+      ]
+    );
+    res.redirect(
+      "/admin/menu?message=" +
+        encodeURIComponent("Food item added successfully!")
+    );
+  } catch (err) {
+    console.error("Error adding food item with image blob:", err);
+    if (err.code === "ER_NET_PACKET_TOO_LARGE") {
+      return res.redirect(
+        "/admin/menu?error=" +
+          encodeURIComponent(
+            "Image file is too large. Please upload a smaller image."
+          )
       );
     }
-  );
+    return res.redirect(
+      "/admin/menu?error=" + encodeURIComponent("Database error adding food.")
+    );
+  }
 });
 
 // API Endpoint to Fetch Item Data for Editing
-router.get("/api/food/:itemId", (req, res) => {
-  const connection = req.app.get("dbConnection");
+router.get("/api/food/:itemId", async (req, res) => {
+  const pool = req.app.get("dbConnection");
   const itemId = req.params.itemId;
   const query =
     "SELECT item_id, item_name, item_type, item_category, item_serving, item_calories, item_price, item_description_long FROM menu WHERE item_id = ?";
-  connection.query(query, [itemId], (err, results) => {
-    if (err) {
-      console.error("Error fetching food item for API:", err);
-      return res
-        .status(500)
-        .json({ success: false, message: "Database error." });
-    }
+  try {
+    const [results] = await pool.promise().query(query, [itemId]);
     if (results.length === 0) {
+      // Ensure a message is sent when item is not found
       return res
         .status(404)
         .json({ success: false, message: "Item not found." });
     }
     res.json({ success: true, item: results[0] });
-  });
+  } catch (err) {
+    console.error("Error fetching food item for API:", err);
+    // Ensure a message is sent on database error
+    res.status(500).json({
+      success: false,
+      message: "Database error occurred while fetching item details.",
+    });
+  }
 });
 
-// POST /admin/editFood/:itemId
-router.post("/editFood/:itemId", (req, res) => {
-  const connection = req.app.get("dbConnection");
+// Adapted POST /admin/editFood
+router.post("/editFood/:itemId", async (req, res) => {
+  // Changed to async
+  const pool = req.app.get("dbConnection"); // Changed to pool
   const itemId = req.params.itemId;
   const {
     item_name,
@@ -294,159 +284,119 @@ router.post("/editFood/:itemId", (req, res) => {
     item_calories,
     item_price,
     item_description_long,
-    // item_img is no longer taken from req.body for the image itself
   } = req.body;
+
+  let imageBuffer = null;
+  let imageMimeType = null;
+  let imageChanged = false;
+
+  if (req.files && req.files.item_img && req.files.item_img.data) {
+    const foodImage = req.files.item_img;
+    if (foodImage.size > 0) {
+      // Check if a new file was actually uploaded
+      imageBuffer = foodImage.data;
+      imageMimeType = foodImage.mimetype;
+      imageChanged = true;
+    }
+  }
 
   if (
     !item_name ||
     !item_type ||
     !item_category ||
     !item_serving ||
-    !item_calories || // Ensure calories is a number, or handle potential NaN
-    item_price === undefined ||
-    item_price === null ||
-    isNaN(parseFloat(item_price))
-    // item_img (filename) validation is removed as we handle file upload separately
+    !item_calories ||
+    !item_price
   ) {
     return res.redirect(
-      `/admin/menu?error=` +
-        encodeURIComponent(
-          "All fields (except image) are required for editing, and price/calories must be valid numbers."
-        )
+      `/admin/menu?error=${encodeURIComponent(
+        "All fields are required."
+      )}&itemId=${itemId}`
     );
   }
 
-  let imageBuffer = null;
-  let imageMimeType = null;
-  let updateImage = false;
+  let query;
+  let queryParams;
 
-  if (req.files && req.files.item_img && req.files.item_img.data) {
-    const foodImage = req.files.item_img;
-    // Basic validation for uploaded file (e.g., size, type) can be added here
-    if (foodImage.size > 0) {
-      // Make sure a file was actually uploaded
-      imageBuffer = foodImage.data;
-      imageMimeType = foodImage.mimetype;
-      updateImage = true;
-    }
+  if (imageChanged) {
+    query =
+      "UPDATE menu SET item_name = ?, item_type = ?, item_category = ?, item_serving = ?, item_calories = ?, item_price = ?, item_description_long = ?, item_img_blob = ?, item_img_mimetype = ? WHERE item_id = ?";
+    queryParams = [
+      item_name,
+      item_type,
+      item_category,
+      item_serving,
+      parseInt(item_calories),
+      parseFloat(item_price),
+      item_description_long || null,
+      imageBuffer,
+      imageMimeType,
+      itemId,
+    ];
+  } else {
+    query =
+      "UPDATE menu SET item_name = ?, item_type = ?, item_category = ?, item_serving = ?, item_calories = ?, item_price = ?, item_description_long = ? WHERE item_id = ?";
+    queryParams = [
+      item_name,
+      item_type,
+      item_category,
+      item_serving,
+      parseInt(item_calories),
+      parseFloat(item_price),
+      item_description_long || null,
+      itemId,
+    ];
   }
 
-  let querySetParts = [
-    "item_name = ?",
-    "item_type = ?",
-    "item_category = ?",
-    "item_serving = ?",
-    "item_calories = ?",
-    "item_price = ?",
-    "item_description_long = ?",
-  ];
-  let queryParams = [
-    item_name,
-    item_type,
-    item_category,
-    item_serving,
-    parseInt(item_calories),
-    parseFloat(item_price),
-    item_description_long || null,
-  ];
-
-  if (updateImage) {
-    querySetParts.push("item_img_blob = ?");
-    querySetParts.push("item_img_mimetype = ?");
-    queryParams.push(imageBuffer);
-    queryParams.push(imageMimeType);
-  }
-  // The old item_img (filename) column is no longer updated here.
-  // If you need to clear it, you would explicitly set item_img = NULL
-
-  queryParams.push(itemId); // For the WHERE clause
-
-  const query = `
-    UPDATE menu 
-    SET ${querySetParts.join(", ")}
-    WHERE item_id = ?`;
-
-  connection.query(query, queryParams, (err, result) => {
-    if (err) {
-      console.error("Error updating food item:", err);
-      if (err.code === "ER_NET_PACKET_TOO_LARGE") {
-        return res.redirect(
-          "/admin/menu?error=" +
-            encodeURIComponent(
-              "New image file is too large. Please upload a smaller image."
-            )
-        );
-      }
-      return res.redirect(
-        "/admin/menu?error=" +
-          encodeURIComponent("Database error updating food item.")
-      );
-    }
-    if (result.affectedRows === 0) {
-      return res.redirect(
-        "/admin/menu?error=" + encodeURIComponent("Item not found for update.")
-      );
-    }
+  try {
+    await pool.promise().query(query, queryParams); // Changed to await pool.promise().query
     res.redirect(
       "/admin/menu?message=" +
         encodeURIComponent("Food item updated successfully!")
     );
-  });
+  } catch (err) {
+    console.error("Error updating food item:", err);
+    if (err.code === "ER_NET_PACKET_TOO_LARGE") {
+      return res.redirect(
+        `/admin/menu?error=${encodeURIComponent(
+          "Image file is too large. Please upload a smaller image."
+        )}&itemId=${itemId}`
+      );
+    }
+    return res.redirect(
+      `/admin/menu?error=${encodeURIComponent(
+        "Database error updating food."
+      )}&itemId=${itemId}`
+    );
+  }
 });
 
-// POST /admin/deleteFood/:itemId
-router.post("/deleteFood/:itemId", (req, res) => {
-  const connection = req.app.get("dbConnection");
+// Adapted POST /admin/deleteFood/:itemId
+router.post("/deleteFood/:itemId", async (req, res) => {
+  // Changed to async
+  const pool = req.app.get("dbConnection"); // Changed to pool
   const itemId = req.params.itemId;
+  const query = "DELETE FROM menu WHERE item_id = ?";
 
-  // First, check if the item is part of any order_items to prevent deletion if it is.
-  // This is important for data integrity. You might decide to allow deletion
-  // or mark items as "inactive" instead. For now, we prevent deletion if in use.
-  const checkOrderItemsQuery =
-    "SELECT COUNT(*) AS count FROM order_items WHERE item_id = ?";
-  connection.query(checkOrderItemsQuery, [itemId], (err, results) => {
-    if (err) {
-      console.error(
-        "Error checking order_items before deleting menu item:",
-        err
-      );
-      return res.redirect(
-        "/admin/menu?error=" +
-          encodeURIComponent("Database error checking related orders.")
-      );
-    }
-
-    if (results[0].count > 0) {
-      return res.redirect(
-        "/admin/menu?error=" +
-          encodeURIComponent(
-            "Cannot delete item. It is part of existing orders. Consider marking it as unavailable instead."
-          )
-      );
-    }
-
-    // If not in any order_items, proceed with deletion
-    const deleteQuery = "DELETE FROM menu WHERE item_id = ?";
-    connection.query(deleteQuery, [itemId], (deleteErr, deleteResult) => {
-      if (deleteErr) {
-        console.error("Error deleting food item:", deleteErr);
-        return res.redirect(
-          "/admin/menu?error=" +
-            encodeURIComponent("Database error deleting food item.")
-        );
-      }
-      if (deleteResult.affectedRows === 0) {
-        return res.redirect(
-          "/admin/menu?error=" +
-            encodeURIComponent("Item not found for deletion.")
-        );
-      }
+  try {
+    const [result] = await pool.promise().query(query, [itemId]); // Changed to await pool.promise().query
+    if (result.affectedRows > 0) {
       res.redirect(
         "/admin/menu?message=" +
           encodeURIComponent("Food item deleted successfully!")
       );
-    });
-  });
+    } else {
+      res.redirect(
+        "/admin/menu?error=" +
+          encodeURIComponent("Food item not found or already deleted.")
+      );
+    }
+  } catch (err) {
+    console.error("Error deleting food item:", err);
+    res.redirect(
+      "/admin/menu?error=" + encodeURIComponent("Database error deleting food.")
+    );
+  }
 });
 
 // --- Order Management ---
@@ -572,106 +522,115 @@ router.get("/ordersManagement", async (req, res) => {
 });
 
 // Route for admin to set order to Processing
-router.post("/order/set-processing/:order_id", (req, res) => {
-  const connection = req.app.get("dbConnection");
+router.post("/order/set-processing/:order_id", async (req, res) => {
+  // Make async
+  const pool = req.app.get("dbConnection"); // Use pool
   const order_id = req.params.order_id;
-  const adminId = req.cookies.cookuid; // For logging or dispatch table
 
   const query =
     "UPDATE orders SET order_status = 'Processing' WHERE order_id = ?";
-  connection.query(query, [order_id], (err, result) => {
-    if (err) {
-      console.error("Error setting order to processing:", err);
-      return res.redirect(
-        "/admin/ordersManagement?error=" + encodeURIComponent("Database error.")
+  try {
+    const [result] = await pool.promise().query(query, [order_id]); // Use await
+    if (result.affectedRows > 0) {
+      res.redirect(
+        "/admin/ordersManagement?message=" +
+          encodeURIComponent(`Order ${order_id} set to Processing.`)
+      );
+    } else {
+      res.redirect(
+        "/admin/ordersManagement?error=" +
+          encodeURIComponent(`Order ${order_id} not found or no change made.`)
       );
     }
-    // Optionally, add to order_dispatch table if "Processing" implies dispatch prep
-    // const dispatchQuery = "INSERT INTO order_dispatch (order_id, dispatched_by_admin_id, dispatch_datetime) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE dispatched_by_admin_id = VALUES(dispatched_by_admin_id), dispatch_datetime = NOW()";
-    // connection.query(dispatchQuery, [order_id, adminId], (dispatchErr, dispatchResult) => { ... });
+  } catch (err) {
+    console.error("Error setting order to processing:", err);
     res.redirect(
-      "/admin/ordersManagement?message=" +
-        encodeURIComponent(`Order ${order_id} set to Processing.`)
+      "/admin/ordersManagement?error=" + encodeURIComponent("Database error.")
     );
-  });
+  }
 });
 
 // Route for admin to set order to Delivered
-router.post("/order/set-delivered-admin/:order_id", (req, res) => {
-  const connection = req.app.get("dbConnection");
+router.post("/order/set-delivered-admin/:order_id", async (req, res) => {
+  // Make async
+  const pool = req.app.get("dbConnection"); // Use pool
   const order_id = req.params.order_id;
   const adminId = req.cookies.cookuid;
 
-  // Update order status and delivery date
-  const query =
+  const updateOrderStatusQuery =
     "UPDATE orders SET order_status = 'Delivered', delivery_date = NOW() WHERE order_id = ?";
-  connection.query(query, [order_id], (err, result) => {
-    if (err) {
-      console.error("Error setting order to delivered:", err);
-      return res.redirect(
-        "/admin/ordersManagement?error=" + encodeURIComponent("Database error.")
+  const dispatchQuery =
+    "INSERT INTO order_dispatch (order_id, dispatched_by_admin_id, dispatch_datetime, dispatch_status) VALUES (?, ?, NOW(), 'Delivered') ON DUPLICATE KEY UPDATE dispatched_by_admin_id = VALUES(dispatched_by_admin_id), dispatch_datetime = NOW(), dispatch_status = 'Delivered'";
+
+  let transactionConnection;
+  try {
+    transactionConnection = await pool.getConnection(); // Get a connection for transaction
+    await transactionConnection.beginTransaction();
+
+    const [updateResult] = await transactionConnection.query(
+      updateOrderStatusQuery,
+      [order_id]
+    );
+
+    if (updateResult.affectedRows > 0) {
+      await transactionConnection.query(dispatchQuery, [order_id, adminId]);
+      await transactionConnection.commit();
+      res.redirect(
+        "/admin/ordersManagement?message=" +
+          encodeURIComponent(`Order ${order_id} set to Delivered.`)
+      );
+    } else {
+      await transactionConnection.rollback();
+      res.redirect(
+        "/admin/ordersManagement?error=" +
+          encodeURIComponent(
+            `Order ${order_id} not found or no change made for delivery.`
+          )
       );
     }
-    // Ensure entry in order_dispatch if not already there
-    const dispatchQuery =
-      "INSERT INTO order_dispatch (order_id, dispatched_by_admin_id, dispatch_datetime, dispatch_status) VALUES (?, ?, NOW(), 'Delivered') ON DUPLICATE KEY UPDATE dispatched_by_admin_id = VALUES(dispatched_by_admin_id), dispatch_datetime = NOW(), dispatch_status = 'Delivered'";
-    connection.query(
-      dispatchQuery,
-      [order_id, adminId],
-      (dispatchErr, dispatchResult) => {
-        if (dispatchErr) {
-          console.error("Error updating order_dispatch table:", dispatchErr);
-          // Decide if this is a critical error to halt the redirect
-        }
-        res.redirect(
-          "/admin/ordersManagement?message=" +
-            encodeURIComponent(`Order ${order_id} set to Delivered.`)
-        );
-      }
+  } catch (err) {
+    if (transactionConnection) await transactionConnection.rollback();
+    console.error("Error setting order to delivered:", err);
+    res.redirect(
+      "/admin/ordersManagement?error=" +
+        encodeURIComponent("Database error during delivery update.")
     );
-  });
+  } finally {
+    if (transactionConnection) transactionConnection.release();
+  }
 });
 
 // NEW ROUTE: Admin to set order to Dispatched
-router.post("/order/set-dispatched/:order_id", (req, res) => {
-  const connection = req.app.get("dbConnection");
+router.post("/order/set-dispatched/:order_id", async (req, res) => {
+  // Make async
+  const pool = req.app.get("dbConnection"); // Use pool
   const order_id = req.params.order_id;
-  const adminId = req.cookies.cookuid; // For logging or dispatch table
+  const adminId = req.cookies.cookuid;
 
-  // Update order status to 'Dispatched' only if it's 'Pending' or 'Processing'
-  const query =
+  const updateOrderStatusQuery =
     "UPDATE orders SET order_status = 'Dispatched' WHERE order_id = ? AND (order_status = 'Pending' OR order_status = 'Processing')";
-  connection.query(query, [order_id], (err, result) => {
-    if (err) {
-      console.error("Error setting order to dispatched:", err);
-      return res.redirect(
-        "/admin/ordersManagement?error=" +
-          encodeURIComponent("Database error setting status to Dispatched.")
-      );
-    }
-    if (result.affectedRows > 0) {
-      // Optionally, add to order_dispatch table
-      const dispatchQuery =
-        "INSERT INTO order_dispatch (order_id, dispatched_by_admin_id, dispatch_datetime, dispatch_status) VALUES (?, ?, NOW(), 'Dispatched') ON DUPLICATE KEY UPDATE dispatched_by_admin_id = VALUES(dispatched_by_admin_id), dispatch_datetime = NOW(), dispatch_status = 'Dispatched'";
-      connection.query(
-        dispatchQuery,
-        [order_id, adminId],
-        (dispatchErr, dispatchResult) => {
-          if (dispatchErr) {
-            console.error(
-              "Error updating order_dispatch table for dispatched order:",
-              dispatchErr
-            );
-            // Non-critical error, so proceed with redirect
-          }
-          res.redirect(
-            "/admin/ordersManagement?message=" +
-              encodeURIComponent(`Order ${order_id} set to Dispatched.`)
-          );
-        }
+  const dispatchQuery =
+    "INSERT INTO order_dispatch (order_id, dispatched_by_admin_id, dispatch_datetime, dispatch_status) VALUES (?, ?, NOW(), 'Dispatched') ON DUPLICATE KEY UPDATE dispatched_by_admin_id = VALUES(dispatched_by_admin_id), dispatch_datetime = NOW(), dispatch_status = 'Dispatched'";
+
+  let transactionConnection;
+  try {
+    transactionConnection = await pool.getConnection();
+    await transactionConnection.beginTransaction();
+
+    const [updateResult] = await transactionConnection.query(
+      updateOrderStatusQuery,
+      [order_id]
+    );
+
+    if (updateResult.affectedRows > 0) {
+      await transactionConnection.query(dispatchQuery, [order_id, adminId]);
+      await transactionConnection.commit();
+      res.redirect(
+        "/admin/ordersManagement?message=" +
+          encodeURIComponent(`Order ${order_id} set to Dispatched.`)
       );
     } else {
-      // Order not found, not in a dispatchable state, or already dispatched
+      await transactionConnection.rollback();
       res.redirect(
         "/admin/ordersManagement?error=" +
           encodeURIComponent(
@@ -679,24 +638,27 @@ router.post("/order/set-dispatched/:order_id", (req, res) => {
           )
       );
     }
-  });
+  } catch (err) {
+    if (transactionConnection) await transactionConnection.rollback();
+    console.error("Error setting order to dispatched:", err);
+    res.redirect(
+      "/admin/ordersManagement?error=" +
+        encodeURIComponent("Database error setting status to Dispatched.")
+    );
+  } finally {
+    if (transactionConnection) transactionConnection.release();
+  }
 });
 
-router.post("/order/mark-paid/:order_id", (req, res) => {
-  const connection = req.app.get("dbConnection");
+router.post("/order/mark-paid/:order_id", async (req, res) => {
+  // Make async
+  const pool = req.app.get("dbConnection"); // Use pool
   const order_id = req.params.order_id;
 
-  // Update payment_status to 'Paid' if it's 'Unpaid' or 'Failed'
   const query =
     "UPDATE orders SET payment_status = 'Paid' WHERE order_id = ? AND (payment_status = 'Unpaid' OR payment_status = 'Failed')";
-  connection.query(query, [order_id], (err, result) => {
-    if (err) {
-      console.error("Error marking order as paid:", err);
-      return res.redirect(
-        "/admin/ordersManagement?error=" +
-          encodeURIComponent("Database error while marking order as paid.")
-      );
-    }
+  try {
+    const [result] = await pool.promise().query(query, [order_id]); // Use await
     if (result.affectedRows > 0) {
       res.redirect(
         "/admin/ordersManagement?message=" +
@@ -710,7 +672,13 @@ router.post("/order/mark-paid/:order_id", (req, res) => {
           )
       );
     }
-  });
+  } catch (err) {
+    console.error("Error marking order as paid:", err);
+    res.redirect(
+      "/admin/ordersManagement?error=" +
+        encodeURIComponent("Database error while marking order as paid.")
+    );
+  }
 });
 
 // GET /admin/users - Display User Management Page

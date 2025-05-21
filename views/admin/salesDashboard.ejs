@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - PizzazzPizza Admin</title>
+  <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/stylesheets/style.css">
+  <style>
+    /* Reusing styles from statisticDashboard.ejs - ensure these are loaded or defined */
+    .admin-main-content .section {
+      padding-top: 20px;
+      padding-bottom: 20px;
+    }
+
+    .admin-main-content {
+      background-color: #f4f6f9;
+      color: #333;
+    }
+
+    .content-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      padding: 15px 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .content-header h1 {
+      margin: 0;
+      font-size: 1.7em;
+      color: #343a40;
+      font-weight: 500;
+    }
+
+    .content-header .header-info {
+      font-size: 0.9em;
+      color: #6c757d;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    @media (min-width: 992px) {
+      .dashboard-grid.kpi-focused {
+        /* For 3-column KPI layout */
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .dashboard-grid.charts-focused {
+        /* For 2-column chart layout */
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .kpi-card,
+    .chart-card {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e9ecef;
+      color: #555;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .kpi-card h2,
+    .chart-card h2 {
+      /* Title of the metric/chart */
+      margin-top: 0;
+      font-size: 0.9em;
+      color: #6c757d;
+      margin-bottom: 8px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .kpi-card .kpi-values {
+      margin-top: 5px;
+    }
+
+    .kpi-card .current-value {
+      font-size: 1.8em;
+      font-weight: 600;
+      color: #007bff;
+      /* Blue for current value */
+      display: block;
+    }
+
+    .kpi-card .comparison-value {
+      font-size: 0.9em;
+      color: #6c757d;
+      /* Grey for comparison text */
+      display: block;
+      margin-top: 3px;
+    }
+
+    .kpi-card .percentage-change {
+      font-size: 0.95em;
+      font-weight: 500;
+      display: block;
+      margin-top: 5px;
+    }
+
+    .percentage-change.positive {
+      color: #28a745;
+      /* Green for positive change */
+    }
+
+    .percentage-change.negative {
+      color: #dc3545;
+      /* Red for negative change */
+    }
+
+    .chart-card {
+      min-height: 380px;
+      height: auto;
+      max-height: 450px;
+      position: relative;
+    }
+
+    .chart-card h2 {
+      /* Chart titles */
+      color: #343a40;
+      font-size: 1.0em;
+      border-bottom: 1px solid #e9ecef;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+
+    .chart-card canvas {
+      max-width: 100%;
+      flex-grow: 1;
+    }
+
+    .no-data-message {
+      text-align: center;
+      padding: 20px;
+      color: #6c757d;
+      font-style: italic;
+    }
+  </style>
+</head>
+
+<body class="admin-active">
+  <%- include('../partials/adminSidebar', { page: 'sales-dashboard' }) %>
+
+  <div class="admin-main-content">
+    <div id="viewport">
+      <div id="js-scroll-content">
+        <section class="section" id="sales-dashboard-page" style="background-image: url(/images/menu-bg.png);">
+          <div class="container-fluid">
+
+            <div class="content-header">
+              <h1><%= title %></h1>
+              <div class="header-info">
+                <% if (data && data.record_date) { %>
+                Showing data for: <%= new Date(data.record_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %>
+                <% } else { %>
+                No data available
+                <% } %>
+              </div>
+            </div>
+
+            <% if (data) { %>
+            <!-- KPIs Section -->
+            <h2 style="color: #343a40; margin-bottom: 15px; font-size: 1.3em;">Today vs. Same Day Last Week</h2>
+            <div class="dashboard-grid kpi-focused">
+              <div class="kpi-card">
+                <h2>Sales Revenue</h2>
+                <div class="kpi-values">
+                  <span class="current-value" id="todaySales"><%= data.kpi_today_sales.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %></span>
+                  <span class="comparison-value">vs <%= data.kpi_sameday_lastweek_sales.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %> (Last Week)</span>
+                  <span class="percentage-change" id="salesPctChange"></span>
+                </div>
+              </div>
+              <div class="kpi-card">
+                <h2>Total Orders</h2>
+                <div class="kpi-values">
+                  <span class="current-value" id="todayOrders"><%= data.kpi_today_orders %></span>
+                  <span class="comparison-value">vs <%= data.kpi_sameday_lastweek_orders %> (Last Week)</span>
+                  <span class="percentage-change" id="ordersPctChange"></span>
+                </div>
+              </div>
+              <div class="kpi-card">
+                <h2>Average Order Value (AOV)</h2>
+                <div class="kpi-values">
+                  <span class="current-value" id="todayAOV"><%= data.kpi_today_aov.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %></span>
+                  <span class="comparison-value">vs <%= data.kpi_sameday_lastweek_aov.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %> (Last Week)</span>
+                  <span class="percentage-change" id="aovPctChange"></span>
+                </div>
+              </div>
+            </div>
+
+            <h2 style="color: #343a40; margin-top: 30px; margin-bottom: 15px; font-size: 1.3em;">Month-to-Date (MTD) vs. Last Full Month</h2>
+            <div class="dashboard-grid kpi-focused">
+              <div class="kpi-card">
+                <h2>Sales Revenue (MTD)</h2>
+                <div class="kpi-values">
+                  <span class="current-value" id="mtdSales"><%= data.kpi_mtd_sales.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %></span>
+                  <span class="comparison-value">vs <%= data.kpi_last_full_month_sales.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %> (Last Full Month)</span>
+                  <span class="percentage-change" id="mtdSalesPctChange"></span>
+                </div>
+              </div>
+              <div class="kpi-card">
+                <h2>Total Orders (MTD)</h2>
+                <div class="kpi-values">
+                  <span class="current-value" id="mtdOrders"><%= data.kpi_mtd_orders %></span>
+                  <span class="comparison-value">vs <%= data.kpi_last_full_month_orders %> (Last Full Month)</span>
+                  <span class="percentage-change" id="mtdOrdersPctChange"></span>
+                </div>
+              </div>
+              <div class="kpi-card">
+                <h2>Average Order Value (MTD)</h2>
+                <div class="kpi-values">
+                  <span class="current-value" id="mtdAOV"><%= data.kpi_mtd_aov.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %></span>
+                  <span class="comparison-value">vs <%= data.kpi_last_full_month_aov.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) %> (Last Full Month)</span>
+                  <span class="percentage-change" id="mtdAovPctChange"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="dashboard-grid charts-focused" style="margin-top: 30px;">
+              <div class="chart-card">
+                <h2>Monthly Sales Trend Comparison</h2>
+                <% if (data.chart_monthly_current_mtd_daily_sales_json && data.chart_monthly_previous_full_daily_sales_json) { %>
+                <canvas id="monthlySalesComparisonChart"></canvas>
+                <% } else { %>
+                <p class="no-data-message">Monthly sales trend data not available.</p>
+                <% } %>
+              </div>
+              <div class="chart-card">
+                <h2>Weekly Sales Performance (Current Week)</h2>
+                <% if (data.chart_weekly_current_week_daily_sales_json) { %>
+                <canvas id="weeklySalesPerformanceChart"></canvas>
+                <% } else { %>
+                <p class="no-data-message">Weekly sales performance data not available.</p>
+                <% } %>
+              </div>
+            </div>
+            <% } else { %>
+            <p class="no-data-message" style="font-size: 1.2em; padding: 40px;">Sales dashboard data is currently unavailable. Snapshots may not have been generated yet.</p>
+            <% } %>
+
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Use the 'data' variable passed from the server
+    const serverData = <%- JSON.stringify(data || null) %>;
+
+    // Chart.js defaults for light theme
+    const chartTextColor = '#555';
+    const chartGridColor = 'rgba(0, 0, 0, 0.08)';
+    const chartTitleColor = '#333';
+
+    function calculatePercentageChange(current, previous) {
+      if (previous === 0) {
+        return current > 0 ? ' (+∞%)' : ' (N/A)'; // Avoid division by zero
+      }
+      const change = ((current - previous) / previous) * 100;
+      const sign = change >= 0 ? '+' : '';
+      return ` (${sign}${change.toFixed(1)}%)`;
+    }
+
+    function setPercentageChangeText(elementId, current, previous) {
+      const element = document.getElementById(elementId);
+      if (element && typeof current === 'number' && typeof previous === 'number') { // Add checks
+        const changeText = calculatePercentageChange(current, previous);
+        element.textContent = changeText;
+        if (current > previous) {
+          element.className = 'percentage-change positive';
+        } else if (current < previous) {
+          element.className = 'percentage-change negative';
+        } else {
+          element.className = 'percentage-change'; // No change
+        }
+      } else if (element) {
+        element.textContent = ' (N/A)';
+        element.className = 'percentage-change';
+      }
+    }
+
+    function renderMonthlySalesComparisonChart(currentMonthData, previousMonthData) {
+      const canvas = document.getElementById('monthlySalesComparisonChart');
+      if (!canvas || !currentMonthData || !previousMonthData) {
+        if (canvas) canvas.parentElement.innerHTML = '<p class="no-data-message">Monthly sales trend data not available for chart.</p>';
+        return;
+      }
+      const ctx = canvas.getContext('2d');
+
+      const dayLabels = Array.from({
+        length: 31
+      }, (_, i) => (i + 1).toString());
+
+      const processDailyData = (dailyArray) => {
+        const dataPoints = Array(31).fill(null);
+        if (dailyArray && Array.isArray(dailyArray)) {
+          dailyArray.forEach(item => {
+            const dayOfMonth = new Date(item.date).getUTCDate();
+            if (dayOfMonth >= 1 && dayOfMonth <= 31) {
+              dataPoints[dayOfMonth - 1] = item.sales;
+            }
+          });
+        }
+        return dataPoints;
+      };
+
+      const currentMonthSales = processDailyData(currentMonthData);
+      const previousMonthSales = processDailyData(previousMonthData);
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: dayLabels,
+          datasets: [{
+            label: 'Current Month MTD Sales',
+            data: currentMonthSales,
+            borderColor: '#007bff',
+            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+            tension: 0.3,
+            fill: true,
+            spanGaps: true,
+          }, {
+            label: 'Previous Full Month Sales',
+            data: previousMonthSales,
+            borderColor: '#6c757d',
+            backgroundColor: 'rgba(108, 117, 125, 0.1)',
+            tension: 0.3,
+            fill: true,
+            spanGaps: true,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: chartTextColor
+              },
+              grid: {
+                color: chartGridColor
+              }
+            },
+            x: {
+              ticks: {
+                color: chartTextColor
+              },
+              grid: {
+                color: chartGridColor
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              labels: {
+                color: chartTitleColor
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderWeeklySalesPerformanceChart(weeklyData, prevWeekData = null) {
+      const canvas = document.getElementById('weeklySalesPerformanceChart');
+      if (!canvas || !weeklyData) {
+        if (canvas) canvas.parentElement.innerHTML = '<p class="no-data-message">Weekly sales performance data not available for chart.</p>';
+        return;
+      }
+      const ctx = canvas.getContext('2d');
+      const dayOrder = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+      const processWeeklyData = (dataArray) => {
+        const sortedData = Array(7).fill(0);
+        if (dataArray && Array.isArray(dataArray)) {
+          dataArray.forEach(item => {
+            const index = dayOrder.indexOf(item.dayOfWeek);
+            if (index !== -1) sortedData[index] = item.sales;
+          });
+        }
+        return sortedData;
+      };
+
+      const currentWeekSales = processWeeklyData(weeklyData);
+      const datasets = [{
+        label: 'Current Week Sales',
+        data: currentWeekSales,
+        backgroundColor: '#28a745',
+        borderColor: '#208339',
+        borderWidth: 1
+      }];
+
+      if (prevWeekData && Array.isArray(prevWeekData) && prevWeekData.length > 0) {
+        const prevWeekSales = processWeeklyData(prevWeekData);
+        datasets.push({
+          label: 'Previous Period Week Sales',
+          data: prevWeekSales,
+          backgroundColor: '#ffc107',
+          borderColor: '#cca006',
+          borderWidth: 1
+        });
+      }
+
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: dayOrder,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: chartTextColor
+              },
+              grid: {
+                color: chartGridColor
+              }
+            },
+            x: {
+              ticks: {
+                color: chartTextColor
+              },
+              grid: {
+                display: false
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              labels: {
+                color: chartTitleColor
+              }
+            }
+          }
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (serverData) { // Use serverData here
+        setPercentageChangeText('salesPctChange', serverData.kpi_today_sales, serverData.kpi_sameday_lastweek_sales);
+        setPercentageChangeText('ordersPctChange', serverData.kpi_today_orders, serverData.kpi_sameday_lastweek_orders);
+        setPercentageChangeText('aovPctChange', serverData.kpi_today_aov, serverData.kpi_sameday_lastweek_aov);
+
+        setPercentageChangeText('mtdSalesPctChange', serverData.kpi_mtd_sales, serverData.kpi_last_full_month_sales);
+        setPercentageChangeText('mtdOrdersPctChange', serverData.kpi_mtd_orders, serverData.kpi_last_full_month_orders);
+        setPercentageChangeText('mtdAovPctChange', serverData.kpi_mtd_aov, serverData.kpi_last_full_month_aov);
+
+        if (serverData.chart_monthly_current_mtd_daily_sales_json && serverData.chart_monthly_previous_full_daily_sales_json) {
+          renderMonthlySalesComparisonChart(serverData.chart_monthly_current_mtd_daily_sales_json, serverData.chart_monthly_previous_full_daily_sales_json);
+        }
+        if (serverData.chart_weekly_current_week_daily_sales_json) {
+          renderWeeklySalesPerformanceChart(serverData.chart_weekly_current_week_daily_sales_json, serverData.chart_weekly_prev_month_sameday_week_daily_sales_json);
+        }
+      } else {
+        console.warn("Sales dashboard data (serverData) is not available for client-side script.");
+      }
+    });
+  </script>
+</body>
+
+</html>

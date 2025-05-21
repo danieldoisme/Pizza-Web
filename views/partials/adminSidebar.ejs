@@ -6,11 +6,11 @@
     <h5>Admin Panel</h5>
   </div>
   <ul class="sidebar-menu">
-    <li class="has-submenu <%= (typeof page !== 'undefined' && (page === 'dashboard' || page === 'statistics')) ? 'active-parent' : '' %>">
+    <li class="has-submenu <%= (typeof page !== 'undefined' && (page === 'dashboard' || page === 'statistics' || page === 'sales')) ? 'active-parent' : '' %>">
       <a href="#" class="menu-toggle">
         <i class="uil uil-estate"></i> Dashboard <i class="uil uil-angle-down submenu-arrow"></i>
       </a>
-      <ul class="submenu" style="display: <%= (typeof page !== 'undefined' && (page === 'dashboard' || page === 'statistics')) ? 'block' : 'none' %>;">
+      <ul class="submenu" style="display: <%= (typeof page !== 'undefined' && (page === 'dashboard' || page === 'statistics' || page === 'sales')) ? 'block' : 'none' %>;">
         <li>
           <a href="/admin/dashboard" class="<%= typeof page !== 'undefined' && page === 'dashboard' ? 'active' : '' %>">
             <i class="uil uil-apps"></i> Welcome
@@ -19,6 +19,11 @@
         <li>
           <a href="/admin/statistics/dashboard" class="<%= typeof page !== 'undefined' && page === 'statistics' ? 'active' : '' %>">
             <i class="uil uil-graph-bar"></i> Statistics
+          </a>
+        </li>
+        <li>
+          <a href="/admin/sales/dashboard" class="<%= typeof page !== 'undefined' && page === 'sales' ? 'active' : '' %>">
+            <i class="uil uil-bill"></i> Sales
           </a>
         </li>
       </ul>
