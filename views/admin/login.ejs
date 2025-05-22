@@ -72,8 +72,8 @@
                 <% } %>
 
                 <form action="/admin/login" method="post">
-                  <input type="email" placeholder="Enter your Admin Email" name="admin_email" required class="form-input" style="width: 450px" value="<%= oldInput && oldInput.admin_email ? oldInput.admin_email : '' %>" /><br /><br />
-                  <input type="password" placeholder="Password" name="admin_password" required minlength="8" class="form-input" style="width: 450px" /><br /><br />
+                  <input type="email" placeholder="Enter your Admin Email" name="admin_email" required class="form-input" style="width: 450px" value="<%= oldInput && oldInput.admin_email ? oldInput.admin_email : '' %>" maxlength="255" /><br /><br />
+                  <input type="password" placeholder="Password" name="admin_password" required minlength="8" class="form-input" style="width: 450px" maxlength="100" /><br /><br />
                   <input type="submit" value="Log In" class="sec-btn sec-btn-orange" style="color: white; background: orange" /><br />
                 </form>
                 <br />
