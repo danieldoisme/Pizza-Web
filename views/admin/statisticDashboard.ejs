@@ -425,6 +425,25 @@
     const chartGridColor = 'rgba(0, 0, 0, 0.08)'; // Lighter grid lines
     const chartTitleColor = '#333'; // Dark color for legend titles
 
+    // Color mappings based on ordersManagement.ejs
+    const orderStatusColors = {
+      'Pending': '#ffc107', // Yellow
+      'Processing': '#007bff', // Blue
+      'Dispatched': '#17a2b8', // Teal
+      'Delivered': '#28a745', // Green
+      'Cancelled': '#dc3545', // Red
+      'Default': '#6c757d' // Grey for any other status
+    };
+
+    const paymentStatusColors = {
+      'Paid': '#28a745', // Green
+      'Unpaid': '#ffc107', // Yellow
+      'Failed': '#dc3545', // Red
+      'Pending Payment': '#17a2b8', // Teal
+      'Refunded': '#6c757d', // Grey
+      'Default': '#6c757d' // Grey for any other status
+    };
+
     function updateKPIs(newData) {
       document.getElementById('totalSales').textContent = newData.totalSales.toLocaleString('en-US', {
         style: 'currency',
@@ -521,6 +540,8 @@
       const ctx = canvas.getContext('2d');
       const labels = Object.keys(statusData);
       const dataValues = Object.values(statusData);
+      const backgroundColors = labels.map(label => orderStatusColors[label] || orderStatusColors['Default']);
+
       if (orderStatusChartInstance) orderStatusChartInstance.destroy();
       orderStatusChartInstance = new Chart(ctx, {
         type: 'doughnut',
@@ -529,7 +550,7 @@
           datasets: [{
             label: 'Order Statuses',
             data: dataValues,
-            backgroundColor: ['#ff8c00', '#007bff', '#28a745', '#17a2b8', '#6f42c1', '#fd7e14'], // Keep vibrant colors
+            backgroundColor: backgroundColors,
             borderColor: '#fff', // White border for segments on light theme
             hoverOffset: 4
           }]
@@ -557,6 +578,8 @@
       const ctx = canvas.getContext('2d');
       const labels = Object.keys(statusData);
       const dataValues = Object.values(statusData);
+      const backgroundColors = labels.map(label => paymentStatusColors[label] || paymentStatusColors['Default']);
+
       if (paymentStatusChartInstance) paymentStatusChartInstance.destroy();
       paymentStatusChartInstance = new Chart(ctx, {
         type: 'pie',
@@ -565,7 +588,7 @@
           datasets: [{
             label: 'Payment Statuses',
             data: dataValues,
-            backgroundColor: ['#28a745', '#dc3545', '#ffc107', '#007bff'], // Keep vibrant colors
+            backgroundColor: backgroundColors,
             borderColor: '#fff', // White border for segments
             hoverOffset: 4
           }]
