@@ -22,7 +22,7 @@ const authRoutes = require("./routes/authRoutes.js");
 const shopRoutes = require("./routes/shopRoutes.js");
 const cartRoutes = require("./routes/cartRoutes.js");
 const checkoutRoutes = require("./routes/checkoutRoutes.js");
-const botApiRoutes = require("./routes/botApiRoutes.js");
+// const botApiRoutes = require("./routes/botApiRoutes.js");
 const imageRoutes = require("./routes/imageRoutes.js"); // Import the new image routes
 const adminStatisticsRoutes = require("./routes/adminStatisticsRoutes"); // Adjust path as needed
 const adminSalesRoutes = require("./routes/adminSalesRoutes"); // 1. Import with the new name
@@ -65,7 +65,7 @@ app.use("/", authRoutes);
 app.use("/", shopRoutes);
 app.use("/", cartRoutes);
 app.use("/", checkoutRoutes);
-app.use("/api/bot", botApiRoutes);
+// app.use("/api/bot", botApiRoutes);
 app.use("/images", imageRoutes); // Register the image routes under the /images path
 app.use("/admin/statistics", adminStatisticsRoutes);
 app.use("/admin/sales", adminSalesRoutes); // 2. Register with the new name

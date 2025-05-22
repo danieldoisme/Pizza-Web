@@ -61,14 +61,21 @@
             <div class="col-lg-6">
               <div class="contact-form-box">
                 <h3 class="h3-title">Send Us a Message</h3>
-                <% if (typeof error !== 'undefined' && error) { %>
+                <% if (typeof error_msg !== 'undefined' && error_msg) { %>
                 <div class="alert alert-danger" role="alert">
-                  <%= error %>
+                  <%= error_msg %>
+                  <% if (typeof errors !== 'undefined' && errors.length > 0) { %>
+                  <ul style="margin-top: 10px; margin-bottom: 0;">
+                    <% errors.forEach(function(err) { %>
+                    <li><%= err.msg %></li>
+                    <% }); %>
+                  </ul>
+                  <% } %>
                 </div>
                 <% } %>
-                <% if (typeof success !== 'undefined' && success) { %>
+                <% if (typeof success_msg !== 'undefined' && success_msg) { %>
                 <div class="alert alert-success" role="alert">
-                  <%= success %>
+                  <%= success_msg %>
                 </div>
                 <% } %>
                 <form action="/contact/send" method="POST">
