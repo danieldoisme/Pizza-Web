@@ -7,6 +7,8 @@ const fileUpload = require("express-fileupload");
 const mysql = require("mysql2");
 const cron = require("node-cron");
 const statisticsService = require("./services/statisticsService");
+const session = require("express-session"); // 1. Import express-session
+const flash = require("connect-flash"); // 2. Import connect-flash
 
 // Initialize Express App
 const app = express();
@@ -32,8 +34,25 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 app.use(express.json());
-app.use(cookieParser());
+app.use(cookieParser()); // cookieParser should come before session
 app.use(fileUpload());
+
+// 3. Configure express-session
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "a_default_fallback_secret_key", // Use an environment variable for the secret
+    resave: false,
+    saveUninitialized: true, // Set to true if you want to save new sessions that are not yet modified
+    cookie: {
+      secure: process.env.NODE_ENV === "production", // Use secure cookies in production (requires HTTPS)
+      httpOnly: true, // Helps prevent XSS attacks
+      maxAge: 24 * 60 * 60 * 1000, // Optional: e.g., 1 day
+    },
+  })
+);
+
+// 4. Configure connect-flash (must be after session middleware)
+app.use(flash());
 
 // Database Connection
 const pool = mysql.createPool({
@@ -54,6 +73,11 @@ app.use((req, res, next) => {
   res.locals.userid = req.cookies.cookuid || null;
   res.locals.isAdmin = req.cookies.usertype === "admin";
   res.locals.item_count = req.cookies.item_count || 0;
+  // 5. Make flash messages available in templates
+  res.locals.success_msg = req.flash("success_msg"); // For general success messages
+  res.locals.error_msg = req.flash("error_msg"); // For general error messages
+  res.locals.error = req.flash("error"); // Specifically for validation errors from express-validator
+  res.locals.success = req.flash("success"); // For success messages (e.g., from reset password)
   next();
 });
 

@@ -47,8 +47,20 @@
                 <div class="sec-title-shape mb-4">
                   <img src="/images/title-shape.svg" alt="" />
                 </div>
+
+                <% if (error && error.length > 0) { %>
+                <div class="alert alert-danger" role="alert" style="max-width: 450px; margin: 0 auto 15px auto;">
+                  <%= error %>
+                </div>
+                <% } %>
+                <% if (success && success.length > 0) { %>
+                <div class="alert alert-success" role="alert" style="max-width: 450px; margin: 0 auto 15px auto;">
+                  <%= success %>
+                </div>
+                <% } %>
+
                 <form action="/signin" method="post">
-                  <input type="email" placeholder="Enter Your Email" required class="form-input" name="email" id="InputEmail" style="width: 450px" /><br /><br />
+                  <input type="email" placeholder="Enter Your Email" required class="form-input" name="email" id="InputEmail" style="width: 450px" value="<%= oldInput && oldInput.email ? oldInput.email : '' %>" /><br /><br />
                   <input type="password" placeholder="Enter Your Password" required class="form-input" name="password" id="InputPassword" style="width: 450px" /><br />
                   <div style="width: 450px; text-align: right; margin: 5px auto 15px auto;">
                     <a href="/forgot-password" style="font-size: 0.9em; font-weight: 600; color: orange; cursor: pointer;">Forgot Password?</a>

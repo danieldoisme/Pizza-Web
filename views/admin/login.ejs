@@ -50,8 +50,29 @@
                 <div class="sec-title-shape mb-4">
                   <img src="/images/title-shape.svg" alt="" />
                 </div>
+
+                <% if (error && error.length > 0) { %>
+                <div class="alert alert-danger" role="alert" style="max-width: 450px; margin: 0 auto 15px auto; text-align: left;">
+                  <strong>Please correct the following errors:</strong><br>
+                  <% if (Array.isArray(error)) { %>
+                  <% error.forEach(function(errMsg) { %>
+                  - <%= errMsg %><br>
+                  <% }); %>
+                  <% } else { %>
+                  <% error.split(',').forEach(function(errMsg) { %>
+                  - <%= errMsg.trim() %><br>
+                  <% }); %>
+                  <% } %>
+                </div>
+                <% } %>
+                <% if (message && message.length > 0) { %>
+                <div class="alert alert-success" role="alert" style="max-width: 450px; margin: 0 auto 15px auto;">
+                  <%= message %>
+                </div>
+                <% } %>
+
                 <form action="/admin/login" method="post">
-                  <input type="text" placeholder="Enter your Admin Email" name="admin_email" required class="form-input" style="width: 450px" /><br /><br />
+                  <input type="email" placeholder="Enter your Admin Email" name="admin_email" required class="form-input" style="width: 450px" value="<%= oldInput && oldInput.admin_email ? oldInput.admin_email : '' %>" /><br /><br />
                   <input type="password" placeholder="Password" name="admin_password" required class="form-input" style="width: 450px" /><br /><br />
                   <input type="submit" value="Log In" class="sec-btn sec-btn-orange" style="color: white; background: orange" /><br />
                 </form>

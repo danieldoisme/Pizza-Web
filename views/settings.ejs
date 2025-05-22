@@ -91,12 +91,15 @@
                   <img src="/images/title-shape.svg" alt="Title Shape" />
                 </div>
               </div>
-              <% if (typeof error !== 'undefined' && error && error.trim() !== '') { %>
-              <div class="alert alert-danger text-center" role="alert">
-                <%= error %>
+              <% if (error && error.length > 0) { %>
+              <div class="alert alert-danger text-center" role="alert" style="text-align: left !important;">
+                <strong>Please correct the following errors:</strong><br>
+                <% error.split(',').forEach(function(errMsg) { %>
+                - <%= errMsg.trim() %><br>
+                <% }); %>
               </div>
               <% } %>
-              <% if (typeof success !== 'undefined' && success && success.trim() !== '') { %>
+              <% if (success && success.length > 0) { %>
               <div class="alert alert-success text-center" role="alert">
                 <%= success %>
               </div>
@@ -105,7 +108,6 @@
           </div>
 
           <div class="tabs-background">
-            <!-- Added wrapper div -->
             <div class="row">
               <div class="col-md-3">
                 <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
@@ -126,35 +128,30 @@
                       <p><strong>Name:</strong> <%= userData.user_name %></p>
                       <p><strong>Email:</strong> <%= userData.user_email %></p>
                     </div>
-
                     <div class="profile-info-section">
                       <h5>Current Contact Details</h5>
                       <p><strong>Mobile Number:</strong> <%= userData.user_mobileno || 'Not set' %></p>
                       <p><strong>Address:</strong> <%= userData.user_address || 'Not set' %></p>
                     </div>
-                    <% } else { %>
-                    <p>Could not load user data.</p>
-                    <% } %>
-
+                    <% } else { %><p>Could not load user data.</p><% } %>
                     <hr>
                     <div class="form-section">
                       <h4 class="h4-title mb-3">Update Contact Number</h4>
                       <form action="/contact" method="post">
-                        <input type="text" placeholder="Enter your New Mobile Number" name="mobileno" required class="form-input" maxlength="15" /><br />
+                        <input type="tel" placeholder="Enter your New Mobile Number" name="mobileno" required class="form-input" maxlength="15" value="<%= (typeof oldInput !== 'undefined' && oldInput.mobileno) ? oldInput.mobileno : (userData && userData.user_mobileno ? userData.user_mobileno : '') %>" /><br />
                         <input type="submit" value="Update Contact Number" class="sec-btn sec-btn-orange" /><br />
                       </form>
                     </div>
-
                     <hr>
                     <div class="form-section">
                       <h4 class="h4-title mb-3">Update Address</h4>
                       <form action="/address" method="post">
-                        <input type="text" placeholder="Street Address" required class="form-input" name="address_line1" /><br />
-                        <input type="text" placeholder="Apartment, suite, etc. (Optional)" class="form-input" name="address_line2" /><br />
-                        <input type="text" placeholder="City" required class="form-input" name="city" /><br />
-                        <input type="text" placeholder="State/Province" required class="form-input" name="state" /><br />
-                        <input type="text" placeholder="ZIP/Postal Code" required class="form-input" name="postal_code" /><br />
-                        <input type="text" placeholder="Country" required class="form-input" name="country" /><br />
+                        <input type="text" placeholder="Street Address" required class="form-input" name="address_line1" value="<%= (typeof oldInput !== 'undefined' && oldInput.address_line1) ? oldInput.address_line1 : '' %>" /><br />
+                        <input type="text" placeholder="Apartment, suite, etc. (Optional)" class="form-input" name="address_line2" value="<%= (typeof oldInput !== 'undefined' && oldInput.address_line2) ? oldInput.address_line2 : '' %>" /><br />
+                        <input type="text" placeholder="City" required class="form-input" name="city" value="<%= (typeof oldInput !== 'undefined' && oldInput.city) ? oldInput.city : '' %>" /><br />
+                        <input type="text" placeholder="State/Province" required class="form-input" name="state" value="<%= (typeof oldInput !== 'undefined' && oldInput.state) ? oldInput.state : '' %>" /><br />
+                        <input type="text" placeholder="ZIP/Postal Code" required class="form-input" name="postal_code" value="<%= (typeof oldInput !== 'undefined' && oldInput.postal_code) ? oldInput.postal_code : '' %>" /><br />
+                        <input type="text" placeholder="Country" required class="form-input" name="country" value="<%= (typeof oldInput !== 'undefined' && oldInput.country) ? oldInput.country : '' %>" /><br />
                         <input type="submit" value="Update Address" class="sec-btn sec-btn-orange" /><br />
                       </form>
                     </div>
@@ -165,7 +162,7 @@
                     <h4 class="h4-title mb-4">Change Password</h4>
                     <form action="/password" method="post">
                       <input type="password" placeholder="Old Password" required class="form-input" name="old_password" id="InputOldPassword" /><br />
-                      <input type="password" placeholder="New Password (min. 6 characters)" required class="form-input" name="new_password" id="InputPassword" pattern=".{6,}" title="Minimum 6 characters" /><br />
+                      <input type="password" placeholder="New Password" required class="form-input" name="new_password" id="InputPassword" title="Min 8 characters, with uppercase, lowercase, number, and special character." /><br />
                       <input type="password" placeholder="Confirm New Password" required class="form-input" name="confirmPassword" id="ConfirmInputPassword" /><br />
                       <input type="submit" value="Update Password" class="sec-btn sec-btn-orange" /><br />
                     </form>
@@ -175,8 +172,6 @@
                   <div class="tab-pane fade" id="v-pills-subscriptions" role="tabpanel" aria-labelledby="v-pills-subscriptions-tab">
                     <h4 class="h4-title mb-4">Email Subscriptions</h4>
                     <p class="mb-4">Manage your email subscription preferences here.</p>
-
-                    <!-- Promotional Emails Section -->
                     <div class="subscription-section mb-4 p-3 border rounded">
                       <h5 class="h5-title mb-3">Promotional Emails & Offers</h5>
                       <% if (typeof promotionSubscription !== 'undefined' && promotionSubscription !== null) { %>
@@ -201,13 +196,11 @@
                       </form>
                       <% } %>
                     </div>
-
                   </div>
                 </div>
               </div>
             </div>
-          </div> <!-- End of wrapper div -->
-
+          </div>
         </div>
       </section>
       <%- include('partials/footer') %>
@@ -220,79 +213,64 @@
     if (passwordForm) {
       passwordForm.addEventListener("submit", function(event) {
         const newPassword = document.getElementById("InputPassword").value;
-        const confirmPassword = document.getElementById(
-          "ConfirmInputPassword"
-        ).value;
+        const confirmPassword = document.getElementById("ConfirmInputPassword").value;
+        const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
 
         if (newPassword !== confirmPassword) {
-          event.preventDefault(); // Stop form submission
+          event.preventDefault();
           alert("New password and confirm password do not match.");
+          return;
         }
-        // Minimum length is handled by pattern attribute, but can be double-checked here if needed.
+        if (!passwordPattern.test(newPassword)) {
+          event.preventDefault();
+          alert("New password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.");
+          return;
+        }
       });
     }
 
-    // Logic to activate tab based on URL hash or query param if needed
+    // Logic to activate tab based on URL hash
     document.addEventListener('DOMContentLoaded', function() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const errorParam = urlParams.get('error');
-      const successParam = urlParams.get('success');
       let activeTabId = 'v-pills-profile-tab'; // Default
 
-      // Heuristic to determine which form might have caused an error/success
-      // This is a simple example; more robust logic might be needed depending on error/success messages
-      if (errorParam || successParam) {
-        if (document.querySelector('form[action="/password"] input[name="old_password"]')) { // Check if password fields are present
-          if ((errorParam && errorParam.toLowerCase().includes('password')) ||
-            (successParam && successParam.toLowerCase().includes('password'))) {
-            activeTabId = 'v-pills-password-tab';
-          }
-        }
-        if (document.querySelector('form[action="/address"] input[name="address_line1"]')) {
-          if ((errorParam && errorParam.toLowerCase().includes('address')) ||
-            (successParam && successParam.toLowerCase().includes('address'))) {
-            activeTabId = 'v-pills-profile-tab'; // Address is on profile tab
-          }
-        }
-        if (document.querySelector('form[action="/contact"] input[name="mobileno"]')) {
-          if ((errorParam && (errorParam.toLowerCase().includes('contact') || errorParam.toLowerCase().includes('mobile'))) ||
-            (successParam && (successParam.toLowerCase().includes('contact') || successParam.toLowerCase().includes('mobile')))) {
-            activeTabId = 'v-pills-profile-tab'; // Contact is on profile tab
-          }
-        }
-        // Add check for subscription messages
-        if (document.querySelector('form[action="/settings/update-promotion-subscription"]')) {
-          if ((errorParam && errorParam.toLowerCase().includes('subscription')) ||
-            (successParam && successParam.toLowerCase().includes('subscription')) ||
-            (errorParam && errorParam.toLowerCase().includes('subscribed')) ||
-            (successParam && successParam.toLowerCase().includes('subscribed'))) {
-            activeTabId = 'v-pills-subscriptions-tab';
-          }
-        }
-      }
-
-      // Activate tab based on URL hash first
       if (window.location.hash) {
-        const hashTabId = window.location.hash.substring(1) + "-tab"; // e.g. #v-pills-subscriptions -> v-pills-subscriptions-tab
+        const hashTabId = window.location.hash.substring(1) + "-tab";
         const hashTabElement = document.getElementById(hashTabId);
         if (hashTabElement) {
           activeTabId = hashTabId;
         }
+      } else {
+        // Fallback to query parameters if no hash (though hash is preferred from backend redirects)
+        const urlParams = new URLSearchParams(window.location.search);
+        const errorParam = urlParams.get('error'); // These are less likely now with flash
+        const successParam = urlParams.get('success'); // These are less likely now with flash
+
+        if (errorParam || successParam) {
+          // Simplified: if any error/success, and it mentions password, go to password tab
+          if ((errorParam && errorParam.toLowerCase().includes('password')) ||
+            (successParam && successParam.toLowerCase().includes('password'))) {
+            activeTabId = 'v-pills-password-tab';
+          } else if ((errorParam && errorParam.toLowerCase().includes('subscription')) ||
+            (successParam && successParam.toLowerCase().includes('subscription'))) {
+            activeTabId = 'v-pills-subscriptions-tab';
+          }
+          // Default to profile for other messages or if no specific keyword match
+        }
       }
+
 
       const activeTabElement = document.getElementById(activeTabId);
       if (activeTabElement) {
-        // Ensure Bootstrap's Tab component is initialized for the default active tab
         const tab = new bootstrap.Tab(activeTabElement);
         tab.show();
       }
 
-      // Add event listener for tab changes to update scroll height
       const tabTriggers = document.querySelectorAll('#v-pills-tab button[data-bs-toggle="pill"]');
       tabTriggers.forEach(tabTrigger => {
-        tabTrigger.addEventListener('shown.bs.tab', function() {
-          // Dispatch a resize event to allow smooth-scroll.js to update page height
+        tabTrigger.addEventListener('shown.bs.tab', function(event) {
           window.dispatchEvent(new Event('resize'));
+          // Update URL hash without adding to history
+          history.replaceState(null, null, ' ' + event.target.getAttribute('data-bs-target'));
         });
       });
     });

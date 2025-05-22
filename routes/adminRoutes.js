@@ -7,71 +7,131 @@ const { body, validationResult } = require("express-validator"); // For input va
 // --- Login/Logout Routes (No Auth Required) ---
 router.get("/login", (req, res) => {
   // If already logged in, redirect to dashboard
-  if (req.cookies.cookuid && req.cookies.cookuname) {
+  if (
+    req.cookies.cookuid &&
+    req.cookies.cookuname &&
+    req.cookies.usertype === "admin"
+  ) {
     return res.redirect("/admin/dashboard");
   }
+
+  const queryError = req.query.error; // For errors passed directly in URL
+  const queryMessage = req.query.message; // For messages passed directly in URL
+
+  // Use res.locals which are populated by your app.js middleware from req.flash()
+  const flashedError = res.locals.error;
+  const flashedSuccess = res.locals.success;
+
+  const oldInput = req.flash("oldInput")[0] || {}; // 'oldInput' uses a distinct flash key
+
+  let displayError = null;
+  if (queryError) {
+    // Priority to query parameter errors
+    displayError = queryError;
+  } else if (flashedError && flashedError.length > 0) {
+    // flashedError from res.locals.error should be an array if set by express-validator,
+    // or a string if flashed manually as a single message.
+    // The app.js middleware currently sets res.locals.error = req.flash('error'),
+    // and req.flash('error') returns an array if multiple messages were flashed for 'error'.
+    displayError = Array.isArray(flashedError)
+      ? flashedError.join(", ")
+      : flashedError;
+  }
+
+  let displayMessage = null;
+  if (queryMessage) {
+    // Priority to query parameter messages
+    displayMessage = queryMessage;
+  } else if (flashedSuccess && flashedSuccess.length > 0) {
+    // flashedSuccess from res.locals.success should be an array if multiple messages were flashed.
+    displayMessage = Array.isArray(flashedSuccess)
+      ? flashedSuccess.join(", ")
+      : flashedSuccess;
+  }
+
   res.render("admin/login", {
-    error: req.query.error || null,
-    message: req.query.message || null,
+    error: displayError, // This will be a string (comma-separated if multiple errors) or null
+    message: displayMessage, // This will be a string or null
+    oldInput: oldInput,
   });
 });
 
-router.post("/login", async (req, res) => {
+const adminLoginValidationRules = [
+  body("admin_email")
+    .isEmail()
+    .withMessage("Please enter a valid email address.")
+    .normalizeEmail(),
+  body("admin_password")
+    .notEmpty()
+    .withMessage("Password is required.")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long."),
+];
+
+router.post("/login", adminLoginValidationRules, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    req.flash(
+      "error",
+      errors.array().map((err) => err.msg)
+    );
+    req.flash("oldInput", req.body);
+    return res.redirect("/admin/login");
+  }
+
   try {
     const { admin_email, admin_password } = req.body;
     const pool = req.app.get("dbConnection");
 
-    if (!admin_email || !admin_password) {
-      return res.redirect(
-        "/admin/login?error=" +
-          encodeURIComponent("Email and password are required.")
-      );
-    }
-
     const query = "SELECT * FROM admin WHERE admin_email = ?";
-    const [results] = await pool.promise().query(query, [admin_email]); // Use await and pool.promise()
+    const [results] = await pool.promise().query(query, [admin_email]);
 
     if (results.length === 0) {
-      return res.redirect(
-        "/admin/login?error=" + encodeURIComponent("Invalid email or password.")
-      );
+      req.flash("error", "Invalid email or password.");
+      req.flash("oldInput", { admin_email }); // Only flash email back
+      return res.redirect("/admin/login");
     }
 
     const admin = results[0];
+    // Ensure admin.admin_password is the hashed password from the database
     const match = await bcrypt.compare(admin_password, admin.admin_password);
 
     if (match) {
       res.cookie("cookuid", admin.admin_id.toString(), {
         httpOnly: true,
         sameSite: "strict",
-        maxAge: 24 * 60 * 60 * 1000,
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
       });
       res.cookie("cookuname", admin.admin_name, {
         httpOnly: true,
         sameSite: "strict",
         maxAge: 24 * 60 * 60 * 1000,
       });
+      // Set a cookie to identify user type for isAdmin middleware or client-side logic
+      res.cookie("usertype", "admin", {
+        httpOnly: true, // httpOnly if only server needs it, false if client JS needs it
+        sameSite: "strict",
+        maxAge: 24 * 60 * 60 * 1000,
+      });
       res.redirect("/admin/dashboard");
     } else {
-      return res.redirect(
-        "/admin/login?error=" + encodeURIComponent("Invalid email or password.")
-      );
+      req.flash("error", "Invalid email or password.");
+      req.flash("oldInput", { admin_email }); // Only flash email back
+      return res.redirect("/admin/login");
     }
   } catch (error) {
     console.error("Admin login error:", error);
-    res.redirect(
-      "/admin/login?error=" +
-        encodeURIComponent("An unexpected error occurred.")
-    );
+    req.flash("error", "An unexpected error occurred. Please try again.");
+    return res.redirect("/admin/login");
   }
 });
 
 router.get("/logout", (req, res) => {
   res.clearCookie("cookuid");
   res.clearCookie("cookuname");
-  res.redirect(
-    "/admin/login?message=" + encodeURIComponent("Logged out successfully.")
-  );
+  res.clearCookie("usertype"); // Clear the usertype cookie
+  req.flash("success", "Logged out successfully."); // Use flash for logout message
+  res.redirect("/admin/login");
 });
 
 // --- Apply isAdmin Middleware to All Protected Routes Below ---
