@@ -16,9 +16,9 @@ function filenameToItemName(filename) {
     .join(" ");
 }
 
-// New function for manual image updates
+// Function for manual image updates
 async function manuallyUpdateImage(connection, itemName, imageFilename) {
-  const filePath = path.join(imageDir, imageFilename); // Assumes imageFilename is relative to imageDir
+  const filePath = path.join(imageDir, imageFilename);
   const mimeType = mime.lookup(filePath);
 
   if (!mimeType || !mimeType.startsWith("image/")) {
@@ -150,22 +150,20 @@ async function migrateImages() {
     console.log("Automatic image migration part completed.");
 
     // --- Manual Image Update Section ---
-    // Uncomment and modify the lines below to manually update specific images.
+    // await manuallyUpdateImage(connection, "Actual Item Name In DB", "actual-image-file.jpg");
     // Ensure the `imageFilename` is the name of the file within the `public/images/dish` directory.
     console.log("\nStarting manual image updates (if any)...");
     await manuallyUpdateImage(
       connection,
       "Prosciutto & Arugula",
       "prosciutto-arugula.jpg"
-    ); // Example
+    );
     await manuallyUpdateImage(
       connection,
       "Lemon-Lime Soda",
       "lemon-lime-soda.jpg"
     );
     await manuallyUpdateImage(connection, "Spinach & Feta", "spinach-feta.jpg");
-    // Add more calls to manuallyUpdateImage as needed:
-    // await manuallyUpdateImage(connection, "Actual Item Name In DB", "actual-image-file.jpg");
     console.log("Manual image updates (if any) completed.");
 
     console.log("Image migration process completed.");

@@ -25,7 +25,6 @@ img {
   max-width: 100%;
 }
 
-/* Hide menu toggle button on user pages */
 .user-nav-toggle {
   display: none !important;
 }
@@ -846,11 +845,9 @@ p {
 }
 /* Scroll Bar Design Ends */
 
-/* Main content top padding */
 .main-content-top-padding {
   padding-top: 80px;
 }
-/* Main content top padding ends */
 
 /* Menu Card Design Starts */
 .repeat-img {
@@ -912,12 +909,10 @@ p {
 }
 
 .menu-list-row.bydefault_show .dish-box-wp {
-  display: block !important; /* Use block for Bootstrap column compatibility and to override display:none */
-  opacity: 1 !important; /* Make items fully opaque, overriding opacity:0 */
-  visibility: visible !important; /* Explicitly set visibility to override any inherited hidden state */
-  transform: translateY(
-    0
-  ) !important; /* Reset any vertical transform, overriding transform:translateY(30px) */
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0) !important;
 }
 
 .dish-box-wp {
@@ -989,12 +984,12 @@ p {
 }
 
 .dish-title .stretched-link-custom {
-  color: inherit; /* Inherit color from parent */
-  text-decoration: none; /* Remove underline */
+  color: inherit;
+  text-decoration: none;
 }
 
 .dish-title .stretched-link-custom:hover {
-  color: #ff8243; /* Change color on hover, or your preferred hover color */
+  color: #ff8243;
 }
 
 .dish-info ul,
@@ -1058,7 +1053,7 @@ p {
   transition: 0.3s;
   background: linear-gradient(145deg, #ffc954, #ffbc00);
   box-shadow: inset 4px 4px 6px #d6a029, inset -4px -4px 6px #ffd837;
-  font-weight: bold; /* Added for bold font */
+  font-weight: bold;
 }
 
 .dish-add-btn i {
@@ -1067,13 +1062,9 @@ p {
 }
 
 .dish-add-btn:hover {
-  background: linear-gradient(
-    145deg,
-    #e67330,
-    #d8860b
-  ); /* Darker gradient on hover */
-  box-shadow: inset 4px 4px 8px #b86228, inset -4px -4px 8px #e09900; /* Adjusted shadow for darker hover */
-  color: #f0f0f0; /* Slightly off-white icon color on hover for better contrast if needed */
+  background: linear-gradient(145deg, #e67330, #d8860b);
+  box-shadow: inset 4px 4px 8px #b86228, inset -4px -4px 8px #e09900;
+  color: #f0f0f0;
 }
 /* Menu Card Design Ends*/
 
@@ -2004,8 +1995,7 @@ p {
 
 .admin-sidebar ul li a:hover i,
 .admin-sidebar ul li a.active i {
-  /* Add this rule */
-  color: #fff !important; /* Ensure icon color is white and overrides other styles */
+  color: #fff !important;
 }
 
 .sidebar-logout {
@@ -2078,12 +2068,10 @@ body.admin-active {
     height: auto !important;
     overflow: visible !important;
   }
-
-  /* The actual scrolling container should be admin-main-content */
 }
 
 #cart-body td a:hover {
-  color: orange !important; /* Ensure this overrides other styles */
+  color: orange !important;
 }
 
 /* --- Promotion Banner Slider Styles --- */
@@ -2096,7 +2084,7 @@ body.admin-active {
 
 .promotion-banner-slider {
   position: relative;
-  padding-bottom: 90px; /* Added padding to make space for pagination INSIDE the slider */
+  padding-bottom: 90px;
 }
 
 .promotion-banner-slider .swiper-slide img {
@@ -2108,7 +2096,6 @@ body.admin-active {
 
 /* Styling for Swiper Pagination for Promotion Banner */
 .promotion-banner-slider .swiper-pagination {
-  /* Visual styles from general .swiper-pagination */
   padding: 10px 20px;
   display: inline-block;
   border-radius: 60px;
@@ -2117,18 +2104,15 @@ body.admin-active {
   max-width: fit-content;
   color: #000;
 
-  /* Positioning: Centered and within the slider's bottom padding */
   position: absolute;
   left: 50% !important;
   transform: translateX(-50%);
-  bottom: 10px !important; /* Positioned 10px from the bottom of the slider's new padded area */
-  /* This should place it ~40px below the images */
+  bottom: 10px !important;
   width: auto;
   z-index: 10;
 }
 
 .promotion-banner-slider .swiper-pagination-bullet {
-  /* Visual styles from general .swiper-pagination-bullet */
   width: 10px;
   height: 10px;
   margin: 0px 10px !important;
@@ -2139,7 +2123,6 @@ body.admin-active {
 }
 
 .promotion-banner-slider .swiper-pagination-bullet-active {
-  /* Visual styles from general .swiper-pagination-bullet-active */
   background-color: #fcbc30;
   width: 30px;
   opacity: 1;

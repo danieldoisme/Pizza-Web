@@ -41,7 +41,7 @@ CREATE TABLE `admin` (
 
 LOCK TABLES `admin` WRITE;
 /*!40000 ALTER TABLE `admin` DISABLE KEYS */;
-INSERT INTO `admin` VALUES (1,'SA','sa@example.com','$2b$10$CQZxid9ooPeD5Vcp7WZPW.c/avSdvdwQnTec.Wkjfqa2YlTsBtBGq','0987654321');
+INSERT INTO `admin` VALUES (1,'SA','sa@example.com','$2b$10$CQZxid9ooPeD5Vcp7WZPW.c/avSdvdwQnTec.Wkjfqa2YlTsBtBGq','0987654321'); -- password: 12312345
 /*!40000 ALTER TABLE `admin` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -390,7 +390,6 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Do Duc Thanh','48 Giai Phong Lane, Hai Ba Trung District, Hanoi, 100000, Vietnam','thanhdd@stu.ptit.edu.vn','$2b$10$jXtOSPTM4EdtSnjX8.1s6Oj2z8Nhwk5ej5JV3UZCLZv6g0G5qcAxG','0973586115', NOW());
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 

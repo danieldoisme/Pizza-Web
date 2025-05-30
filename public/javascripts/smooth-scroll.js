@@ -17,9 +17,6 @@ const scrollerTargetElement = document.querySelector("#js-scroll-content");
 
 // smooth scroll logic for #js-scroll-content
 if (!IS_ADMIN_PAGE && scrollerTargetElement) {
-  // var html = document.documentElement;
-  // var body = document.body;
-
   var scroller = {
     target: scrollerTargetElement,
     ease: 0.08, // <= scroll speed
@@ -124,9 +121,6 @@ if (!IS_ADMIN_PAGE && scrollerTargetElement) {
 const scrolltotopButton = document.querySelector(".scrolltop");
 
 if (scrolltotopButton) {
-  // Move the button to be a direct child of <body>
-  // This ensures position:fixed works relative to the viewport,
-  // escaping any transformed parent containers like #js-scroll-content.
   document.body.appendChild(scrolltotopButton);
 
   scrolltotopButton.addEventListener("click", () => {
@@ -155,9 +149,6 @@ if (scrolltotopButton) {
   function toggleScrollTopButtonVisibility() {
     const currentScrollY = window.pageYOffset;
     const customScrollerActive = !IS_ADMIN_PAGE && !!scrollerTargetElement;
-    // console.log( // Keeping logs for debugging if needed, can be commented out later
-    //   `smooth-scroll.js: toggleScrollTopButtonVisibility. window.pageYOffset: ${currentScrollY}, CustomScrollerActive: ${customScrollerActive}`
-    // );
 
     if (currentScrollY > 50) {
       // console.log("smooth-scroll.js: Attempting to show scroll-to-top button.");
@@ -168,7 +159,6 @@ if (scrolltotopButton) {
     }
   }
 
-  // Ensure the event listener is added and the initial check is performed reliably
   if (
     document.readyState === "complete" ||
     (document.readyState !== "loading" && !document.documentElement.doScroll)
@@ -184,7 +174,7 @@ if (scrolltotopButton) {
         "smooth-scroll.js: DOMContentLoaded. Initializing scroll-to-top visibility logic."
       );
       window.addEventListener("scroll", toggleScrollTopButtonVisibility);
-      toggleScrollTopButtonVisibility(); // Initial check
+      toggleScrollTopButtonVisibility();
     });
   }
 } else {
