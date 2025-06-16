@@ -21,16 +21,8 @@ router.get("/login", (req, res) => {
   // Use res.locals which are populated by your app.js middleware from req.flash()
   const flashedError = res.locals.error;
   const flashedSuccess = res.locals.success;
-  
-  // Kiểm tra nếu req.flash tồn tại
-  let oldInput = {};
-  try {
-    if (typeof req.flash === 'function') {
-      oldInput = req.flash("oldInput")[0] || {};
-    }
-  } catch (e) {
-    console.log("Flash middleware not available");
-  }
+
+  const oldInput = req.flash("oldInput")[0] || {}; // 'oldInput' uses a distinct flash key
 
   let displayError = null;
   if (queryError) {
@@ -76,38 +68,14 @@ const adminLoginValidationRules = [
     .withMessage("Password must be at least 8 characters long."),
 ];
 
-// Helper function to safely use flash
-function safeFlash(req, key, value) {
-  try {
-    if (typeof req.flash === 'function') {
-      if (value === undefined) {
-        return req.flash(key);
-      }
-      return req.flash(key, value);
-    }
-  } catch (e) {
-    console.log("Flash middleware not available");
-  }
-  return value === undefined ? [] : null;
-}
-
 router.post("/login", adminLoginValidationRules, async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    try {
-      if (typeof req.flash === 'function') {
-        req.flash(
-          "error",
-          errors.array().map((err) => err.msg)
-        );
-        req.flash("oldInput", req.body);
-      }
-    } catch (e) {
-      console.log("Flash middleware not available");
-      return res.redirect(
-        "/admin/login?error=" + encodeURIComponent(errors.array().map((err) => err.msg).join(", "))
-      );
-    }
+    req.flash(
+      "error",
+      errors.array().map((err) => err.msg)
+    );
+    req.flash("oldInput", req.body);
     return res.redirect("/admin/login");
   }
 
@@ -115,36 +83,12 @@ router.post("/login", adminLoginValidationRules, async (req, res) => {
     const { admin_email, admin_password } = req.body;
     const pool = req.app.get("dbConnection");
 
-    if (!admin_email || !admin_password) {
-      try {
-        if (typeof req.flash === 'function') {
-          req.flash("error", "Invalid email or password.");
-          req.flash("oldInput", { admin_email });
-        }
-      } catch (e) {
-        console.log("Flash middleware not available");
-        return res.redirect(
-          "/admin/login?error=" + encodeURIComponent("Invalid email or password.")
-        );
-      }
-      return res.redirect("/admin/login");
-    }
-
     const query = "SELECT * FROM admin WHERE admin_email = ?";
     const [results] = await pool.promise().query(query, [admin_email]);
 
     if (results.length === 0) {
-      try {
-        if (typeof req.flash === 'function') {
-          req.flash("error", "Invalid email or password.");
-          req.flash("oldInput", { admin_email });
-        }
-      } catch (e) {
-        console.log("Flash middleware not available");
-        return res.redirect(
-          "/admin/login?error=" + encodeURIComponent("Invalid email or password.")
-        );
-      }
+      req.flash("error", "Invalid email or password.");
+      req.flash("oldInput", { admin_email }); // Only flash email back
       return res.redirect("/admin/login");
     }
 
@@ -171,31 +115,13 @@ router.post("/login", adminLoginValidationRules, async (req, res) => {
       });
       res.redirect("/admin/dashboard");
     } else {
-      try {
-        if (typeof req.flash === 'function') {
-          req.flash("error", "Invalid email or password.");
-          req.flash("oldInput", { admin_email });
-        }
-      } catch (e) {
-        console.log("Flash middleware not available");
-        return res.redirect(
-          "/admin/login?error=" + encodeURIComponent("Invalid email or password.")
-        );
-      }
+      req.flash("error", "Invalid email or password.");
+      req.flash("oldInput", { admin_email }); // Only flash email back
       return res.redirect("/admin/login");
     }
   } catch (error) {
     console.error("Admin login error:", error);
-    try {
-      if (typeof req.flash === 'function') {
-        req.flash("error", "An unexpected error occurred. Please try again.");
-      }
-    } catch (e) {
-      console.log("Flash middleware not available");
-      return res.redirect(
-        "/admin/login?error=" + encodeURIComponent("An unexpected error occurred. Please try again.")
-      );
-    }
+    req.flash("error", "An unexpected error occurred. Please try again.");
     return res.redirect("/admin/login");
   }
 });
@@ -204,16 +130,7 @@ router.get("/logout", (req, res) => {
   res.clearCookie("cookuid");
   res.clearCookie("cookuname");
   res.clearCookie("usertype"); // Clear the usertype cookie
-  try {
-    if (typeof req.flash === 'function') {
-      req.flash("success", "Logged out successfully."); // Use flash for logout message
-    }
-  } catch (e) {
-    console.log("Flash middleware not available");
-    return res.redirect(
-      "/admin/login?message=" + encodeURIComponent("Logged out successfully.")
-    );
-  }
+  req.flash("success", "Logged out successfully."); // Use flash for logout message
   res.redirect("/admin/login");
 });
 
