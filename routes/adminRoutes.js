@@ -7,18 +7,6 @@ const { body, validationResult } = require("express-validator"); // For input va
 // --- Login/Logout Routes (No Auth Required) ---
 router.get("/login", (req, res) => {
   // If already logged in, redirect to dashboard
-  if (req.cookies.cookuid && req.cookies.cookuname) {
-    return res.redirect("/admin/dashboard");
-  }
-  res.render("admin/login", {
-    error: req.query.error || null,
-    message: req.query.message || null,
-  });
-});
-
-// Admin Registration Page
-router.get("/register", (req, res) => {
-  // If already logged in, redirect to dashboard
   if (
     req.cookies.cookuid &&
     req.cookies.cookuname &&
@@ -33,8 +21,16 @@ router.get("/register", (req, res) => {
   // Use res.locals which are populated by your app.js middleware from req.flash()
   const flashedError = res.locals.error;
   const flashedSuccess = res.locals.success;
-
-  const oldInput = req.flash("oldInput")[0] || {}; // 'oldInput' uses a distinct flash key
+  
+  // Kiểm tra nếu req.flash tồn tại
+  let oldInput = {};
+  try {
+    if (typeof req.flash === 'function') {
+      oldInput = req.flash("oldInput")[0] || {};
+    }
+  } catch (e) {
+    console.log("Flash middleware not available");
+  }
 
   let displayError = null;
   if (queryError) {
@@ -68,151 +64,6 @@ router.get("/register", (req, res) => {
   });
 });
 
-// Admin Registration Page
-router.get("/register", (req, res) => {
-  // If already logged in, redirect to dashboard
-  if (
-    req.cookies.cookuid &&
-    req.cookies.cookuname &&
-    req.cookies.usertype === "admin"
-  ) {
-    return res.redirect("/admin/dashboard");
-  }
-
-  const queryError = req.query.error;
-  const queryMessage = req.query.message;
-  const flashedError = res.locals.error;
-  const flashedSuccess = res.locals.success;
-  const oldInput = req.flash("oldInput")[0] || {};
-
-  let displayError = null;
-  if (queryError) {
-    displayError = queryError;
-  } else if (flashedError && flashedError.length > 0) {
-    displayError = Array.isArray(flashedError)
-      ? flashedError.join(", ")
-      : flashedError;
-  }
-
-  let displayMessage = null;
-  if (queryMessage) {
-    displayMessage = queryMessage;
-  } else if (flashedSuccess && flashedSuccess.length > 0) {
-    displayMessage = Array.isArray(flashedSuccess)
-      ? flashedSuccess.join(", ")
-      : flashedSuccess;
-  }
-
-  res.render("admin/register", {
-    error: displayError,
-    message: displayMessage,
-    oldInput: oldInput,
-  });
-});
-
-// Admin Registration Validation Rules
-const adminRegisterValidationRules = [
-  body("admin_name")
-    .notEmpty()
-    .withMessage("Admin name is required.")
-    .trim()
-    .escape(),
-  body("admin_email")
-    .isEmail()
-    .withMessage("Please enter a valid email address.")
-    .normalizeEmail(),
-  body("admin_mobile")
-    .notEmpty()
-    .withMessage("Mobile number is required.")
-    .isMobilePhone("any", { strictMode: false })
-    .withMessage("Invalid mobile number.")
-    .trim()
-    .escape(),
-  body("admin_password")
-    .isLength({ min: 8 })
-    .withMessage("Password must be at least 8 characters long.")
-    .matches(/[A-Z]/)
-    .withMessage("Password must contain at least one uppercase letter.")
-    .matches(/[a-z]/)
-    .withMessage("Password must contain at least one lowercase letter.")
-    .matches(/[0-9]/)
-    .withMessage("Password must contain at least one number.")
-    .matches(/[\W_]/)
-    .withMessage(
-      "Password must contain at least one special character (e.g., !@#$%^&*)."
-    ),
-  body("admin_confirm_password").custom((value, { req }) => {
-    if (value !== req.body.admin_password) {
-      throw new Error("Passwords do not match.");
-    }
-    return true;
-  }),
-  body("admin_code").custom((value) => {
-    // Mã đăng ký admin được xác định trước
-    const adminRegisterCode = process.env.ADMIN_REGISTER_CODE || "PizzazzAdmin2024";
-    if (value !== adminRegisterCode) {
-      throw new Error("Invalid admin registration code.");
-    }
-    return true;
-  }),
-];
-
-// Admin Registration Handler
-router.post("/register", adminRegisterValidationRules, async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    req.flash(
-      "error",
-      errors.array().map((err) => err.msg)
-    );
-    req.flash("oldInput", req.body);
-    return res.redirect("/admin/register");
-  }
-
-  const { admin_name, admin_email, admin_mobile, admin_password } = req.body;
-  const pool = req.app.get("dbConnection");
-
-  try {
-    // Kiểm tra email đã tồn tại chưa
-    const [existingAdmin] = await pool.promise().query(
-      "SELECT * FROM admin WHERE admin_email = ?",
-      [admin_email]
-    );
-
-    if (existingAdmin.length > 0) {
-      req.flash("error", "Email đã được sử dụng. Vui lòng chọn email khác.");
-      req.flash("oldInput", {
-        admin_name,
-        admin_email,
-        admin_mobile
-      });
-      return res.redirect("/admin/register");
-    }
-
-    // Mã hóa mật khẩu
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(admin_password, saltRounds);
-
-    // Thêm admin mới vào cơ sở dữ liệu
-    await pool.promise().query(
-      "INSERT INTO admin (admin_name, admin_email, admin_password, admin_mobile) VALUES (?, ?, ?, ?)",
-      [admin_name, admin_email, hashedPassword, admin_mobile]
-    );
-
-    req.flash("success", "Đăng ký tài khoản admin thành công. Vui lòng đăng nhập.");
-    return res.redirect("/admin/login");
-  } catch (error) {
-    console.error("Admin registration error:", error);
-    req.flash("error", "Đã xảy ra lỗi trong quá trình đăng ký. Vui lòng thử lại.");
-    req.flash("oldInput", {
-      admin_name,
-      admin_email,
-      admin_mobile
-    });
-    return res.redirect("/admin/register");
-  }
-});
-
 const adminLoginValidationRules = [
   body("admin_email")
     .isEmail()
@@ -225,14 +76,38 @@ const adminLoginValidationRules = [
     .withMessage("Password must be at least 8 characters long."),
 ];
 
+// Helper function to safely use flash
+function safeFlash(req, key, value) {
+  try {
+    if (typeof req.flash === 'function') {
+      if (value === undefined) {
+        return req.flash(key);
+      }
+      return req.flash(key, value);
+    }
+  } catch (e) {
+    console.log("Flash middleware not available");
+  }
+  return value === undefined ? [] : null;
+}
+
 router.post("/login", adminLoginValidationRules, async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    req.flash(
-      "error",
-      errors.array().map((err) => err.msg)
-    );
-    req.flash("oldInput", req.body);
+    try {
+      if (typeof req.flash === 'function') {
+        req.flash(
+          "error",
+          errors.array().map((err) => err.msg)
+        );
+        req.flash("oldInput", req.body);
+      }
+    } catch (e) {
+      console.log("Flash middleware not available");
+      return res.redirect(
+        "/admin/login?error=" + encodeURIComponent(errors.array().map((err) => err.msg).join(", "))
+      );
+    }
     return res.redirect("/admin/login");
   }
 
@@ -241,56 +116,105 @@ router.post("/login", adminLoginValidationRules, async (req, res) => {
     const pool = req.app.get("dbConnection");
 
     if (!admin_email || !admin_password) {
-      return res.redirect(
-        "/admin/login?error=" +
-          encodeURIComponent("Email and password are required.")
-      );
+      try {
+        if (typeof req.flash === 'function') {
+          req.flash("error", "Invalid email or password.");
+          req.flash("oldInput", { admin_email });
+        }
+      } catch (e) {
+        console.log("Flash middleware not available");
+        return res.redirect(
+          "/admin/login?error=" + encodeURIComponent("Invalid email or password.")
+        );
+      }
+      return res.redirect("/admin/login");
     }
 
     const query = "SELECT * FROM admin WHERE admin_email = ?";
-    const [results] = await pool.promise().query(query, [admin_email]); // Use await and pool.promise()
+    const [results] = await pool.promise().query(query, [admin_email]);
 
     if (results.length === 0) {
-      return res.redirect(
-        "/admin/login?error=" + encodeURIComponent("Invalid email or password.")
-      );
+      try {
+        if (typeof req.flash === 'function') {
+          req.flash("error", "Invalid email or password.");
+          req.flash("oldInput", { admin_email });
+        }
+      } catch (e) {
+        console.log("Flash middleware not available");
+        return res.redirect(
+          "/admin/login?error=" + encodeURIComponent("Invalid email or password.")
+        );
+      }
+      return res.redirect("/admin/login");
     }
 
     const admin = results[0];
+    // Ensure admin.admin_password is the hashed password from the database
     const match = await bcrypt.compare(admin_password, admin.admin_password);
 
     if (match) {
       res.cookie("cookuid", admin.admin_id.toString(), {
         httpOnly: true,
         sameSite: "strict",
-        maxAge: 24 * 60 * 60 * 1000,
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
       });
       res.cookie("cookuname", admin.admin_name, {
         httpOnly: true,
         sameSite: "strict",
         maxAge: 24 * 60 * 60 * 1000,
       });
+      // Set a cookie to identify user type for isAdmin middleware or client-side logic
+      res.cookie("usertype", "admin", {
+        httpOnly: true, // httpOnly if only server needs it, false if client JS needs it
+        sameSite: "strict",
+        maxAge: 24 * 60 * 60 * 1000,
+      });
       res.redirect("/admin/dashboard");
     } else {
-      return res.redirect(
-        "/admin/login?error=" + encodeURIComponent("Invalid email or password.")
-      );
+      try {
+        if (typeof req.flash === 'function') {
+          req.flash("error", "Invalid email or password.");
+          req.flash("oldInput", { admin_email });
+        }
+      } catch (e) {
+        console.log("Flash middleware not available");
+        return res.redirect(
+          "/admin/login?error=" + encodeURIComponent("Invalid email or password.")
+        );
+      }
+      return res.redirect("/admin/login");
     }
   } catch (error) {
     console.error("Admin login error:", error);
-    res.redirect(
-      "/admin/login?error=" +
-        encodeURIComponent("An unexpected error occurred.")
-    );
+    try {
+      if (typeof req.flash === 'function') {
+        req.flash("error", "An unexpected error occurred. Please try again.");
+      }
+    } catch (e) {
+      console.log("Flash middleware not available");
+      return res.redirect(
+        "/admin/login?error=" + encodeURIComponent("An unexpected error occurred. Please try again.")
+      );
+    }
+    return res.redirect("/admin/login");
   }
 });
 
 router.get("/logout", (req, res) => {
   res.clearCookie("cookuid");
   res.clearCookie("cookuname");
-  res.redirect(
-    "/admin/login?message=" + encodeURIComponent("Logged out successfully.")
-  );
+  res.clearCookie("usertype"); // Clear the usertype cookie
+  try {
+    if (typeof req.flash === 'function') {
+      req.flash("success", "Logged out successfully."); // Use flash for logout message
+    }
+  } catch (e) {
+    console.log("Flash middleware not available");
+    return res.redirect(
+      "/admin/login?message=" + encodeURIComponent("Logged out successfully.")
+    );
+  }
+  res.redirect("/admin/login");
 });
 
 // --- Apply isAdmin Middleware to All Protected Routes Below ---
@@ -384,10 +308,56 @@ router.get("/menu", async (req, res) => {
   }
 });
 
-// Adapted POST /admin/addFood
-router.post("/addFood", async (req, res) => {
-  // Changed to async
-  const pool = req.app.get("dbConnection"); // Changed to pool
+const addFoodValidationRules = [
+  body("item_name")
+    .notEmpty()
+    .withMessage("Item name is required.")
+    .trim()
+    .isLength({ min: 2, max: 100 }),
+  body("item_type")
+    .notEmpty()
+    .withMessage("Item type is required.")
+    .trim()
+    .isLength({ max: 50 }),
+  body("item_category")
+    .notEmpty()
+    .withMessage("Item category is required.")
+    .trim()
+    .isLength({ max: 50 }),
+  body("item_serving")
+    .notEmpty()
+    .withMessage("Serving size is required.")
+    .trim()
+    .isLength({ max: 50 }),
+  body("item_calories")
+    .isInt({ min: 0 })
+    .withMessage("Calories must be a non-negative integer."),
+  body("item_price")
+    .isFloat({ min: 0 }) // Changed precision
+    .withMessage(
+      "Price must be a non-negative number." // Simplified message
+    ),
+  body("item_description_long")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ max: 500 }),
+];
+
+router.post("/addFood", addFoodValidationRules, async (req, res) => {
+  const pool = req.app.get("dbConnection"); // <--- ADD THIS LINE
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const errorMessages = errors
+      .array()
+      .map((err) => err.msg)
+      .join(", ");
+    // Consider flashing old input as well if you want to repopulate the form
+    return res.redirect(
+      "/admin/menu?error=" +
+        encodeURIComponent(`Validation failed: ${errorMessages}`)
+    );
+  }
+
   const {
     item_name,
     item_type,
@@ -401,28 +371,43 @@ router.post("/addFood", async (req, res) => {
   let imageBuffer = null;
   let imageMimeType = null;
 
+  const MAX_IMG_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_IMG_TYPES = [
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+  ];
+
   if (req.files && req.files.item_img && req.files.item_img.data) {
     const foodImage = req.files.item_img;
+
+    if (foodImage.size === 0) {
+      // Check if file is empty
+      return res.redirect(
+        "/admin/menu?error=" + encodeURIComponent("Food image cannot be empty.")
+      );
+    }
+    if (foodImage.size > MAX_IMG_SIZE) {
+      return res.redirect(
+        "/admin/menu?error=" +
+          encodeURIComponent("Food image is too large (max 5MB).")
+      );
+    }
+    if (!ALLOWED_IMG_TYPES.includes(foodImage.mimetype)) {
+      return res.redirect(
+        "/admin/menu?error=" +
+          encodeURIComponent(
+            "Invalid food image file type. Allowed: JPG, PNG, GIF, WEBP."
+          )
+      );
+    }
+
     imageBuffer = foodImage.data;
     imageMimeType = foodImage.mimetype;
   } else {
     return res.redirect(
       "/admin/menu?error=" + encodeURIComponent("Food image is required.")
-    );
-  }
-
-  if (
-    !item_name ||
-    !item_type ||
-    !item_category ||
-    !item_serving ||
-    !item_calories ||
-    !item_price ||
-    !imageBuffer
-  ) {
-    return res.redirect(
-      "/admin/menu?error=" +
-        encodeURIComponent("All fields and image are required.")
     );
   }
 
@@ -490,11 +475,56 @@ router.get("/api/food/:itemId", async (req, res) => {
   }
 });
 
-// Adapted POST /admin/editFood
-router.post("/editFood/:itemId", async (req, res) => {
-  // Changed to async
-  const pool = req.app.get("dbConnection"); // Changed to pool
-  const itemId = req.params.itemId;
+const editFoodValidationRules = [
+  body("item_name")
+    .notEmpty()
+    .withMessage("Item name is required.")
+    .trim()
+    .isLength({ min: 2, max: 100 }),
+  body("item_type")
+    .notEmpty()
+    .withMessage("Item type is required.")
+    .trim()
+    .isLength({ max: 50 }),
+  body("item_category")
+    .notEmpty()
+    .withMessage("Item category is required.")
+    .trim()
+    .isLength({ max: 50 }),
+  body("item_serving")
+    .notEmpty()
+    .withMessage("Serving size is required.")
+    .trim()
+    .isLength({ max: 50 }),
+  body("item_calories")
+    .isInt({ min: 0 })
+    .withMessage("Calories must be a non-negative integer."),
+  body("item_price")
+    .isFloat({ min: 0 }) // Changed precision
+    .withMessage(
+      "Price must be a non-negative number." // Simplified message
+    ),
+  body("item_description_long")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ max: 500 }),
+];
+
+router.post("/editFood/:itemId", editFoodValidationRules, async (req, res) => {
+  const pool = req.app.get("dbConnection"); // <--- ADD THIS LINE
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const errorMessages = errors
+      .array()
+      .map((err) => err.msg)
+      .join(", ");
+    return res.redirect(
+      `/admin/menu?error=${encodeURIComponent(
+        `Validation failed: ${errorMessages}`
+      )}&editItemId=${req.params.itemId}`
+    ); // Keep itemId for potential repopulation
+  }
+
   const {
     item_name,
     item_type,
@@ -504,34 +534,42 @@ router.post("/editFood/:itemId", async (req, res) => {
     item_price,
     item_description_long,
   } = req.body;
+  const itemId = req.params.itemId;
 
   let imageBuffer = null;
   let imageMimeType = null;
   let imageChanged = false;
 
+  const MAX_IMG_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_IMG_TYPES = [
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+  ];
+
   if (req.files && req.files.item_img && req.files.item_img.data) {
     const foodImage = req.files.item_img;
     if (foodImage.size > 0) {
       // Check if a new file was actually uploaded
+      if (foodImage.size > MAX_IMG_SIZE) {
+        return res.redirect(
+          `/admin/menu?error=${encodeURIComponent(
+            "Updated food image is too large (max 5MB)."
+          )}&itemId=${itemId}`
+        );
+      }
+      if (!ALLOWED_IMG_TYPES.includes(foodImage.mimetype)) {
+        return res.redirect(
+          `/admin/menu?error=${encodeURIComponent(
+            "Invalid updated food image file type. Allowed: JPG, PNG, GIF, WEBP."
+          )}&itemId=${itemId}`
+        );
+      }
       imageBuffer = foodImage.data;
       imageMimeType = foodImage.mimetype;
       imageChanged = true;
     }
-  }
-
-  if (
-    !item_name ||
-    !item_type ||
-    !item_category ||
-    !item_serving ||
-    !item_calories ||
-    !item_price
-  ) {
-    return res.redirect(
-      `/admin/menu?error=${encodeURIComponent(
-        "All fields are required."
-      )}&itemId=${itemId}`
-    );
   }
 
   let query;
@@ -550,7 +588,7 @@ router.post("/editFood/:itemId", async (req, res) => {
       item_description_long || null,
       imageBuffer,
       imageMimeType,
-      itemId,
+      req.params.itemId,
     ];
   } else {
     query =
@@ -563,7 +601,7 @@ router.post("/editFood/:itemId", async (req, res) => {
       parseInt(item_calories),
       parseFloat(item_price),
       item_description_long || null,
-      itemId,
+      req.params.itemId,
     ];
   }
 
@@ -579,13 +617,13 @@ router.post("/editFood/:itemId", async (req, res) => {
       return res.redirect(
         `/admin/menu?error=${encodeURIComponent(
           "Image file is too large. Please upload a smaller image."
-        )}&itemId=${itemId}`
+        )}&itemId=${req.params.itemId}`
       );
     }
     return res.redirect(
       `/admin/menu?error=${encodeURIComponent(
         "Database error updating food."
-      )}&itemId=${itemId}`
+      )}&itemId=${req.params.itemId}`
     );
   }
 });
@@ -624,9 +662,36 @@ router.get("/ordersManagement", async (req, res) => {
   const connection = req.app.get("dbConnection");
   const adminName = req.cookies.cookuname;
 
+  const ALLOWED_ORDER_STATUSES = [
+    "",
+    "Pending",
+    "Processing",
+    "Dispatched",
+    "Delivered",
+    "Cancelled",
+  ]; // Add "" for 'All'
+  const ALLOWED_PAYMENT_STATUSES = [
+    "",
+    "Unpaid",
+    "Paid",
+    "Failed",
+    "Pending Payment",
+    "Refunded",
+  ]; // Add "" for 'All'
+
   // Filters
-  const order_status_filter = req.query.order_status_filter || "";
-  const payment_status_filter = req.query.payment_status_filter || "";
+  let order_status_filter = req.query.order_status_filter || "";
+  if (!ALLOWED_ORDER_STATUSES.includes(order_status_filter)) {
+    // console.warn(`Invalid order_status_filter received: ${req.query.order_status_filter}`); // Optional: log invalid attempts
+    order_status_filter = ""; // Default to 'All' or handle as an error
+  }
+
+  let payment_status_filter = req.query.payment_status_filter || "";
+  if (!ALLOWED_PAYMENT_STATUSES.includes(payment_status_filter)) {
+    // console.warn(`Invalid payment_status_filter received: ${req.query.payment_status_filter}`);
+    payment_status_filter = ""; // Default to 'All'
+  }
+
   const search_user_filter = req.query.search_user_filter || "";
   // Future: date_from_filter, date_to_filter
 
@@ -783,7 +848,7 @@ router.post("/order/set-delivered-admin/:order_id", async (req, res) => {
 
   let transactionConnection;
   try {
-    transactionConnection = await pool.getConnection(); // Get a connection for transaction
+    transactionConnection = await pool.promise().getConnection(); // Changed to use pool.promise().getConnection()
     await transactionConnection.beginTransaction();
 
     const [updateResult] = await transactionConnection.query(
@@ -808,7 +873,16 @@ router.post("/order/set-delivered-admin/:order_id", async (req, res) => {
       );
     }
   } catch (err) {
-    if (transactionConnection) await transactionConnection.rollback();
+    if (transactionConnection) {
+      try {
+        await transactionConnection.rollback();
+      } catch (rollbackError) {
+        console.error(
+          `Error rolling back transaction for order ${order_id} delivery:`,
+          rollbackError
+        );
+      }
+    }
     console.error("Error setting order to delivered:", err);
     res.redirect(
       "/admin/ordersManagement?error=" +
@@ -821,8 +895,7 @@ router.post("/order/set-delivered-admin/:order_id", async (req, res) => {
 
 // NEW ROUTE: Admin to set order to Dispatched
 router.post("/order/set-dispatched/:order_id", async (req, res) => {
-  // Make async
-  const pool = req.app.get("dbConnection"); // Use pool
+  const pool = req.app.get("dbConnection");
   const order_id = req.params.order_id;
   const adminId = req.cookies.cookuid;
 
@@ -833,7 +906,7 @@ router.post("/order/set-dispatched/:order_id", async (req, res) => {
 
   let transactionConnection;
   try {
-    transactionConnection = await pool.getConnection();
+    transactionConnection = await pool.promise().getConnection(); // Changed to use pool.promise().getConnection()
     await transactionConnection.beginTransaction();
 
     const [updateResult] = await transactionConnection.query(
@@ -846,26 +919,42 @@ router.post("/order/set-dispatched/:order_id", async (req, res) => {
       await transactionConnection.commit();
       res.redirect(
         "/admin/ordersManagement?message=" +
-          encodeURIComponent(`Order ${order_id} set to Dispatched.`)
+          encodeURIComponent(
+            `Order #${order_id} has been marked as Dispatched.`
+          )
       );
     } else {
       await transactionConnection.rollback();
       res.redirect(
         "/admin/ordersManagement?error=" +
           encodeURIComponent(
-            `Order ${order_id} could not be set to Dispatched. It may not be in a 'Pending' or 'Processing' state, or was already actioned.`
+            `Order #${order_id} could not be set to Dispatched. It may not be in a 'Pending' or 'Processing' state, or was already actioned.`
           )
       );
     }
   } catch (err) {
-    if (transactionConnection) await transactionConnection.rollback();
-    console.error("Error setting order to dispatched:", err);
+    if (transactionConnection) {
+      try {
+        await transactionConnection.rollback();
+      } catch (rollbackError) {
+        // Log rollback error but proceed to inform user of the main error
+        console.error(
+          `Error rolling back transaction for order ${order_id} dispatch:`,
+          rollbackError
+        );
+      }
+    }
+    console.error(`Error setting order ${order_id} to dispatched:`, err);
     res.redirect(
       "/admin/ordersManagement?error=" +
-        encodeURIComponent("Database error setting status to Dispatched.")
+        encodeURIComponent(
+          `Database error setting order #${order_id} to Dispatched. Please try again.`
+        ) // User-friendly message
     );
   } finally {
-    if (transactionConnection) transactionConnection.release();
+    if (transactionConnection) {
+      transactionConnection.release();
+    }
   }
 });
 
@@ -1154,12 +1243,38 @@ router.get("/api/banner/:banner_id", async (req, res) => {
   }
 });
 
-// POST /admin/banners/upload - Handle new banner upload
-router.post("/banners/upload", async (req, res) => {
-  const connection = req.app.get("dbConnection");
-  const { alt_text, sort_order, is_active } = req.body;
+const bannerValidationRules = [
+  body("alt_text")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ max: 255 })
+    .withMessage("Alt text cannot exceed 255 characters."),
+  body("sort_order")
+    .optional({ checkFalsy: true })
+    .isInt({ min: 0 })
+    .withMessage("Sort order must be a non-negative integer."),
+  // is_active is handled by checkbox logic, no specific validator needed unless you want to ensure it's boolean-like
+];
 
-  if (!req.files || !req.files.banner_image) {
+// POST /admin/banners/upload - Handle new banner upload
+router.post("/banners/upload", bannerValidationRules, async (req, res) => {
+  const connection = req.app.get("dbConnection");
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const errorMessages = errors
+      .array()
+      .map((err) => err.msg)
+      .join(", ");
+    return res.redirect(
+      "/admin/banners?error=" +
+        encodeURIComponent(`Validation failed: ${errorMessages}`)
+    );
+  }
+
+  const { alt_text, sort_order, is_active } = req.body; // <--- ADD THIS LINE
+
+  // Check for banner image
+  if (!req.files || !req.files.banner_image || !req.files.banner_image.data) {
     return res.redirect(
       "/admin/banners?error=" + encodeURIComponent("Banner image is required.")
     );
@@ -1189,15 +1304,13 @@ router.post("/banners/upload", async (req, res) => {
   try {
     const query =
       "INSERT INTO promotion_banners (image_blob, image_mimetype, alt_text, sort_order, is_active) VALUES (?, ?, ?, ?, ?)";
-    await connection
-      .promise()
-      .query(query, [
-        imageBuffer,
-        imageMimeType,
-        alt_text || null,
-        parseInt(sort_order) || 0,
-        is_active === "on" || is_active === "true" ? 1 : 0,
-      ]);
+    await connection.promise().query(query, [
+      imageBuffer,
+      imageMimeType,
+      alt_text || null, // Now alt_text will be defined
+      parseInt(sort_order) || 0, // Now sort_order will be defined
+      is_active === "on" || is_active === "true" ? 1 : 0, // Now is_active will be defined
+    ]);
     res.redirect(
       "/admin/banners?message=" +
         encodeURIComponent("Banner uploaded successfully!")
@@ -1218,92 +1331,108 @@ router.post("/banners/upload", async (req, res) => {
 });
 
 // POST /admin/banners/edit/:banner_id - Handle banner update
-router.post("/banners/edit/:banner_id", async (req, res) => {
-  const connection = req.app.get("dbConnection");
-  const { banner_id } = req.params;
-  const { alt_text, sort_order, is_active } = req.body;
-
-  let imageBuffer = null;
-  let imageMimeType = null;
-  let updateImage = false;
-
-  if (
-    req.files &&
-    req.files.banner_image_edit &&
-    req.files.banner_image_edit.data
-  ) {
-    const bannerImage = req.files.banner_image_edit;
-    // Basic validation (example: size and type)
-    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-    const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-
-    if (bannerImage.size > 0) {
-      // Process only if a file is actually uploaded
-      if (bannerImage.size > MAX_SIZE) {
-        return res.redirect(
-          "/admin/banners?error=" +
-            encodeURIComponent("Updated image file is too large (max 5MB).")
-        );
-      }
-      if (!ALLOWED_TYPES.includes(bannerImage.mimetype)) {
-        return res.redirect(
-          "/admin/banners?error=" +
-            encodeURIComponent(
-              "Invalid updated image file type. Allowed: JPG, PNG, WEBP."
-            )
-        );
-      }
-      imageBuffer = bannerImage.data;
-      imageMimeType = bannerImage.mimetype;
-      updateImage = true;
-    }
-  }
-
-  try {
-    let querySetParts = ["alt_text = ?", "sort_order = ?", "is_active = ?"];
-    let queryParams = [
-      alt_text || null,
-      parseInt(sort_order) || 0,
-      is_active === "on" || is_active === "true" ? 1 : 0,
-    ];
-
-    if (updateImage) {
-      querySetParts.push("image_blob = ?");
-      querySetParts.push("image_mimetype = ?");
-      queryParams.push(imageBuffer);
-      queryParams.push(imageMimeType);
-    }
-    queryParams.push(banner_id);
-
-    const query = `UPDATE promotion_banners SET ${querySetParts.join(
-      ", "
-    )} WHERE banner_id = ?`;
-    const [result] = await connection.promise().query(query, queryParams);
-
-    if (result.affectedRows === 0) {
+router.post(
+  "/banners/edit/:banner_id",
+  bannerValidationRules,
+  async (req, res) => {
+    const connection = req.app.get("dbConnection");
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const errorMessages = errors
+        .array()
+        .map((err) => err.msg)
+        .join(", ");
       return res.redirect(
         "/admin/banners?error=" +
-          encodeURIComponent("Banner not found or no changes made.")
+          encodeURIComponent(`Validation failed: ${errorMessages}`)
       );
     }
-    res.redirect(
-      "/admin/banners?message=" +
-        encodeURIComponent("Banner updated successfully!")
-    );
-  } catch (err) {
-    console.error("Error updating banner:", err);
-    if (err.code === "ER_NET_PACKET_TOO_LARGE") {
-      return res.redirect(
+
+    const { banner_id } = req.params;
+    const { alt_text, sort_order, is_active } = req.body;
+
+    let imageBuffer = null;
+    let imageMimeType = null;
+    let updateImage = false;
+
+    if (
+      req.files &&
+      req.files.banner_image_edit &&
+      req.files.banner_image_edit.data
+    ) {
+      const bannerImage = req.files.banner_image_edit;
+      // Basic validation (example: size and type)
+      const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+      const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+      if (bannerImage.size > 0) {
+        // Process only if a file is actually uploaded
+        if (bannerImage.size > MAX_SIZE) {
+          return res.redirect(
+            "/admin/banners?error=" +
+              encodeURIComponent("Updated image file is too large (max 5MB).")
+          );
+        }
+        if (!ALLOWED_TYPES.includes(bannerImage.mimetype)) {
+          return res.redirect(
+            "/admin/banners?error=" +
+              encodeURIComponent(
+                "Invalid updated image file type. Allowed: JPG, PNG, WEBP."
+              )
+          );
+        }
+        imageBuffer = bannerImage.data;
+        imageMimeType = bannerImage.mimetype;
+        updateImage = true;
+      }
+    }
+
+    try {
+      let querySetParts = ["alt_text = ?", "sort_order = ?", "is_active = ?"];
+      let queryParams = [
+        alt_text || null,
+        parseInt(sort_order) || 0,
+        is_active === "on" || is_active === "true" ? 1 : 0,
+      ];
+
+      if (updateImage) {
+        querySetParts.push("image_blob = ?");
+        querySetParts.push("image_mimetype = ?");
+        queryParams.push(imageBuffer);
+        queryParams.push(imageMimeType);
+      }
+      queryParams.push(banner_id);
+
+      const query = `UPDATE promotion_banners SET ${querySetParts.join(
+        ", "
+      )} WHERE banner_id = ?`;
+      const [result] = await connection.promise().query(query, queryParams);
+
+      if (result.affectedRows === 0) {
+        return res.redirect(
+          "/admin/banners?error=" +
+            encodeURIComponent("Banner not found or no changes made.")
+        );
+      }
+      res.redirect(
+        "/admin/banners?message=" +
+          encodeURIComponent("Banner updated successfully!")
+      );
+    } catch (err) {
+      console.error("Error updating banner:", err);
+      if (err.code === "ER_NET_PACKET_TOO_LARGE") {
+        return res.redirect(
+          "/admin/banners?error=" +
+            encodeURIComponent("Updated image file is too large for database.")
+        );
+      }
+      res.redirect(
         "/admin/banners?error=" +
-          encodeURIComponent("Updated image file is too large for database.")
+          encodeURIComponent("Database error updating banner.")
       );
     }
-    res.redirect(
-      "/admin/banners?error=" +
-        encodeURIComponent("Database error updating banner.")
-    );
   }
-});
+);
 
 // POST /admin/banners/toggle-active/:banner_id - Toggle active status
 router.post("/banners/toggle-active/:banner_id", async (req, res) => {
@@ -1366,6 +1495,214 @@ router.post("/banners/delete/:banner_id", async (req, res) => {
     res.redirect(
       "/admin/banners?error=" +
         encodeURIComponent("Database error deleting banner.")
+    );
+  }
+});
+
+// Mark an order as Cancelled
+router.post("/order/set-cancelled/:order_id", async (req, res) => {
+  const { order_id } = req.params;
+  const connection = req.app.get("dbConnection");
+  const redirectUrl =
+    "/admin/ordersManagement" +
+    (req.headers.referer ? "?" + req.headers.referer.split("?")[1] : "");
+  try {
+    const [updateResult] = await connection.promise().query(
+      "UPDATE orders SET order_status = 'Cancelled' WHERE order_id = ? AND order_status NOT IN ('Delivered', 'Cancelled')", // Added state check
+      [order_id]
+    );
+    if (updateResult.affectedRows > 0) {
+      // Use query parameter for success message
+      return res.redirect(
+        redirectUrl.includes("?")
+          ? `${redirectUrl}&message=${encodeURIComponent(
+              `Order #${order_id} has been marked as Cancelled.`
+            )}`
+          : `${redirectUrl}?message=${encodeURIComponent(
+              `Order #${order_id} has been marked as Cancelled.`
+            )}`
+      );
+    } else {
+      // Use query parameter for error message
+      return res.redirect(
+        redirectUrl.includes("?")
+          ? `${redirectUrl}&error=${encodeURIComponent(
+              `Order #${order_id} not found or no change made.`
+            )}`
+          : `${redirectUrl}?error=${encodeURIComponent(
+              `Order #${order_id} not found or no change made.`
+            )}`
+      );
+    }
+  } catch (error) {
+    console.error("Error marking order as Cancelled:", error);
+    // Use query parameter for error message
+    return res.redirect(
+      redirectUrl.includes("?")
+        ? `${redirectUrl}&error=${encodeURIComponent(
+            "Failed to mark order as Cancelled due to a server error."
+          )}`
+        : `${redirectUrl}?error=${encodeURIComponent(
+            "Failed to mark order as Cancelled due to a server error."
+          )}`
+    );
+  }
+});
+
+// Mark an order's payment as Refunded
+router.post("/order/mark-refunded/:order_id", async (req, res) => {
+  const { order_id } = req.params;
+  const connection = req.app.get("dbConnection");
+  const redirectUrl =
+    "/admin/ordersManagement" +
+    (req.headers.referer ? "?" + req.headers.referer.split("?")[1] : "");
+  try {
+    const [orderRows] = await connection
+      .promise()
+      .query("SELECT payment_status FROM orders WHERE order_id = ?", [
+        order_id,
+      ]);
+    if (orderRows.length === 0) {
+      // Use query parameter for error message
+      return res.redirect(
+        redirectUrl.includes("?")
+          ? `${redirectUrl}&error=${encodeURIComponent(
+              `Order #${order_id} not found.`
+            )}`
+          : `${redirectUrl}?error=${encodeURIComponent(
+              `Order #${order_id} not found.`
+            )}`
+      );
+    }
+
+    const [updateResult] = await connection.promise().query(
+      "UPDATE orders SET payment_status = 'Refunded' WHERE order_id = ? AND order_status = 'Cancelled' AND payment_status = 'Paid'", // Added state checks
+      [order_id]
+    );
+    if (updateResult.affectedRows > 0) {
+      // Use query parameter for success message
+      return res.redirect(
+        redirectUrl.includes("?")
+          ? `${redirectUrl}&message=${encodeURIComponent(
+              `Order #${order_id} payment has been marked as Refunded.`
+            )}`
+          : `${redirectUrl}?message=${encodeURIComponent(
+              `Order #${order_id} payment has been marked as Refunded.`
+            )}`
+      );
+    } else {
+      // Use query parameter for error message
+      return res.redirect(
+        redirectUrl.includes("?")
+          ? `${redirectUrl}&error=${encodeURIComponent(
+              `Order #${order_id} not found or no change made to payment status.`
+            )}`
+          : `${redirectUrl}?error=${encodeURIComponent(
+              `Order #${order_id} not found or no change made to payment status.`
+            )}`
+      );
+    }
+  } catch (error) {
+    console.error("Error marking order payment as Refunded:", error);
+    // Use query parameter for error message
+    return res.redirect(
+      redirectUrl.includes("?")
+        ? `${redirectUrl}&error=${encodeURIComponent(
+            "Failed to mark order payment as Refunded due to a server error."
+          )}`
+        : `${redirectUrl}?error=${encodeURIComponent(
+            "Failed to mark order payment as Refunded due to a server error."
+          )}`
+    );
+  }
+});
+
+// NEW ROUTE: Admin converts a failed PayPal order to COD
+router.post("/order/convert-to-cod/:order_id", async (req, res) => {
+  const { order_id } = req.params;
+  const connection = req.app.get("dbConnection");
+  const redirectUrl =
+    "/admin/ordersManagement" +
+    (req.headers.referer ? "?" + req.headers.referer.split("?")[1] : "");
+
+  try {
+    // First, verify the order's current payment status and method
+    const [orderRows] = await connection
+      .promise()
+      .query(
+        "SELECT payment_status, payment_method FROM orders WHERE order_id = ?",
+        [order_id]
+      );
+
+    if (orderRows.length === 0) {
+      return res.redirect(
+        redirectUrl.includes("?")
+          ? `${redirectUrl}&error=${encodeURIComponent(
+              `Order #${order_id} not found.`
+            )}`
+          : `${redirectUrl}?error=${encodeURIComponent(
+              `Order #${order_id} not found.`
+            )}`
+      );
+    }
+
+    const currentPaymentStatus = orderRows[0].payment_status;
+    const currentPaymentMethod = orderRows[0].payment_method;
+
+    if (
+      currentPaymentStatus === "Failed" &&
+      currentPaymentMethod === "PayPal"
+    ) {
+      // Update payment_status to "Pending Payment" and payment_method to "COD"
+      const [updateResult] = await connection
+        .promise()
+        .query(
+          "UPDATE orders SET payment_status = 'Pending Payment', payment_method = 'COD' WHERE order_id = ?",
+          [order_id]
+        );
+
+      if (updateResult.affectedRows > 0) {
+        return res.redirect(
+          redirectUrl.includes("?")
+            ? `${redirectUrl}&message=${encodeURIComponent(
+                `Order #${order_id} has been converted to COD (Pending Payment).`
+              )}`
+            : `${redirectUrl}?message=${encodeURIComponent(
+                `Order #${order_id} has been converted to COD (Pending Payment).`
+              )}`
+        );
+      } else {
+        return res.redirect(
+          redirectUrl.includes("?")
+            ? `${redirectUrl}&error=${encodeURIComponent(
+                `Failed to convert Order #${order_id} to COD. No changes made.`
+              )}`
+            : `${redirectUrl}?error=${encodeURIComponent(
+                `Failed to convert Order #${order_id} to COD. No changes made.`
+              )}`
+        );
+      }
+    } else {
+      return res.redirect(
+        redirectUrl.includes("?")
+          ? `${redirectUrl}&error=${encodeURIComponent(
+              `Order #${order_id} cannot be converted to COD. Current payment status: ${currentPaymentStatus}, method: ${currentPaymentMethod}.`
+            )}`
+          : `${redirectUrl}?error=${encodeURIComponent(
+              `Order #${order_id} cannot be converted to COD. Current payment status: ${currentPaymentStatus}, method: ${currentPaymentMethod}.`
+            )}`
+      );
+    }
+  } catch (error) {
+    console.error("Error converting order to COD:", error);
+    return res.redirect(
+      redirectUrl.includes("?")
+        ? `${redirectUrl}&error=${encodeURIComponent(
+            "Server error converting order to COD."
+          )}`
+        : `${redirectUrl}?error=${encodeURIComponent(
+            "Server error converting order to COD."
+          )}`
     );
   }
 });
