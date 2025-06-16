@@ -236,20 +236,25 @@
             <div class="dashboard-grid charts-focused" style="margin-top: 30px;">
               <div class="chart-card">
                 <h2>Monthly Sales Trend Comparison</h2>
-                <% if (data.chart_monthly_current_mtd_daily_sales_json && data.chart_monthly_previous_full_daily_sales_json) { %>
-                <canvas id="monthlySalesComparisonChart"></canvas>
+                <% if (data && data.chart_monthly_current_mtd_daily_sales_json && data.chart_monthly_previous_full_daily_sales_json) { %>
+                <canvas id="monthlySalesComparisonChart" style="width: 100%; height: 300px;"></canvas>
                 <% } else { %>
                 <p class="no-data-message">Monthly sales trend data not available.</p>
                 <% } %>
               </div>
               <div class="chart-card">
                 <h2>Weekly Sales Performance (Current Week)</h2>
-                <% if (data.chart_weekly_current_week_daily_sales_json) { %>
-                <canvas id="weeklySalesPerformanceChart"></canvas>
+                <% if (data && data.chart_weekly_current_week_daily_sales_json) { %>
+                <canvas id="weeklySalesPerformanceChart" style="width: 100%; height: 300px;"></canvas>
                 <% } else { %>
                 <p class="no-data-message">Weekly sales performance data not available.</p>
                 <% } %>
               </div>
+            </div>
+            
+            <!-- Liên kết đến trang biểu đồ riêng -->
+            <div class="alert alert-info mt-4">
+              <p><strong>Gặp sự cố khi hiển thị biểu đồ?</strong> Hãy xem phiên bản tối ưu tại <a href="/charts/index.html" target="_blank">đây</a>.</p>
             </div>
             <% } else { %>
             <p class="no-data-message" style="font-size: 1.2em; padding: 40px;">Sales dashboard data is currently unavailable. Snapshots may not have been generated yet.</p>
@@ -261,7 +266,8 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Thay đổi nguồn tải Chart.js và thêm console.log để debug -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
   <script>
     // Use the 'data' variable passed from the server
     const serverData = <%- JSON.stringify(data || null) %>;
@@ -304,6 +310,7 @@
         if (canvas) canvas.parentElement.innerHTML = '<p class="no-data-message">Monthly sales trend data not available for chart.</p>';
         return;
       }
+      
       const ctx = canvas.getContext('2d');
 
       const dayLabels = Array.from({
@@ -311,12 +318,14 @@
       }, (_, i) => (i + 1).toString());
 
       const processDailyData = (dailyArray) => {
-        const dataPoints = Array(31).fill(null);
+        const dataPoints = Array(31).fill(0); // Thay null bằng 0
         if (dailyArray && Array.isArray(dailyArray)) {
           dailyArray.forEach(item => {
-            const dayOfMonth = new Date(item.date).getUTCDate();
-            if (dayOfMonth >= 1 && dayOfMonth <= 31) {
-              dataPoints[dayOfMonth - 1] = item.sales;
+            if (item && item.date) { // Kiểm tra xem item có tồn tại và có thuộc tính date không
+              const dayOfMonth = new Date(item.date).getUTCDate();
+              if (dayOfMonth >= 1 && dayOfMonth <= 31) {
+                dataPoints[dayOfMonth - 1] = parseFloat(item.sales) || 0; // Đảm bảo đúng kiểu số
+              }
             }
           });
         }
@@ -326,7 +335,11 @@
       const currentMonthSales = processDailyData(currentMonthData);
       const previousMonthSales = processDailyData(previousMonthData);
 
-      new Chart(ctx, {
+      if (window.monthlySalesChart) {
+        window.monthlySalesChart.destroy();
+      }
+
+      window.monthlySalesChart = new Chart(ctx, {
         type: 'line',
         data: {
           labels: dayLabels,
@@ -394,8 +407,10 @@
         const sortedData = Array(7).fill(0);
         if (dataArray && Array.isArray(dataArray)) {
           dataArray.forEach(item => {
-            const index = dayOrder.indexOf(item.dayOfWeek);
-            if (index !== -1) sortedData[index] = item.sales;
+            if (item && item.dayOfWeek) {
+              const index = dayOrder.indexOf(item.dayOfWeek);
+              if (index !== -1) sortedData[index] = parseFloat(item.sales) || 0;
+            }
           });
         }
         return sortedData;
@@ -421,7 +436,11 @@
         });
       }
 
-      new Chart(ctx, {
+      if (window.weeklySalesChart) {
+        window.weeklySalesChart.destroy();
+      }
+
+      window.weeklySalesChart = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: dayOrder,
@@ -472,9 +491,14 @@
 
         if (serverData.chart_monthly_current_mtd_daily_sales_json && serverData.chart_monthly_previous_full_daily_sales_json) {
           renderMonthlySalesComparisonChart(serverData.chart_monthly_current_mtd_daily_sales_json, serverData.chart_monthly_previous_full_daily_sales_json);
+        } else {
+          console.warn("Monthly chart data not available:", serverData.chart_monthly_current_mtd_daily_sales_json, serverData.chart_monthly_previous_full_daily_sales_json);
         }
+        
         if (serverData.chart_weekly_current_week_daily_sales_json) {
           renderWeeklySalesPerformanceChart(serverData.chart_weekly_current_week_daily_sales_json, serverData.chart_weekly_prev_month_sameday_week_daily_sales_json);
+        } else {
+          console.warn("Weekly chart data not available:", serverData.chart_weekly_current_week_daily_sales_json);
         }
       } else {
         console.warn("Sales dashboard data (serverData) is not available for client-side script.");
