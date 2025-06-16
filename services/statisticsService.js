@@ -709,7 +709,9 @@ module.exports = {
   getLiveDashboardData,
   calculateAndStoreDailySnapshots,
   getSalesComparisonData,
-  // Add the date helper functions to the exports:
+  createAndStoreLiveSnapshot, // <-- Thêm dòng này
+  getSnapshotById,           // <-- Thêm cả dòng này nếu bạn đã tạo hàm này
+  // Các hàm helper về ngày tháng
   getFormattedDate,
   getFirstDayOfMonth,
   getLastDayOfMonth,

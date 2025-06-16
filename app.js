@@ -7,10 +7,12 @@ const fileUpload = require("express-fileupload");
 const mysql = require("mysql2");
 const cron = require("node-cron");
 const statisticsService = require("./services/statisticsService");
-
+const http = require('http');
+const { Server } = require("socket.io");
 // Initialize Express App
 const app = express();
-
+const server = http.createServer(app); // Tạo server HTTP từ app của Express
+const io = new Server(server); // Gắn Socket.IO vào server
 // Import services
 // const statisticsService = require("./services/statisticsService"); // 2. Require your statisticsService
 
@@ -73,43 +75,51 @@ app.use("/admin/sales", adminSalesRoutes); // 2. Register with the new name
 // Schedule daily statistics snapshot
 // Runs every day at 1:05 AM (adjust as needed)
 cron.schedule(
-  "5 1 * * *",
+  "*/1 * * * *", // Thay đổi tại đây: Chạy mỗi 2 phút
   async () => {
-    console.log("Running daily statistics snapshot job...");
+    console.log(`Running 2-minute snapshot job at ${new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}...`);
     try {
-      // Ensure you pass the promise-enabled pool if calculateAndStoreDailySnapshots expects it
-      // If calculateAndStoreDailySnapshots is using the app's main pool directly,
-      // and that pool is already mysql2/promise, this is fine.
-      // Otherwise, you might need to get the pool differently or ensure it's promise-wrapped.
-      // Based on populateSnapshots.js, calculateAndStoreDailySnapshots expects a mysql2/promise pool.
-      // So, we create one here specifically for the job, or ensure the main app pool is compatible.
-
-      // Option 1: Create a dedicated promise pool for the cron job (similar to populateSnapshots.js)
       const cronPool = mysql
         .createPool({
           host: process.env.DB_HOST || "localhost",
           user: process.env.DB_USER || "root",
           password: process.env.DB_PASSWORD || "",
           database: process.env.DB_NAME || "pizzazzpizza",
-          waitForConnections: true,
-          connectionLimit: 1, // Sufficient for a script
-          queueLimit: 0,
+          connectionLimit: 1,
         })
-        .promise(); // Make sure it's a promise pool
+        .promise();
 
-      await statisticsService.calculateAndStoreDailySnapshots(cronPool);
-      console.log("Daily statistics snapshot job completed successfully.");
-      await cronPool.end(); // Close the dedicated pool
+      // Gọi hàm tạo snapshot cho dữ liệu LIVE
+      await statisticsService.createAndStoreLiveSnapshot(cronPool);
+
+      console.log("2-minute snapshot job completed successfully.");
+      await cronPool.end(); // Đóng pool sau khi chạy xong
     } catch (error) {
-      console.error("Error running daily statistics snapshot job:", error);
+      console.error("Error running 2-minute snapshot job:", error);
     }
   },
   {
     scheduled: true,
-    timezone: "Asia/Ho_Chi_Minh", // Or your server's timezone
+    timezone: "Asia/Ho_Chi_Minh",
   }
 );
 
 console.log("Daily statistics snapshot job scheduled.");
+
+io.on('connection', (socket) => {
+  console.log('Một admin đã kết nối vào dashboard');
+  socket.on('disconnect', () => {
+    console.log('Admin đã ngắt kết nối');
+  });
+});
+
+// QUAN TRỌNG: Thay vì app.listen, hãy dùng server.listen
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server đang chạy tại http://localhost:${PORT}`);
+});
+
+// Gán 'io' vào app để các route có thể sử dụng
+app.set('io', io);
 
 module.exports = app;
