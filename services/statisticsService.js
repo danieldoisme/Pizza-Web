@@ -691,7 +691,7 @@ module.exports = {
   getLiveDashboardData,
   calculateAndStoreDailySnapshots,
   getSalesComparisonData,
-  // Add the date helper functions to the exports:
+
   getFormattedDate,
   getFirstDayOfMonth,
   getLastDayOfMonth,

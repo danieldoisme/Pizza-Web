@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { body, query, param, validationResult } = require("express-validator"); // Added param
 const isAuthenticated = require("../middleware/isAuthenticated");
 
 // Render Home Page (Menu Page)
@@ -107,7 +108,14 @@ router.get("/homepage", renderHomePage);
 
 // Placeholder for Item Detail Page
 async function renderItemDetailPage(req, res) {
-  const itemId = req.params.itemId;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    // Handle invalid itemId, e.g., by showing a 404 or error page
+    console.error("Validation errors for item ID:", errors.array());
+    return res.status(400).send("Invalid item ID format."); // Or render a specific error page
+  }
+
+  const itemId = req.params.itemId; // itemId is now validated and sanitized (toInt)
   const connection = req.app.get("dbConnection");
   console.log(`renderItemDetailPage called for item ID: ${itemId}`);
   // Logic to fetch item details from 'menu' table using itemId
@@ -152,8 +160,18 @@ async function renderItemDetailPage(req, res) {
 
 // Placeholder for Submitting Item Rating
 async function submitItemRating(req, res) {
-  const itemId = req.params.itemId;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed.",
+      errors: errors.array(),
+    });
+  }
+
+  const itemId = req.params.itemId; // itemId is validated and sanitized
   const userId = req.cookies.cookuid;
+  // rating_value and review_text are validated and sanitized by express-validator
   const { rating_value, review_text } = req.body;
   const connection = req.app.get("dbConnection");
   console.log(
@@ -165,11 +183,14 @@ async function submitItemRating(req, res) {
       .status(401)
       .json({ success: false, message: "Please log in to rate items." });
   }
-  if (!rating_value || rating_value < 1 || rating_value > 5) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid rating value." });
-  }
+  // The specific check for rating_value range is already handled by body('rating_value').isInt({ min: 1, max: 5 })
+  // So, this explicit check can be removed if express-validator handles it before this point.
+  // However, keeping it doesn't hurt as a defense-in-depth if middleware order changes.
+  // if (!rating_value || rating_value < 1 || rating_value > 5) {
+  //   return res
+  //     .status(400)
+  //     .json({ success: false, message: "Invalid rating value." });
+  // }
 
   try {
     // Upsert logic: Insert or Update rating
@@ -216,22 +237,37 @@ async function submitItemRating(req, res) {
 }
 
 // Corrected Search Results Page handler
+const searchValidationRules = [
+  query("query")
+    .trim()
+    .notEmpty()
+    .withMessage("Please enter a search term.")
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Search term must be between 1 and 100 characters.")
+    .escape(), // Sanitize for XSS prevention
+];
+
 async function renderSearchResultsPage(req, res) {
-  const searchTerm = req.query.query;
-  const connection = req.app.get("dbConnection");
+  const errors = validationResult(req);
+  // The sanitized search term is available in req.query.query
+  const searchTerm = req.query.query; // This will be the sanitized version if validation passes
+
   console.log(
     `renderSearchResultsPage called with search query: ${searchTerm}`
   );
 
-  if (!searchTerm || searchTerm.trim() === "") {
+  if (!errors.isEmpty()) {
     return res.render("searchResults", {
       pageType: "search",
       results: [],
-      query: "",
-      searchError: "Please enter a search term.",
+      query: searchTerm || "", // Pass the (potentially invalid but sanitized) term back
+      searchError: errors.array()[0].msg, // Display the first validation error
       // username, userid, item_count, isAdmin from res.locals
     });
   }
+  // No need for: if (!searchTerm || searchTerm.trim() === "") as validator handles .notEmpty()
+
+  const connection = req.app.get("dbConnection");
 
   try {
     // Add item_type to the SELECT statement
@@ -241,43 +277,74 @@ async function renderSearchResultsPage(req, res) {
         item_calories, item_serving, item_rating, total_ratings, 
         item_description_long
       FROM menu 
-      WHERE item_name LIKE ? OR item_category LIKE ? OR item_description_long LIKE ?
+      WHERE item_name LIKE ?
     `;
-    const searchPattern = `%${searchTerm}%`;
-    connection.query(
-      dbQuery,
-      [searchPattern, searchPattern, searchPattern],
-      (err, searchResults) => {
-        if (err) {
-          console.error("Error searching items:", err);
-          return res.render("searchResults", {
-            pageType: "search",
-            results: [],
-            query: searchTerm,
-            searchError: "Error performing search.",
-          });
-        }
-        res.render("searchResults", {
+    const searchPattern = `%${searchTerm}%`; // searchTerm is already trimmed and escaped
+    connection.query(dbQuery, [searchPattern], (err, searchResults) => {
+      if (err) {
+        console.error("Error searching items:", err);
+        return res.render("searchResults", {
           pageType: "search",
-          results: searchResults,
+          results: [],
           query: searchTerm,
-          searchError: null,
+          searchError: "Error performing search.",
         });
       }
-    );
+      res.render("searchResults", {
+        pageType: "search",
+        results: searchResults,
+        query: searchTerm, // Pass the sanitized search term to the view
+        searchError: null,
+      });
+    });
   } catch (error) {
     console.error("Server error in renderSearchResultsPage:", error);
     res.status(500).render("searchResults", {
       pageType: "search",
       results: [],
-      query: searchTerm,
+      query: searchTerm || "", // Pass sanitized term if available
       searchError: "An unexpected server error occurred.",
     });
   }
 }
 
-router.get("/item/:itemId", isAuthenticated, renderItemDetailPage); // No isAuthenticated, so anyone can view
-router.post("/item/:itemId/rate", isAuthenticated, submitItemRating);
-router.get("/search", isAuthenticated, renderSearchResultsPage); // No isAuthenticated, so anyone can search
+router.get(
+  "/item/:itemId",
+  isAuthenticated,
+  [
+    param("itemId")
+      .isInt({ gt: 0 }) // Ensure itemId is an integer greater than 0
+      .withMessage("Item ID must be a positive integer.")
+      .toInt(), // Sanitizes to an integer
+  ],
+  renderItemDetailPage
+);
+
+router.post(
+  "/item/:itemId/rate",
+  isAuthenticated,
+  [
+    param("itemId")
+      .isInt({ gt: 0 })
+      .withMessage("Item ID must be a positive integer.")
+      .toInt(),
+    body("rating_value")
+      .isInt({ min: 1, max: 5 })
+      .withMessage("Rating must be an integer between 1 and 5."),
+    body("review_text")
+      .optional({ checkFalsy: true })
+      .trim()
+      .isLength({ max: 1000 })
+      .withMessage("Review text cannot exceed 1000 characters.")
+      .escape(), // Sanitize review text for XSS prevention before DB storage
+  ],
+  submitItemRating
+);
+router.get(
+  "/search",
+  isAuthenticated,
+  searchValidationRules,
+  renderSearchResultsPage
+);
 
 module.exports = router;

@@ -61,7 +61,7 @@
                       <div class="col-md-3">
                         <label for="order_status_filter" class="form-label fw-bold">Order Status</label>
                         <select name="order_status_filter" id="order_status_filter" class="form-select form-select-sm">
-                          <option value="">All</option>
+                          <option value="">All Order Statuses</option>
                           <option value="Pending" <%= currentFilters.order_status_filter === 'Pending' ? 'selected' : '' %>>Pending</option>
                           <option value="Processing" <%= currentFilters.order_status_filter === 'Processing' ? 'selected' : '' %>>Processing</option>
                           <option value="Dispatched" <%= currentFilters.order_status_filter === 'Dispatched' ? 'selected' : '' %>>Dispatched</option>
@@ -72,11 +72,11 @@
                       <div class="col-md-3">
                         <label for="payment_status_filter" class="form-label fw-bold">Payment Status</label>
                         <select name="payment_status_filter" id="payment_status_filter" class="form-select form-select-sm">
-                          <option value="">All</option>
-                          <option value="Paid" <%= currentFilters.payment_status_filter === 'Paid' ? 'selected' : '' %>>Paid</option>
+                          <option value="">All Payment Statuses</option>
                           <option value="Unpaid" <%= currentFilters.payment_status_filter === 'Unpaid' ? 'selected' : '' %>>Unpaid</option>
-                          <option value="Pending" <%= currentFilters.payment_status_filter === 'Pending' ? 'selected' : '' %>>Pending Payment</option>
+                          <option value="Paid" <%= currentFilters.payment_status_filter === 'Paid' ? 'selected' : '' %>>Paid</option>
                           <option value="Failed" <%= currentFilters.payment_status_filter === 'Failed' ? 'selected' : '' %>>Failed</option>
+                          <option value="Pending Payment" <%= currentFilters.payment_status_filter === 'Pending Payment' ? 'selected' : '' %>>Pending Payment</option>
                           <option value="Refunded" <%= currentFilters.payment_status_filter === 'Refunded' ? 'selected' : '' %>>Refunded</option>
                         </select>
                       </div>
@@ -184,7 +184,18 @@
                           order.payment_method %>
                       </p>
                       <p style="margin: 5px 0">
-                        <strong>Payment Status:</strong><br /><span style="font-weight:bold; padding: 3px 8px; border-radius: 4px; color: white; background-color: <%= order.payment_status === 'Paid' ? '#28a745' : (order.payment_status === 'Unpaid' ? '#fd7e14' : (order.payment_status === 'Pending' ? '#ffc107' : (order.payment_status === 'Failed' ? '#dc3545' : (order.payment_status === 'Refunded' ? '#6c757d' : '#adb5bd')))) %>"><%= order.payment_status %></span>
+                        <strong>Payment:</strong><br />
+                        <span style="font-weight:bold; padding: 3px 8px; border-radius: 4px; color: white; 
+                          background-color: <%= order.payment_status === 'Paid' ? '#28a745' : 
+                                              (order.payment_status === 'Unpaid' ? '#ffc107' : 
+                                              (order.payment_status === 'Failed' ? '#dc3545' : 
+                                              (order.payment_status === 'Pending Payment' ? '#17a2b8' :
+                                              (order.payment_status === 'Refunded' ? '#6c757d' : '#6c757d')))) %>">
+                          <%= order.payment_status %>
+                        </span>
+                        <% if (order.payment_method) { %>
+                        <span class="text-muted small">(<%= order.payment_method %>)</span>
+                        <% } %>
                       </p>
                       <p style="margin: 5px 0">
                         <strong>Status:</strong><br /><span style="font-weight:bold; padding: 3px 8px; border-radius: 4px; color: white; background-color: <%= order.order_status === "Pending" ? "#ffc107" : (order.order_status === "Processing" ? "#007bff" : (order.order_status === "Dispatched" ? "#17a2b8" : (order.order_status === "Delivered" ? "#28a745" : (order.order_status === "Cancelled" ? "#dc3545" : "#6c757d")))) %>"><%= order.order_status %></span>
@@ -230,13 +241,41 @@
                       </form>
                       <% } %>
                       <%# Updated condition and action for marking as paid %>
-                      <% if ((order.payment_status === 'Unpaid' || order.payment_status === 'Failed') && ['Pending', 'Processing', 'Dispatched', 'Delivered'].includes(order.order_status)) { %>
+                      <% if ((order.payment_status === 'Unpaid' || order.payment_status === 'Pending Payment') && ['Pending', 'Processing', 'Dispatched', 'Delivered'].includes(order.order_status)) { %>
                       <form action="/admin/order/mark-paid/<%= order.order_id %>" method="POST" style="margin: 0;">
                         <button type="submit" class="btn btn-sm btn-info">
                           Mark as Paid
                         </button>
                       </form>
                       <% } %>
+
+                      <%# Add Cancel Order Button %>
+                      <% if (order.order_status !== 'Delivered' && order.order_status !== 'Cancelled') { %>
+                      <form action="/admin/order/set-cancelled/<%= order.order_id %>" method="POST" style="margin: 0;">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to cancel this order?');">
+                          Cancel Order
+                        </button>
+                      </form>
+                      <% } %>
+
+                      <%# Add Mark as Refunded Button %>
+                      <% if (order.order_status === 'Cancelled' && order.payment_status === 'Paid') { %>
+                      <form action="/admin/order/mark-refunded/<%= order.order_id %>" method="POST" style="margin: 0;">
+                        <button type="submit" class="btn btn-sm btn-secondary" onclick="return confirm('Are you sure you have processed the refund and want to mark this order as Refunded?');">
+                          Mark as Refunded
+                        </button>
+                      </form>
+                      <% } %>
+
+                      <%# NEW: Add Convert to COD Button %>
+                      <% if (order.payment_status === 'Failed' && order.payment_method === 'PayPal') { %>
+                      <form action="/admin/order/convert-to-cod/<%= order.order_id %>" method="POST" style="margin: 0;">
+                        <button type="submit" class="btn btn-sm btn-info" onclick="return confirm('Are you sure you want to convert this order to Cash on Delivery (Pending Payment)?');">
+                          Convert to COD
+                        </button>
+                      </form>
+                      <% } %>
+
                       <% if (order.order_status === 'Dispatched') { %>
                       <form action="/admin/order/set-delivered-admin/<%= order.order_id %>" method="POST" style="margin: 0">
                         <button type="submit" class="btn btn-sm btn-success">

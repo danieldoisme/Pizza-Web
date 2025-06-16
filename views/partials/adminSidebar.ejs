@@ -101,74 +101,84 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    console.log('Sidebar DOMContentLoaded. Current page:', '<%= page %>');
     const menuToggles = document.querySelectorAll('.admin-sidebar .menu-toggle');
+    const dashboardSubmenuStateKey = 'dashboardSubmenuState'; // localStorage key
 
     menuToggles.forEach(toggle => {
+      // Assuming this script primarily targets the "Dashboard" submenu,
+      // as it's the only one with class "has-submenu" in the provided HTML.
+      // If other submenus are added, this logic would apply to them individually
+      // and might need distinct localStorage keys.
+
       const parentLi = toggle.parentElement;
       const submenu = toggle.nextElementSibling;
 
-      if (submenu) {
-        // Initial state: Ensure display is 'none' if not meant to be open, then set maxHeight
-        parentLi.classList.remove('open');
-        submenu.classList.remove('open');
-
-        if (submenu.style.display === 'block') { // Set by EJS if child is active
-          console.log('Sidebar INIT: Submenu for page "<%= page %>" should be OPEN.');
-          parentLi.classList.add('open');
-          submenu.classList.add('open');
-          // submenu.style.display = 'block'; // Already set by EJS
-          // Use a short timeout to allow the DOM to update from EJS's display:block
-          setTimeout(() => {
-            submenu.style.maxHeight = submenu.scrollHeight + "px";
-          }, 0); // Minimal timeout
-        } else {
-          console.log('Sidebar INIT: Submenu for page "<%= page %>" should be CLOSED.');
-          submenu.style.display = 'none'; // Explicitly set display none
-          submenu.style.maxHeight = '0';
-        }
+      if (!submenu || !parentLi.classList.contains('has-submenu')) {
+        return;
       }
 
+      const applyState = (isOpen, useTransition = false) => {
+        if (isOpen) {
+          parentLi.classList.add('open');
+          submenu.classList.add('open');
+          submenu.style.display = 'block'; // Ensure display is block for scrollHeight
+
+          // Use a timeout to allow display:block to take effect before measuring scrollHeight
+          setTimeout(() => {
+            const currentScrollHeight = submenu.scrollHeight;
+            if (useTransition) {
+              submenu.style.maxHeight = (currentScrollHeight > 0 ? currentScrollHeight : 500) + "px"; // Fallback to 500px
+            } else {
+              // No transition on initial load if already open
+              submenu.style.maxHeight = (currentScrollHeight > 0 ? currentScrollHeight : 500) + "px";
+            }
+            // console.log('Applied OPEN state. maxHeight:', submenu.style.maxHeight);
+          }, useTransition ? 0 : 50); // Shorter delay for click, longer for initial load
+        } else {
+          if (useTransition) {
+            submenu.style.maxHeight = '0';
+          } else {
+            // No transition on initial load if closed
+            submenu.style.maxHeight = '0';
+          }
+          parentLi.classList.remove('open');
+          submenu.classList.remove('open');
+          // Note: display:none could be set after transition, but max-height:0 and overflow:hidden usually suffice.
+          // console.log('Applied CLOSED state. maxHeight:', submenu.style.maxHeight);
+        }
+      };
+
+      // Initialize state from localStorage or EJS default
+      const savedState = localStorage.getItem(dashboardSubmenuStateKey);
+
+      if (savedState === 'open') {
+        // console.log('localStorage: open');
+        applyState(true, false); // Open without transition on load
+      } else if (savedState === 'closed') {
+        // console.log('localStorage: closed');
+        applyState(false, false); // Close without transition on load
+      } else {
+        // No saved state, use EJS default (based on inline style for display)
+        const isEjsOpen = submenu.style.display === 'block';
+        // console.log('localStorage: none. EJS open:', isEjsOpen);
+        applyState(isEjsOpen, false); // Apply EJS state without transition
+        // Optionally, save this default state to localStorage
+        // localStorage.setItem(dashboardSubmenuStateKey, isEjsOpen ? 'open' : 'closed');
+      }
+
+      // Click event listener for toggling
       toggle.addEventListener('click', function(event) {
         event.preventDefault();
-        console.log('Sidebar CLICK: Toggle clicked. Current page:', '<%= page %>');
+        const currentlyOpen = submenu.classList.contains('open');
+        // console.log('Toggle CLICK. Currently open:', currentlyOpen);
 
-        const currentParentLi = this.parentElement;
-        const currentSubmenu = this.nextElementSibling;
-
-        if (!currentParentLi || !currentSubmenu) {
-          console.error('Sidebar CLICK: ParentLi or Submenu not found on click!');
-          return;
+        if (currentlyOpen) { // If currently open, then close it
+          applyState(false, true); // Close with transition
+          localStorage.setItem(dashboardSubmenuStateKey, 'closed');
+        } else { // If currently closed, then open it
+          applyState(true, true); // Open with transition
+          localStorage.setItem(dashboardSubmenuStateKey, 'open');
         }
-
-        currentParentLi.classList.toggle('open');
-        currentSubmenu.classList.toggle('open');
-
-        if (currentSubmenu.classList.contains('open')) {
-          console.log('Sidebar CLICK: Toggling to OPEN.');
-          currentSubmenu.style.display = 'block'; // Set display to block BEFORE getting scrollHeight
-          // Use a timeout to allow display:block to take effect before reading scrollHeight
-          setTimeout(() => {
-            console.log('Sidebar CLICK (after timeout): scrollHeight:', currentSubmenu.scrollHeight);
-            if (currentSubmenu.scrollHeight > 0) {
-              currentSubmenu.style.maxHeight = currentSubmenu.scrollHeight + "px";
-            } else {
-              console.warn('Sidebar CLICK: Submenu scrollHeight is 0 even after display:block. Setting default open height.');
-              currentSubmenu.style.maxHeight = "100px"; // Fallback
-            }
-          }, 0); // Minimal timeout
-        } else {
-          console.log('Sidebar CLICK: Toggling to CLOSE.');
-          // When closing, set maxHeight first, then display to none after transition (if desired)
-          // For simplicity with max-height transition, just setting max-height to 0 is often enough
-          // and display:none can be set after the transition via an event listener if needed.
-          currentSubmenu.style.maxHeight = '0';
-          // To ensure it's fully hidden and out of layout after transition:
-          // setTimeout(() => { if (!currentSubmenu.classList.contains('open')) currentSubmenu.style.display = 'none'; }, 300); // Match CSS transition duration
-        }
-        console.log('Sidebar CLICK: parentLi classes:', currentParentLi.className);
-        console.log('Sidebar CLICK: submenu classes:', currentSubmenu.className);
-        console.log('Sidebar CLICK: submenu maxHeight:', currentSubmenu.style.maxHeight);
       });
     });
   });

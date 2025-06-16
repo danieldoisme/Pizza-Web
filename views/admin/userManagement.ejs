@@ -288,7 +288,7 @@
             <input type="hidden" id="editUserId" name="userId">
             <div class="form-group">
               <label for="editUserName">Name</label>
-              <input type="text" class="form-control" id="editUserName" name="user_name" required>
+              <input type="text" class="form-control" id="editUserName" name="user_name" required minlength="2" maxlength="100">
             </div>
             <div class="form-group">
               <label for="editUserEmail">Email</label>
@@ -296,11 +296,11 @@
             </div>
             <div class="form-group">
               <label for="editUserMobile">Mobile Number</label>
-              <input type="tel" class="form-control" id="editUserMobile" name="user_mobileno">
+              <input type="tel" class="form-control" id="editUserMobile" name="user_mobileno" pattern="[+]?[0-9\s\-()]{7,20}">
             </div>
             <div class="form-group">
               <label for="editUserAddress">Address</label>
-              <textarea class="form-control" id="editUserAddress" name="user_address" rows="3"></textarea>
+              <textarea class="form-control" id="editUserAddress" name="user_address" rows="3" maxlength="255"></textarea>
             </div>
           </div>
           <div class="modal-footer">

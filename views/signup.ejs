@@ -36,7 +36,7 @@
   <!-- Header ends  -->
   <div id="viewport">
     <div id="js-scroll-content">
-      <!-- Sign In starts  -->
+      <!-- Sign Up starts  -->
       <section class="section" style="background-image: url(/images/menu-bg.png)">
         <div class="container">
           <div class="row">
@@ -46,18 +46,33 @@
                 <div class="sec-title-shape mb-4">
                   <img src="/images/title-shape.svg" alt="" />
                 </div>
+
+                <% if (error && error.length > 0) { %>
+                <div class="alert alert-danger" role="alert" style="max-width: 450px; margin: 0 auto 15px auto; text-align: left;">
+                  <strong>Please correct the following errors:</strong><br>
+                  <% error.split(',').forEach(function(errMsg) { %>
+                  - <%= errMsg.trim() %><br>
+                  <% }); %>
+                </div>
+                <% } %>
+                <% if (success && success.length > 0) { %>
+                <div class="alert alert-success" role="alert" style="max-width: 450px; margin: 0 auto 15px auto;">
+                  <%= success %>
+                </div>
+                <% } %>
+
                 <form action="/signup" method="post">
-                  <input type="text" placeholder="Enter your Name" required class="form-input" name="name" id="InputName" style="width: 450px" /><br /><br />
-                  <input type="text" placeholder="Street Address" required class="form-input" name="address_line1" id="InputAddressLine1" style="width: 450px" /><br /><br />
-                  <input type="text" placeholder="Apartment, suite, etc. (Optional)" class="form-input" name="address_line2" id="InputAddressLine2" style="width: 450px" /><br /><br />
-                  <input type="text" placeholder="City" required class="form-input" name="city" id="InputCity" style="width: 450px" /><br /><br />
-                  <input type="text" placeholder="State/Province" required class="form-input" name="state" id="InputState" style="width: 450px" /><br /><br />
-                  <input type="text" placeholder="ZIP/Postal Code" required class="form-input" name="postal_code" id="InputPostalCode" style="width: 450px" /><br /><br />
-                  <input type="text" placeholder="Country" required class="form-input" name="country" id="InputCountry" style="width: 450px" /><br /><br />
-                  <input type="text" placeholder="Enter your Email" required class="form-input" name="email" id="InputEmail" style="width: 450px" /><br /><br />
-                  <input type="text" placeholder="Enter your Mobile number" required class="form-input" name="mobile" id="InputMobile" maxlength="10" style="width: 450px" /><br /><br />
-                  <input type="password" placeholder="Enter your Password" required class="form-input" name="password" id="InputPassword" pattern=".{6,}" title="Minimum 6 character" style="width: 450px" /><br /><br />
-                  <input type="password" placeholder="Re-Enter your Password" required class="form-input" name="confirmPassword" id="ConfirmInputPassword" style="width: 450px" /><br /><br />
+                  <input type="text" placeholder="Enter your Name" required class="form-input" name="name" id="InputName" style="width: 450px" value="<%= oldInput.name || '' %>" maxlength="100" /><br /><br />
+                  <input type="text" placeholder="Street Address" required class="form-input" name="address_line1" id="InputAddressLine1" style="width: 450px" value="<%= oldInput.address_line1 || '' %>" maxlength="255" /><br /><br />
+                  <input type="text" placeholder="Apartment, suite, etc. (Optional)" class="form-input" name="address_line2" id="InputAddressLine2" style="width: 450px" value="<%= oldInput.address_line2 || '' %>" maxlength="255" /><br /><br />
+                  <input type="text" placeholder="City" required class="form-input" name="city" id="InputCity" style="width: 450px" value="<%= oldInput.city || '' %>" maxlength="100" /><br /><br />
+                  <input type="text" placeholder="State/Province" required class="form-input" name="state" id="InputState" style="width: 450px" value="<%= oldInput.state || '' %>" maxlength="100" /><br /><br />
+                  <input type="text" placeholder="ZIP/Postal Code" required class="form-input" name="postal_code" id="InputPostalCode" style="width: 450px" value="<%= oldInput.postal_code || '' %>" maxlength="20" /><br /><br />
+                  <input type="text" placeholder="Country" required class="form-input" name="country" id="InputCountry" style="width: 450px" value="<%= oldInput.country || '' %>" maxlength="100" /><br /><br />
+                  <input type="email" placeholder="Enter your Email" required class="form-input" name="email" id="InputEmail" style="width: 450px" value="<%= oldInput.email || '' %>" maxlength="255" /><br /><br />
+                  <input type="tel" placeholder="Enter your Mobile number" required class="form-input" name="mobile" id="InputMobile" maxlength="15" style="width: 450px" value="<%= oldInput.mobile || '' %>" /><br /><br />
+                  <input type="password" placeholder="Enter your Password" required class="form-input" name="password" id="InputPassword" title="Password must be at least 8 characters, including an uppercase letter, a lowercase letter, a number, and a special character." style="width: 450px" maxlength="100" /><br /><br />
+                  <input type="password" placeholder="Re-Enter your Password" required class="form-input" name="confirmPassword" id="ConfirmInputPassword" style="width: 450px" maxlength="100" /><br /><br />
                   <input type="submit" value="Sign Up" class="sec-btn sec-btn-orange" style="color: white; background: orange" /><br />
                 </form>
                 <br />
@@ -72,7 +87,7 @@
           </div>
         </div>
       </section>
-      <!-- Sign In ends  -->
+      <!-- Sign Up ends  -->
 
       <%- include('partials/footer') %>
     </div>

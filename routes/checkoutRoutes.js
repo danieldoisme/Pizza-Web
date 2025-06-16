@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { body, validationResult } = require("express-validator"); // Import express-validator
 
 const isAuthenticated = require("../middleware/isAuthenticated");
 
@@ -101,23 +102,113 @@ async function renderCheckoutPage(req, res) {
 }
 
 // Process Payment
+const processPaymentValidationRules = [
+  body("paymentMethod")
+    .trim()
+    .isIn(["COD", "PayPal"])
+    .withMessage("Invalid payment method selected."),
+  body("addressOption")
+    .optional()
+    .trim()
+    .isIn(["existing", "new"])
+    .withMessage("Invalid address option."),
+  body("address") // Existing address
+    .if(body("addressOption").equals("existing"))
+    .trim()
+    .notEmpty()
+    .withMessage("Existing address cannot be empty if selected.")
+    .isLength({ max: 255 })
+    .withMessage("Existing address is too long."),
+  body("new_address_line1")
+    .if(body("addressOption").equals("new"))
+    .trim()
+    .notEmpty()
+    .withMessage("Street address is required for a new address.")
+    .isLength({ max: 100 })
+    .withMessage("New street address is too long (max 100 chars)."),
+  body("new_address_line2")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage("New apartment/suite info is too long (max 100 chars)."),
+  body("new_city")
+    .if(body("addressOption").equals("new"))
+    .trim()
+    .notEmpty()
+    .withMessage("City is required for a new address.")
+    .isLength({ max: 50 })
+    .withMessage("New city name is too long (max 50 chars)."),
+  body("new_state")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ max: 50 })
+    .withMessage("New state/province name is too long (max 50 chars)."),
+  body("new_postal_code")
+    .if(body("addressOption").equals("new"))
+    .trim()
+    .notEmpty()
+    .withMessage("ZIP/Postal code is required for a new address.")
+    .isLength({ max: 20 })
+    .withMessage("New ZIP/Postal code is too long (max 20 chars)."),
+  body("new_country")
+    .if(body("addressOption").equals("new"))
+    .trim()
+    .notEmpty()
+    .withMessage("Country is required for a new address.")
+    .isLength({ max: 50 })
+    .withMessage("New country name is too long (max 50 chars)."),
+  body("paymentId") // PayPal Order ID
+    .optional({ checkFalsy: true })
+    .trim()
+    .isString()
+    .isLength({ max: 100 })
+    .withMessage("PayPal Payment ID seems invalid."),
+  body("status") // PayPal status
+    .optional({ checkFalsy: true })
+    .trim()
+    .isString()
+    .isLength({ max: 50 })
+    .withMessage("PayPal status seems invalid."),
+  body("paypalShippingAddress")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isString()
+    .isLength({ max: 255 })
+    .withMessage("PayPal shipping address is too long."),
+  body("notes")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage("Notes are too long (max 500 chars)."),
+];
+
 async function processPayment(req, res) {
-  console.log("processPayment req.body:", req.body);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed.",
+      errors: errors.array(),
+    });
+  }
+
+  console.log("processPayment req.body (post-validation):", req.body);
 
   const user_id = req.cookies.cookuid;
   const {
     paymentMethod,
-    address, // For existing address selection
-    new_address_line1, // New address fields start here
+    addressOption, // Used by validators, available here
+    address, // For existing address selection (validated and trimmed)
+    new_address_line1, // New address fields start here (validated and trimmed)
     new_address_line2,
     new_city,
     new_state,
     new_postal_code,
-    new_country, // New address fields end here
-    paymentId, // PayPal Order ID
-    status, // PayPal status e.g. 'COMPLETED'
-    paypalShippingAddress, // Address from PayPal
-    notes, // Optional notes from customer
+    new_country, // New address fields end here (validated and trimmed)
+    paymentId, // PayPal Order ID (validated and trimmed)
+    status, // PayPal status e.g. 'COMPLETED' (validated and trimmed)
+    paypalShippingAddress, // Address from PayPal (validated and trimmed)
+    notes, // Optional notes from customer (validated and trimmed)
   } = req.body;
   const connection = req.app.get("dbConnection");
 
@@ -157,52 +248,14 @@ async function processPayment(req, res) {
       let finalAddressString = "";
 
       if (paymentMethod === "COD") {
-        if (new_address_line1 && new_city && new_postal_code && new_country) {
-          // New address submitted for COD
-          const parts = [
-            new_address_line1,
-            new_address_line2,
-            new_city,
-            new_state,
-            new_postal_code,
-            new_country,
-          ];
-          finalAddressString = parts
-            .filter((part) => part && part.trim() !== "")
-            .join(", ")
-            .substring(0, 255);
-        } else if (
-          address &&
-          typeof address === "string" &&
-          address.trim() !== ""
-        ) {
-          // Existing address selected for COD
-          finalAddressString = address.trim().substring(0, 255);
-        } else {
-          console.error(
-            "COD order: Delivery address is missing or empty. Required: new address fields or existing address.",
-            req.body
-          );
-          return res.status(400).json({
-            success: false,
-            message:
-              "Delivery address is required for COD. Please check your address details.",
-          });
-        }
-      } else if (paymentMethod === "PayPal") {
+        // Check if 'new' address option was selected and validated fields are present
         if (
-          paypalShippingAddress &&
-          typeof paypalShippingAddress === "string" &&
-          paypalShippingAddress.trim() !== ""
-        ) {
-          finalAddressString = paypalShippingAddress.trim().substring(0, 255);
-        } else if (
+          addressOption === "new" &&
           new_address_line1 &&
           new_city &&
           new_postal_code &&
           new_country
         ) {
-          // Fallback to new address from form for PayPal
           const parts = [
             new_address_line1,
             new_address_line2,
@@ -215,33 +268,90 @@ async function processPayment(req, res) {
             .filter((part) => part && part.trim() !== "")
             .join(", ")
             .substring(0, 255);
+          // Check if 'existing' address option was selected and validated 'address' is present
         } else if (
+          addressOption === "existing" &&
           address &&
-          typeof address === "string" &&
           address.trim() !== ""
         ) {
-          // Fallback to existing address from form for PayPal
+          finalAddressString = address.trim().substring(0, 255);
+        } else {
+          // This case should ideally be caught by client-side validation or if addressOption is missing/invalid
+          // For COD, an address (either new or existing) must be validly provided if selected.
+          // If addressOption was not 'new' or 'existing' but COD is chosen, it's an issue.
+          // Or if addressOption was 'new' but required fields were empty (should be caught by validator).
+          // Or if addressOption was 'existing' but 'address' was empty (should be caught by validator).
+          console.error(
+            "COD order: Valid delivery address details not found after validation. AddressOption:",
+            addressOption,
+            "ReqBody:",
+            req.body
+          );
+          return res.status(400).json({
+            success: false,
+            message:
+              "A valid delivery address is required for Cash on Delivery. Please check your address selection and details.",
+          });
+        }
+      } else if (paymentMethod === "PayPal") {
+        if (paypalShippingAddress && paypalShippingAddress.trim() !== "") {
+          finalAddressString = paypalShippingAddress.trim().substring(0, 255);
+          // Fallback to new address from form if PayPal didn't provide one and 'new' was selected
+        } else if (
+          addressOption === "new" &&
+          new_address_line1 &&
+          new_city &&
+          new_postal_code &&
+          new_country
+        ) {
+          const parts = [
+            new_address_line1,
+            new_address_line2,
+            new_city,
+            new_state,
+            new_postal_code,
+            new_country,
+          ];
+          finalAddressString = parts
+            .filter((part) => part && part.trim() !== "")
+            .join(", ")
+            .substring(0, 255);
+          // Fallback to existing address from form
+        } else if (
+          addressOption === "existing" &&
+          address &&
+          address.trim() !== ""
+        ) {
           finalAddressString = address.trim().substring(0, 255);
         } else {
           console.warn(
-            "PayPal order: Shipping address not determined from PayPal or form."
+            "PayPal order: Shipping address not determined from PayPal or form. AddressOption:",
+            addressOption
           );
-          // If address is strictly required for PayPal orders too, add a check and error response here.
-          // For now, we might allow it if PayPal flow doesn't mandate it and it's not physical goods.
-          // However, for physical goods, this would be an issue.
+          // Depending on business logic, an address might still be required.
+          // If finalAddressString remains empty, it will be stored as such.
         }
       } else {
-        console.error("Invalid payment method received:", paymentMethod);
+        // This case should be caught by the paymentMethod validator
+        console.error(
+          "Invalid payment method after validation:",
+          paymentMethod
+        );
         return res
           .status(400)
           .json({ success: false, message: "Invalid payment method." });
       }
 
+      // Ensure finalAddressString is not undefined if it's going into the DB
+      if (finalAddressString === undefined) finalAddressString = "";
+
       const orderStatus = "Pending";
       const paymentStatusDb =
         paymentMethod === "PayPal" && status === "COMPLETED"
           ? "Paid"
-          : "Unpaid";
+          : paymentMethod === "PayPal" // If PayPal and not COMPLETED
+          ? "Failed" // Set to "Failed"
+          : "Unpaid"; // Default for COD or other non-PayPal scenarios
 
       const orderInsertQuery = `
         INSERT INTO orders (user_id, total_amount, payment_method, shipping_address, order_status, payment_status, notes) 
@@ -353,7 +463,12 @@ function renderConfirmationPage(req, res) {
 // Checkout and Payment Routes
 router.post("/checkout", isAuthenticated, renderCheckoutPage); // Kept as POST as per original app.js
 router.get("/checkout", isAuthenticated, renderCheckoutPage); // Added GET for direct access
-router.post("/checkout/process-payment", isAuthenticated, processPayment);
+router.post(
+  "/checkout/process-payment",
+  isAuthenticated,
+  processPaymentValidationRules,
+  processPayment
+);
 router.get("/confirmation", isAuthenticated, renderConfirmationPage);
 
 module.exports = router;

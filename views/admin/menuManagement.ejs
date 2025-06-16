@@ -228,27 +228,27 @@
           <div class="modal-body">
             <div class="form-group">
               <label for="item_name">Name</label>
-              <input type="text" class="form-control" id="item_name" name="item_name" required>
+              <input type="text" class="form-control" id="item_name" name="item_name" required minlength="2" maxlength="100">
             </div>
             <div class="form-group">
               <label for="item_type">Type (e.g., Vegetarian, Non-Vegan, Spicy)</label>
-              <input type="text" class="form-control" id="item_type" name="item_type" required>
+              <input type="text" class="form-control" id="item_type" name="item_type" required maxlength="50">
             </div>
             <div class="form-group">
               <label for="item_category">Category (e.g., Pizzas, Appetizers, Desserts, Beverages)</label>
-              <input type="text" class="form-control" id="item_category" name="item_category" required>
+              <input type="text" class="form-control" id="item_category" name="item_category" required maxlength="50">
             </div>
             <div class="form-group">
               <label for="item_price">Price</label>
-              <input type="number" step="0.01" class="form-control" id="item_price" name="item_price" required>
+              <input type="number" step="0.01" class="form-control" id="item_price" name="item_price" required min="0">
             </div>
             <div class="form-group">
               <label for="item_calories">Calories</label>
-              <input type="number" class="form-control" id="item_calories" name="item_calories" required>
+              <input type="number" class="form-control" id="item_calories" name="item_calories" required min="0">
             </div>
             <div class="form-group">
               <label for="item_serving">Serving (e.g., 1, 2-3, slice)</label>
-              <input type="text" class="form-control" id="item_serving" name="item_serving" required>
+              <input type="text" class="form-control" id="item_serving" name="item_serving" required maxlength="50">
             </div>
             <div class="form-group">
               <label for="item_img_upload">Image</label>
@@ -256,7 +256,7 @@
             </div>
             <div class="form-group">
               <label for="item_description_long">Description (Optional)</label>
-              <textarea class="form-control" id="item_description_long" name="item_description_long" rows="3"></textarea>
+              <textarea class="form-control" id="item_description_long" name="item_description_long" rows="3" maxlength="500"></textarea>
             </div>
           </div>
           <div class="modal-footer">
@@ -285,27 +285,27 @@
             <input type="hidden" id="edit_item_id" name="item_id"> <!-- Keep this if your JS uses it for form action -->
             <div class="form-group">
               <label for="edit_item_name">Name</label>
-              <input type="text" class="form-control" id="edit_item_name" name="item_name" required>
+              <input type="text" class="form-control" id="edit_item_name" name="item_name" required minlength="2" maxlength="100">
             </div>
             <div class="form-group">
               <label for="edit_item_type">Type</label>
-              <input type="text" class="form-control" id="edit_item_type" name="item_type" required>
+              <input type="text" class="form-control" id="edit_item_type" name="item_type" required maxlength="50">
             </div>
             <div class="form-group">
               <label for="edit_item_category">Category</label>
-              <input type="text" class="form-control" id="edit_item_category" name="item_category" required>
+              <input type="text" class="form-control" id="edit_item_category" name="item_category" required maxlength="50">
             </div>
             <div class="form-group">
               <label for="edit_item_price">Price</label>
-              <input type="number" step="0.01" class="form-control" id="edit_item_price" name="item_price" required>
+              <input type="number" step="0.01" class="form-control" id="edit_item_price" name="item_price" required min="0">
             </div>
             <div class="form-group">
               <label for="edit_item_calories">Calories</label>
-              <input type="number" class="form-control" id="edit_item_calories" name="item_calories" required>
+              <input type="number" class="form-control" id="edit_item_calories" name="item_calories" required min="0">
             </div>
             <div class="form-group">
               <label for="edit_item_serving">Serving</label>
-              <input type="text" class="form-control" id="edit_item_serving" name="item_serving" required>
+              <input type="text" class="form-control" id="edit_item_serving" name="item_serving" required maxlength="50">
             </div>
             <div class="form-group">
               <label for="edit_item_img">New Image (Optional)</label>
@@ -315,7 +315,7 @@
             </div>
             <div class="form-group">
               <label for="edit_item_description_long">Description (Optional)</label>
-              <textarea class="form-control" id="edit_item_description_long" name="item_description_long" rows="3"></textarea>
+              <textarea class="form-control" id="edit_item_description_long" name="item_description_long" rows="3" maxlength="500"></textarea>
             </div>
           </div>
           <div class="modal-footer">

@@ -6,10 +6,9 @@ function isAdmin(req, res, next) {
     return res.redirect("/admin/login");
   }
 
-  const pool = req.app.get("dbConnection"); // Get the mysql2 pool from app
+  const pool = req.app.get("dbConnection");
 
   if (!pool || typeof pool.promise !== "function") {
-    // Check if pool is valid and has .promise()
     console.error(
       "Database pool not found or is not a mysql2 pool in isAdmin middleware."
     );
@@ -26,7 +25,6 @@ function isAdmin(req, res, next) {
     )
     .then(([results]) => {
       if (!results || results.length === 0) {
-        // Invalid admin credentials
         res.clearCookie("cookuid");
         res.clearCookie("cookuname");
         return res.redirect(
@@ -37,7 +35,7 @@ function isAdmin(req, res, next) {
         );
       }
       // Admin is authenticated
-      req.admin = results[0]; // Optionally attach admin info to req
+      req.admin = results[0];
       next();
     })
     .catch((error) => {

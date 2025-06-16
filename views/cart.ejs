@@ -77,7 +77,7 @@
                     <td><a href="/item/<%= item.item_id %>" style="color: #ff8243; text-decoration: none;"><%= item.item_name %></a></td>
                     <td class="item-price" data-price="<%= item.item_price %>">$<%= item.item_price.toFixed(2) %></td>
                     <td>
-                      <input type="number" class="form-control quantity-input" style="width: 80px; margin: 0 auto; text-align: center;" id="quantity-<%= item.item_id %>" value="<%= item.quantity %>" min="1" data-item-id="<%= item.item_id %>" data-item-price="<%= item.item_price %>" onchange="handleQuantityChange(this)">
+                      <input type="number" class="form-control quantity-input" style="width: 80px; margin: 0 auto; text-align: center;" id="quantity-<%= item.item_id %>" value="<%= item.quantity %>" min="1" max="10" data-item-id="<%= item.item_id %>" data-item-price="<%= item.item_price %>" onchange="handleQuantityChange(this)">
                     </td>
                     <td class="item-subtotal-display" id="subtotal-<%= item.item_id %>">$<%= item.subtotal.toFixed(2) %></td>
                     <td>
@@ -89,6 +89,9 @@
                   <% }); %>
                 </tbody>
               </table>
+              <div style="text-align: left; margin-top: 5px; margin-bottom: 10px; padding-left: 15px;">
+                <small class="text-muted">* Max 10 units per item.</small>
+              </div>
               <div style="text-align: right; margin-bottom: 20px;">
                 <h4>Grand Total: $<span id="cart-grand-total"><%= total.toFixed(2) %></span></h4>
               </div>
@@ -214,23 +217,22 @@
     function handleQuantityChange(inputElement) {
       const itemId = inputElement.dataset.itemId;
       const itemPrice = parseFloat(inputElement.dataset.itemPrice);
-      const newQuantity = parseInt(inputElement.value);
+      let newQuantity = parseInt(inputElement.value);
+      const minQuantity = 1;
+      const maxQuantity = 10;
 
-      if (isNaN(newQuantity) || newQuantity < 0) {
-        alert("Invalid quantity. Quantity must be a positive number.");
-        // Re-fetch cart to reset to a valid state or use a stored old value
-        // For simplicity, we can just call updatePageTotals to reflect current input if it's bad
-        // Or better, fetch the actual current quantity from server if input is invalid.
-        // For now, let's assume user corrects it or it gets handled by min="1"
-        inputElement.value = inputElement.min || 1; // Reset to min if invalid
-        updatePageTotals();
-        return;
-      }
-
-      if (newQuantity === 0) {
-        // If quantity is set to 0, treat as removal
-        removeFromCart(itemId, `cart-item-row-${itemId}`);
-        return;
+      if (isNaN(newQuantity) || newQuantity < minQuantity) {
+        alert(`Invalid quantity. Quantity must be at least ${minQuantity}.`);
+        inputElement.value = minQuantity; // Reset to min if invalid
+        newQuantity = minQuantity;
+        // updatePageTotals(); // updateQuantity will call this
+        // return; // Proceed to update with min value
+      } else if (newQuantity > maxQuantity) {
+        alert(`Sorry, you can order a maximum of ${maxQuantity} units for this item at a time.`);
+        inputElement.value = maxQuantity; // Reset to max if exceeded
+        newQuantity = maxQuantity;
+        // updatePageTotals(); // updateQuantity will call this
+        // return; // Proceed to update with max value
       }
 
       updateQuantity(itemId, newQuantity, itemPrice, inputElement);

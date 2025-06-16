@@ -1,5 +1,5 @@
 // Loading and Using Modules Required
-require("dotenv").config(); // Load environment variables
+require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
@@ -7,12 +7,11 @@ const fileUpload = require("express-fileupload");
 const mysql = require("mysql2");
 const cron = require("node-cron");
 const statisticsService = require("./services/statisticsService");
+const session = require("express-session");
+const flash = require("connect-flash");
 
 // Initialize Express App
 const app = express();
-
-// Import services
-// const statisticsService = require("./services/statisticsService"); // 2. Require your statisticsService
 
 // Import routes
 const indexRoutesModule = require("./routes/indexRoutes.js");
@@ -22,10 +21,9 @@ const authRoutes = require("./routes/authRoutes.js");
 const shopRoutes = require("./routes/shopRoutes.js");
 const cartRoutes = require("./routes/cartRoutes.js");
 const checkoutRoutes = require("./routes/checkoutRoutes.js");
-const botApiRoutes = require("./routes/botApiRoutes.js");
-const imageRoutes = require("./routes/imageRoutes.js"); // Import the new image routes
-const adminStatisticsRoutes = require("./routes/adminStatisticsRoutes"); // Adjust path as needed
-const adminSalesRoutes = require("./routes/adminSalesRoutes"); // 1. Import with the new name
+const imageRoutes = require("./routes/imageRoutes.js");
+const adminStatisticsRoutes = require("./routes/adminStatisticsRoutes");
+const adminSalesRoutes = require("./routes/adminSalesRoutes");
 
 // Set View Engine and Middleware
 app.set("view engine", "ejs");
@@ -34,10 +32,22 @@ app.use(express.static("public"));
 app.use(express.json());
 app.use(cookieParser());
 app.use(fileUpload());
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "",
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    },
+  })
+);
+app.use(flash());
 
 // Database Connection
 const pool = mysql.createPool({
-  // Change to createPool and use 'pool'
   host: process.env.DB_HOST || "localhost",
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASSWORD || "",
@@ -46,7 +56,7 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
 });
-app.set("dbConnection", pool); // Set the pool object
+app.set("dbConnection", pool);
 
 // Middleware to make user data and cart count available to all views
 app.use((req, res, next) => {
@@ -54,37 +64,32 @@ app.use((req, res, next) => {
   res.locals.userid = req.cookies.cookuid || null;
   res.locals.isAdmin = req.cookies.usertype === "admin";
   res.locals.item_count = req.cookies.item_count || 0;
+  res.locals.success_msg = req.flash("success_msg");
+  res.locals.error_msg = req.flash("error_msg");
+  res.locals.success = req.flash("success");
+  res.locals.error = req.flash("error");
   next();
 });
 
 // Set up routes
 app.use("/", indexRoutesModule.router);
 app.use("/admin", adminRoutes);
+app.use("/admin/statistics", adminStatisticsRoutes);
+app.use("/admin/sales", adminSalesRoutes);
 app.use("/", userRoutes);
 app.use("/", authRoutes);
 app.use("/", shopRoutes);
 app.use("/", cartRoutes);
 app.use("/", checkoutRoutes);
-app.use("/api/bot", botApiRoutes);
-app.use("/images", imageRoutes); // Register the image routes under the /images path
-app.use("/admin/statistics", adminStatisticsRoutes);
-app.use("/admin/sales", adminSalesRoutes); // 2. Register with the new name
+app.use("/images", imageRoutes);
 
 // Schedule daily statistics snapshot
-// Runs every day at 1:05 AM (adjust as needed)
+// Runs every day at 1:05 AM
 cron.schedule(
   "5 1 * * *",
   async () => {
     console.log("Running daily statistics snapshot job...");
     try {
-      // Ensure you pass the promise-enabled pool if calculateAndStoreDailySnapshots expects it
-      // If calculateAndStoreDailySnapshots is using the app's main pool directly,
-      // and that pool is already mysql2/promise, this is fine.
-      // Otherwise, you might need to get the pool differently or ensure it's promise-wrapped.
-      // Based on populateSnapshots.js, calculateAndStoreDailySnapshots expects a mysql2/promise pool.
-      // So, we create one here specifically for the job, or ensure the main app pool is compatible.
-
-      // Option 1: Create a dedicated promise pool for the cron job (similar to populateSnapshots.js)
       const cronPool = mysql
         .createPool({
           host: process.env.DB_HOST || "localhost",
@@ -92,21 +97,21 @@ cron.schedule(
           password: process.env.DB_PASSWORD || "",
           database: process.env.DB_NAME || "pizzazzpizza",
           waitForConnections: true,
-          connectionLimit: 1, // Sufficient for a script
+          connectionLimit: 1,
           queueLimit: 0,
         })
-        .promise(); // Make sure it's a promise pool
+        .promise();
 
       await statisticsService.calculateAndStoreDailySnapshots(cronPool);
       console.log("Daily statistics snapshot job completed successfully.");
-      await cronPool.end(); // Close the dedicated pool
+      await cronPool.end();
     } catch (error) {
       console.error("Error running daily statistics snapshot job:", error);
     }
   },
   {
     scheduled: true,
-    timezone: "Asia/Ho_Chi_Minh", // Or your server's timezone
+    timezone: "Asia/Ho_Chi_Minh",
   }
 );
 
