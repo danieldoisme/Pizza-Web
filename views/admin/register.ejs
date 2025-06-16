@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Log In - PizzazzPizza</title>
+  <title>Admin Registration - PizzazzPizza</title>
   <!-- for icons  -->
   <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
   <!-- bootstrap  -->
@@ -37,7 +37,7 @@
 
   <div id="viewport">
     <div id="js-scroll-content">
-      <!-- Log In starts  -->
+      <!-- Registration starts  -->
       <section class="section" style="background-image: url(/images/menu-bg.png)">
         <div class="container">
           <div class="row">
@@ -45,31 +45,53 @@
               <div class="sec-title text-center mb-5">
                 <h2 class="h2-title">
                   <span style="color: orange; display: inline">Admin</span>
-                  Log In
+                  Registration
                 </h2>
                 <div class="sec-title-shape mb-4">
                   <img src="/images/title-shape.svg" alt="" />
                 </div>
-                <form action="/admin/login" method="post">
-                  <input type="text" placeholder="Enter your Admin Email" name="admin_email" required class="form-input" style="width: 450px" /><br /><br />
-                  <input type="password" placeholder="Password" name="admin_password" required class="form-input" style="width: 450px" /><br /><br />
-                  <input type="submit" value="Log In" class="sec-btn sec-btn-orange" style="color: white; background: orange" /><br />
+
+                <% if (error && error.length > 0) { %>
+                <div class="alert alert-danger" role="alert" style="max-width: 450px; margin: 0 auto 15px auto; text-align: left;">
+                  <strong>Please correct the following errors:</strong><br>
+                  <% if (Array.isArray(error)) { %>
+                  <% error.forEach(function(errMsg) { %>
+                  - <%= errMsg %><br>
+                  <% }); %>
+                  <% } else { %>
+                  <% error.split(',').forEach(function(errMsg) { %>
+                  - <%= errMsg.trim() %><br>
+                  <% }); %>
+                  <% } %>
+                </div>
+                <% } %>
+                <% if (message && message.length > 0) { %>
+                <div class="alert alert-success" role="alert" style="max-width: 450px; margin: 0 auto 15px auto;">
+                  <%= message %>
+                </div>
+                <% } %>
+
+                <form action="/admin/register" method="post">
+                  <input type="text" placeholder="Admin Name" name="admin_name" required class="form-input" style="width: 450px" value="<%= oldInput && oldInput.admin_name ? oldInput.admin_name : '' %>" maxlength="45" /><br /><br />
+                  
+                  <input type="email" placeholder="Admin Email" name="admin_email" required class="form-input" style="width: 450px" value="<%= oldInput && oldInput.admin_email ? oldInput.admin_email : '' %>" maxlength="45" /><br /><br />
+                  
+                  <input type="text" placeholder="Mobile Number" name="admin_mobile" required class="form-input" style="width: 450px" value="<%= oldInput && oldInput.admin_mobile ? oldInput.admin_mobile : '' %>" maxlength="45" /><br /><br />
+                  
+                  <input type="password" placeholder="Password" name="admin_password" required minlength="8" class="form-input" style="width: 450px" maxlength="100" /><br /><br />
+                  
+                  <input type="password" placeholder="Confirm Password" name="admin_confirm_password" required minlength="8" class="form-input" style="width: 450px" maxlength="100" /><br /><br />
+                  
+                  <input type="password" placeholder="Admin Registration Code" name="admin_code" required class="form-input" style="width: 450px" /><br /><br />
+                  
+                  <input type="submit" value="Register" class="sec-btn sec-btn-orange" style="color: white; background: orange" /><br />
                 </form>
                 <br />
                 <i class="text-capitalize" style="font-size: 20px">
-                  Back to User Login?
-                  <a href="/signin">
+                  Already have an account?
+                  <a href="/admin/login">
                     <span style="font-weight: 600; color: orange; cursor: pointer">
-                      Click Here
-                    </span>
-                  </a>
-                </i>
-                <br /><br />
-                <i class="text-capitalize" style="font-size: 20px">
-                  Need an admin account?
-                  <a href="/admin/register">
-                    <span style="font-weight: 600; color: orange; cursor: pointer">
-                      Register Here
+                      Log In
                     </span>
                   </a>
                 </i>
@@ -78,7 +100,7 @@
           </div>
         </div>
       </section>
-      <!-- Log In ends  -->
+      <!-- Registration ends  -->
 
       <%- include('../partials/footer') %>
     </div>
@@ -111,4 +133,4 @@
   <script src="/javascripts/main.js"></script>
 </body>
 
-</html>
+</html> 

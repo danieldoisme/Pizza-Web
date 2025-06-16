@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Biểu đồ Doanh số</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .chart-container { height: 400px; margin-bottom: 30px; }
+        h1 { color: #333; }
+        .chart-card { 
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .chart-card h2 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Biểu đồ Doanh số</h1>
+        <p>Dữ liệu từ ngày: 12/6/2025</p>
+
+        <div class="chart-card">
+            <h2>Monthly Sales Trend Comparison</h2>
+            <div class="chart-container">
+                <canvas id="monthlySalesChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h2>Weekly Sales Performance (Current Week)</h2>
+            <div class="chart-container">
+                <canvas id="weeklySalesChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Dữ liệu biểu đồ
+        const monthlyCurrentData = [{"date":"2025-06-01","sales":1536},{"date":"2025-06-02","sales":1460},{"date":"2025-06-03","sales":1505},{"date":"2025-06-04","sales":1712},{"date":"2025-06-05","sales":926},{"date":"2025-06-06","sales":1203},{"date":"2025-06-07","sales":892},{"date":"2025-06-08","sales":981},{"date":"2025-06-09","sales":1162},{"date":"2025-06-10","sales":1298},{"date":"2025-06-11","sales":1567},{"date":"2025-06-12","sales":1469}];
+        const monthlyPreviousData = [{"date":"2025-06-01","sales":727},{"date":"2025-06-02","sales":910},{"date":"2025-06-03","sales":1988},{"date":"2025-06-04","sales":1203},{"date":"2025-06-05","sales":1386},{"date":"2025-06-06","sales":1181},{"date":"2025-06-07","sales":618},{"date":"2025-06-08","sales":614},{"date":"2025-06-09","sales":1123},{"date":"2025-06-10","sales":1660},{"date":"2025-06-11","sales":719},{"date":"2025-06-12","sales":983},{"date":"2025-06-13","sales":816},{"date":"2025-06-14","sales":1981},{"date":"2025-06-15","sales":1246},{"date":"2025-06-16","sales":1945},{"date":"2025-06-17","sales":1486},{"date":"2025-06-18","sales":804},{"date":"2025-06-19","sales":1420},{"date":"2025-06-20","sales":1679},{"date":"2025-06-21","sales":523},{"date":"2025-06-22","sales":1711},{"date":"2025-06-23","sales":505},{"date":"2025-06-24","sales":1107},{"date":"2025-06-25","sales":1769},{"date":"2025-06-26","sales":1498},{"date":"2025-06-27","sales":1900},{"date":"2025-06-28","sales":1782},{"date":"2025-06-29","sales":1818},{"date":"2025-06-30","sales":1064}];
+        const weeklyCurrentData = [{"sales":1060,"dayOfWeek":"Mon"},{"sales":1372,"dayOfWeek":"Tue"},{"sales":1709,"dayOfWeek":"Wed"},{"sales":1827,"dayOfWeek":"Thu"},{"sales":778,"dayOfWeek":"Fri"},{"sales":983,"dayOfWeek":"Sat"},{"sales":949,"dayOfWeek":"Sun"}];
+        const weeklyPreviousData = [{"sales":724,"dayOfWeek":"Mon"},{"sales":1691,"dayOfWeek":"Tue"},{"sales":858,"dayOfWeek":"Wed"},{"sales":761,"dayOfWeek":"Thu"},{"sales":1911,"dayOfWeek":"Fri"},{"sales":762,"dayOfWeek":"Sat"},{"sales":603,"dayOfWeek":"Sun"}];
+
+        // Hàm tạo biểu đồ
+        document.addEventListener('DOMContentLoaded', function() {
+            // Biểu đồ tháng
+            const monthlyCtx = document.getElementById('monthlySalesChart').getContext('2d');
+            
+            // Xử lý dữ liệu tháng
+            const dayLabels = Array.from({length: 31}, (_, i) => (i + 1).toString());
+            
+            const processMonthlyData = (data) => {
+                const result = Array(31).fill(0);
+                if (data && Array.isArray(data)) {
+                    data.forEach(item => {
+                        if (item && item.date) {
+                            const day = new Date(item.date).getDate();
+                            if (day >= 1 && day <= 31) {
+                                result[day-1] = Number(item.sales);
+                            }
+                        }
+                    });
+                }
+                return result;
+            };
+            
+            const currentMonthData = processMonthlyData(monthlyCurrentData);
+            const previousMonthData = processMonthlyData(monthlyPreviousData);
+            
+            new Chart(monthlyCtx, {
+                type: 'line',
+                data: {
+                    labels: dayLabels,
+                    datasets: [
+                        {
+                            label: 'Current Month',
+                            data: currentMonthData,
+                            borderColor: '#007bff',
+                            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Previous Month',
+                            data: previousMonthData,
+                            borderColor: '#6c757d',
+                            backgroundColor: 'rgba(108, 117, 125, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+            
+            // Biểu đồ tuần
+            const weeklyCtx = document.getElementById('weeklySalesChart').getContext('2d');
+            
+            // Xử lý dữ liệu tuần
+            const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            
+            const processWeeklyData = (data) => {
+                const result = Array(7).fill(0);
+                if (data && Array.isArray(data)) {
+                    data.forEach(item => {
+                        if (item && item.dayOfWeek) {
+                            const index = weekDays.indexOf(item.dayOfWeek);
+                            if (index !== -1) {
+                                result[index] = Number(item.sales);
+                            }
+                        }
+                    });
+                }
+                return result;
+            };
+            
+            const currentWeekData = processWeeklyData(weeklyCurrentData);
+            const previousWeekData = processWeeklyData(weeklyPreviousData);
+            
+            new Chart(weeklyCtx, {
+                type: 'bar',
+                data: {
+                    labels: weekDays,
+                    datasets: [
+                        {
+                            label: 'Current Week',
+                            data: currentWeekData,
+                            backgroundColor: '#28a745',
+                            borderColor: '#1e7e34',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Previous Week',
+                            data: previousWeekData,
+                            backgroundColor: '#ffc107',
+                            borderColor: '#d39e00',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        });
+    </script>
+</body>
+</html>

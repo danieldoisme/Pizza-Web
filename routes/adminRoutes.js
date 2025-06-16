@@ -16,7 +16,226 @@ router.get("/login", (req, res) => {
   });
 });
 
-router.post("/login", async (req, res) => {
+// Admin Registration Page
+router.get("/register", (req, res) => {
+  // If already logged in, redirect to dashboard
+  if (
+    req.cookies.cookuid &&
+    req.cookies.cookuname &&
+    req.cookies.usertype === "admin"
+  ) {
+    return res.redirect("/admin/dashboard");
+  }
+
+  const queryError = req.query.error; // For errors passed directly in URL
+  const queryMessage = req.query.message; // For messages passed directly in URL
+
+  // Use res.locals which are populated by your app.js middleware from req.flash()
+  const flashedError = res.locals.error;
+  const flashedSuccess = res.locals.success;
+
+  const oldInput = req.flash("oldInput")[0] || {}; // 'oldInput' uses a distinct flash key
+
+  let displayError = null;
+  if (queryError) {
+    // Priority to query parameter errors
+    displayError = queryError;
+  } else if (flashedError && flashedError.length > 0) {
+    // flashedError from res.locals.error should be an array if set by express-validator,
+    // or a string if flashed manually as a single message.
+    // The app.js middleware currently sets res.locals.error = req.flash('error'),
+    // and req.flash('error') returns an array if multiple messages were flashed for 'error'.
+    displayError = Array.isArray(flashedError)
+      ? flashedError.join(", ")
+      : flashedError;
+  }
+
+  let displayMessage = null;
+  if (queryMessage) {
+    // Priority to query parameter messages
+    displayMessage = queryMessage;
+  } else if (flashedSuccess && flashedSuccess.length > 0) {
+    // flashedSuccess from res.locals.success should be an array if multiple messages were flashed.
+    displayMessage = Array.isArray(flashedSuccess)
+      ? flashedSuccess.join(", ")
+      : flashedSuccess;
+  }
+
+  res.render("admin/login", {
+    error: displayError, // This will be a string (comma-separated if multiple errors) or null
+    message: displayMessage, // This will be a string or null
+    oldInput: oldInput,
+  });
+});
+
+// Admin Registration Page
+router.get("/register", (req, res) => {
+  // If already logged in, redirect to dashboard
+  if (
+    req.cookies.cookuid &&
+    req.cookies.cookuname &&
+    req.cookies.usertype === "admin"
+  ) {
+    return res.redirect("/admin/dashboard");
+  }
+
+  const queryError = req.query.error;
+  const queryMessage = req.query.message;
+  const flashedError = res.locals.error;
+  const flashedSuccess = res.locals.success;
+  const oldInput = req.flash("oldInput")[0] || {};
+
+  let displayError = null;
+  if (queryError) {
+    displayError = queryError;
+  } else if (flashedError && flashedError.length > 0) {
+    displayError = Array.isArray(flashedError)
+      ? flashedError.join(", ")
+      : flashedError;
+  }
+
+  let displayMessage = null;
+  if (queryMessage) {
+    displayMessage = queryMessage;
+  } else if (flashedSuccess && flashedSuccess.length > 0) {
+    displayMessage = Array.isArray(flashedSuccess)
+      ? flashedSuccess.join(", ")
+      : flashedSuccess;
+  }
+
+  res.render("admin/register", {
+    error: displayError,
+    message: displayMessage,
+    oldInput: oldInput,
+  });
+});
+
+// Admin Registration Validation Rules
+const adminRegisterValidationRules = [
+  body("admin_name")
+    .notEmpty()
+    .withMessage("Admin name is required.")
+    .trim()
+    .escape(),
+  body("admin_email")
+    .isEmail()
+    .withMessage("Please enter a valid email address.")
+    .normalizeEmail(),
+  body("admin_mobile")
+    .notEmpty()
+    .withMessage("Mobile number is required.")
+    .isMobilePhone("any", { strictMode: false })
+    .withMessage("Invalid mobile number.")
+    .trim()
+    .escape(),
+  body("admin_password")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long.")
+    .matches(/[A-Z]/)
+    .withMessage("Password must contain at least one uppercase letter.")
+    .matches(/[a-z]/)
+    .withMessage("Password must contain at least one lowercase letter.")
+    .matches(/[0-9]/)
+    .withMessage("Password must contain at least one number.")
+    .matches(/[\W_]/)
+    .withMessage(
+      "Password must contain at least one special character (e.g., !@#$%^&*)."
+    ),
+  body("admin_confirm_password").custom((value, { req }) => {
+    if (value !== req.body.admin_password) {
+      throw new Error("Passwords do not match.");
+    }
+    return true;
+  }),
+  body("admin_code").custom((value) => {
+    // Mã đăng ký admin được xác định trước
+    const adminRegisterCode = process.env.ADMIN_REGISTER_CODE || "PizzazzAdmin2024";
+    if (value !== adminRegisterCode) {
+      throw new Error("Invalid admin registration code.");
+    }
+    return true;
+  }),
+];
+
+// Admin Registration Handler
+router.post("/register", adminRegisterValidationRules, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    req.flash(
+      "error",
+      errors.array().map((err) => err.msg)
+    );
+    req.flash("oldInput", req.body);
+    return res.redirect("/admin/register");
+  }
+
+  const { admin_name, admin_email, admin_mobile, admin_password } = req.body;
+  const pool = req.app.get("dbConnection");
+
+  try {
+    // Kiểm tra email đã tồn tại chưa
+    const [existingAdmin] = await pool.promise().query(
+      "SELECT * FROM admin WHERE admin_email = ?",
+      [admin_email]
+    );
+
+    if (existingAdmin.length > 0) {
+      req.flash("error", "Email đã được sử dụng. Vui lòng chọn email khác.");
+      req.flash("oldInput", {
+        admin_name,
+        admin_email,
+        admin_mobile
+      });
+      return res.redirect("/admin/register");
+    }
+
+    // Mã hóa mật khẩu
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(admin_password, saltRounds);
+
+    // Thêm admin mới vào cơ sở dữ liệu
+    await pool.promise().query(
+      "INSERT INTO admin (admin_name, admin_email, admin_password, admin_mobile) VALUES (?, ?, ?, ?)",
+      [admin_name, admin_email, hashedPassword, admin_mobile]
+    );
+
+    req.flash("success", "Đăng ký tài khoản admin thành công. Vui lòng đăng nhập.");
+    return res.redirect("/admin/login");
+  } catch (error) {
+    console.error("Admin registration error:", error);
+    req.flash("error", "Đã xảy ra lỗi trong quá trình đăng ký. Vui lòng thử lại.");
+    req.flash("oldInput", {
+      admin_name,
+      admin_email,
+      admin_mobile
+    });
+    return res.redirect("/admin/register");
+  }
+});
+
+const adminLoginValidationRules = [
+  body("admin_email")
+    .isEmail()
+    .withMessage("Please enter a valid email address.")
+    .normalizeEmail(),
+  body("admin_password")
+    .notEmpty()
+    .withMessage("Password is required.")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long."),
+];
+
+router.post("/login", adminLoginValidationRules, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    req.flash(
+      "error",
+      errors.array().map((err) => err.msg)
+    );
+    req.flash("oldInput", req.body);
+    return res.redirect("/admin/login");
+  }
+
   try {
     const { admin_email, admin_password } = req.body;
     const pool = req.app.get("dbConnection");

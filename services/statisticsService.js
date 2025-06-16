@@ -651,7 +651,7 @@ async function getSalesComparisonData(pool, date = null) {
     const [rows] = await promisePool.query(querySql, queryParams);
 
     if (rows.length > 0) {
-      const data = rows[0];
+      const data = { ...rows[0] };
       const fieldsToParse = [
         "chart_monthly_current_mtd_daily_sales_json",
         "chart_monthly_previous_full_daily_sales_json",
@@ -660,40 +660,22 @@ async function getSalesComparisonData(pool, date = null) {
       ];
 
       fieldsToParse.forEach((field) => {
-        const originalValue = data[field];
-        if (typeof originalValue === "string" && originalValue.trim() !== "") {
+        if (typeof data[field] === 'string' && data[field].trim()) {
           try {
-            data[field] = JSON.parse(originalValue);
+            data[field] = JSON.parse(data[field]);
           } catch (e) {
-            console.error(
-              `Error parsing JSON for field ${field} on date ${data.record_date}. Value was: "${originalValue}". Error:`,
-              e.message
-            );
-            // Set to a default that makes sense for charts, e.g., null or an empty structure
-            data[field] = null; // Or { labels: [], data: [] } or [] depending on expected chart structure
+            console.error(`Error parsing JSON for field ${field}:`, e.message);
+            data[field] = null;
           }
-        } else if (
-          originalValue === null ||
-          (typeof originalValue === "string" && originalValue.trim() === "")
-        ) {
-          // If it's SQL NULL or an empty string, treat as no data.
-          console.log(
-            `Field ${field} on date ${data.record_date} is null or empty string. Setting to null.`
-          );
-          data[field] = null;
-        } else if (
-          typeof originalValue !== "string" &&
-          originalValue !== null
-        ) {
-          // If it's already an object (shouldn't happen if DB schema is TEXT/VARCHAR for these)
-          console.warn(
-            `Field ${field} on date ${
-              data.record_date
-            } is not a string but not null. Type: ${typeof originalValue}. Using as is or setting to null.`
-          );
-          // Decide if you want to use it as is, or nullify it if it's unexpected.
-          // For safety, if it's not expected to be pre-parsed, nullify it.
-          data[field] = null;
+        } 
+        else if (data[field] instanceof Buffer) {
+          try {
+            const jsonStr = data[field].toString();
+            data[field] = JSON.parse(jsonStr);
+          } catch (e) {
+            console.error(`Error parsing Buffer to JSON for field ${field}:`, e.message);
+            data[field] = null;
+          }
         }
       });
       return data;
