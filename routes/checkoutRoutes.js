@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { body, validationResult } = require("express-validator"); // Import express-validator
-
+const statisticsService = require('../services/statisticsService');
 const isAuthenticated = require("../middleware/isAuthenticated");
 
 // Render Checkout Page
@@ -400,7 +400,7 @@ async function processPayment(req, res) {
 
               const clearCartQuery =
                 "DELETE FROM user_cart_items WHERE user_id = ?";
-              connection.query(clearCartQuery, [user_id], (clearCartErr) => {
+              connection.query(clearCartQuery, [user_id],async (clearCartErr) => {
                 if (clearCartErr) {
                   console.error(
                     "Error clearing cart after order:",
@@ -408,6 +408,16 @@ async function processPayment(req, res) {
                   );
                 }
                 res.cookie("item_count", 0, { httpOnly: false });
+
+                try {
+                  const io = req.app.get('io');
+                  const dbPool = req.app.get('dbConnection');
+                  const fullDashboardData = await statisticsService.getLiveDashboardData(dbPool);
+                  io.emit('dashboard_update', fullDashboardData);
+                  console.log('Socket event "dashboard_update" với dữ liệu đầy đủ đã được phát đi.');
+                } catch (statsError) {
+                  console.error("Lỗi khi phát sự kiện cập nhật dashboard:", statsError);
+                }
 
                 res.json({
                   success: true,
