@@ -38,7 +38,7 @@ app.use(cookieParser());
 app.use(fileUpload());
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "khoa-bi-mat-tam-thoi-de-test",
+    secret: process.env.SESSION_SECRET || "132132132133",
     resave: false,
     saveUninitialized: true,
     cookie: {

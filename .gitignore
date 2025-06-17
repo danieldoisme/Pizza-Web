@@ -7,7 +7,7 @@
 
 # Environment
 .env
-SESSION_SECRET=day_la_khoa_bi_mat_rat_an_toan_cua_toi_123456
+
 
 # Dependencies
 node_modules
