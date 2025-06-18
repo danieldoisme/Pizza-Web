@@ -2,11 +2,9 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const isAdmin = require("../middleware/isAdmin.js");
-const { body, validationResult } = require("express-validator"); // For input validation
+const { body, validationResult } = require("express-validator");
 
-// --- Login/Logout Routes (No Auth Required) ---
 router.get("/login", (req, res) => {
-  // If already logged in, redirect to dashboard
   if (
     req.cookies.cookuid &&
     req.cookies.cookuname &&
@@ -15,24 +13,18 @@ router.get("/login", (req, res) => {
     return res.redirect("/admin/dashboard");
   }
 
-  const queryError = req.query.error; // For errors passed directly in URL
-  const queryMessage = req.query.message; // For messages passed directly in URL
+  const queryError = req.query.error;
+  const queryMessage = req.query.message;
 
-  // Use res.locals which are populated by your app.js middleware from req.flash()
   const flashedError = res.locals.error;
   const flashedSuccess = res.locals.success;
 
-  const oldInput = req.flash("oldInput")[0] || {}; // 'oldInput' uses a distinct flash key
+  const oldInput = req.flash("oldInput")[0] || {};
 
   let displayError = null;
   if (queryError) {
-    // Priority to query parameter errors
     displayError = queryError;
   } else if (flashedError && flashedError.length > 0) {
-    // flashedError from res.locals.error should be an array if set by express-validator,
-    // or a string if flashed manually as a single message.
-    // The app.js middleware currently sets res.locals.error = req.flash('error'),
-    // and req.flash('error') returns an array if multiple messages were flashed for 'error'.
     displayError = Array.isArray(flashedError)
       ? flashedError.join(", ")
       : flashedError;
@@ -40,18 +32,16 @@ router.get("/login", (req, res) => {
 
   let displayMessage = null;
   if (queryMessage) {
-    // Priority to query parameter messages
     displayMessage = queryMessage;
   } else if (flashedSuccess && flashedSuccess.length > 0) {
-    // flashedSuccess from res.locals.success should be an array if multiple messages were flashed.
     displayMessage = Array.isArray(flashedSuccess)
       ? flashedSuccess.join(", ")
       : flashedSuccess;
   }
 
   res.render("admin/login", {
-    error: displayError, // This will be a string (comma-separated if multiple errors) or null
-    message: displayMessage, // This will be a string or null
+    error: displayError,
+    message: displayMessage,
     oldInput: oldInput,
   });
 });
@@ -88,35 +78,33 @@ router.post("/login", adminLoginValidationRules, async (req, res) => {
 
     if (results.length === 0) {
       req.flash("error", "Invalid email or password.");
-      req.flash("oldInput", { admin_email }); // Only flash email back
+      req.flash("oldInput", { admin_email });
       return res.redirect("/admin/login");
     }
 
     const admin = results[0];
-    // Ensure admin.admin_password is the hashed password from the database
     const match = await bcrypt.compare(admin_password, admin.admin_password);
 
     if (match) {
       res.cookie("cookuid", admin.admin_id.toString(), {
         httpOnly: true,
         sameSite: "strict",
-        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        maxAge: 24 * 60 * 60 * 1000,
       });
       res.cookie("cookuname", admin.admin_name, {
         httpOnly: true,
         sameSite: "strict",
         maxAge: 24 * 60 * 60 * 1000,
       });
-      // Set a cookie to identify user type for isAdmin middleware or client-side logic
       res.cookie("usertype", "admin", {
-        httpOnly: true, // httpOnly if only server needs it, false if client JS needs it
+        httpOnly: true,
         sameSite: "strict",
         maxAge: 24 * 60 * 60 * 1000,
       });
       res.redirect("/admin/dashboard");
     } else {
       req.flash("error", "Invalid email or password.");
-      req.flash("oldInput", { admin_email }); // Only flash email back
+      req.flash("oldInput", { admin_email });
       return res.redirect("/admin/login");
     }
   } catch (error) {
@@ -129,17 +117,14 @@ router.post("/login", adminLoginValidationRules, async (req, res) => {
 router.get("/logout", (req, res) => {
   res.clearCookie("cookuid");
   res.clearCookie("cookuname");
-  res.clearCookie("usertype"); // Clear the usertype cookie
-  req.flash("success", "Logged out successfully."); // Use flash for logout message
+  res.clearCookie("usertype");
+  req.flash("success", "Logged out successfully.");
   res.redirect("/admin/login");
 });
 
-// --- Apply isAdmin Middleware to All Protected Routes Below ---
 router.use(isAdmin);
 
-// --- Protected Admin Routes ---
 router.get("/dashboard", (req, res) => {
-  // You can fetch any data needed for the dashboard here
   res.render("admin/dashboard", {
     adminName: req.cookies.cookuname,
     message: req.query.message || null,
@@ -148,16 +133,13 @@ router.get("/dashboard", (req, res) => {
   });
 });
 
-// --- Menu Management ---
-// New Main Route for Menu Management Page
 router.get("/menu", async (req, res) => {
-  const pool = req.app.get("dbConnection"); // Use pool
+  const pool = req.app.get("dbConnection");
 
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10; // Default 10 items per page
+  const limit = parseInt(req.query.limit) || 10;
   const offset = (page - 1) * limit;
 
-  // Define allowed sortable columns to prevent SQL injection
   const allowedSortBy = [
     "item_id",
     "item_name",
@@ -167,18 +149,17 @@ router.get("/menu", async (req, res) => {
     "item_calories",
     "item_serving",
   ];
-  let sortBy = req.query.sortBy || "item_name"; // Default sort by item_name
+  let sortBy = req.query.sortBy || "item_name";
   if (!allowedSortBy.includes(sortBy)) {
-    sortBy = "item_name"; // Fallback to default if invalid column is provided
+    sortBy = "item_name";
   }
 
-  let sortOrder = req.query.sortOrder || "ASC"; // Default sort order ASC
+  let sortOrder = req.query.sortOrder || "ASC";
   if (sortOrder.toUpperCase() !== "ASC" && sortOrder.toUpperCase() !== "DESC") {
-    sortOrder = "ASC"; // Fallback to default if invalid order
+    sortOrder = "ASC";
   }
 
   const countQuery = "SELECT COUNT(*) AS totalItems FROM menu";
-  // Use pool.escapeId for sortBy to prevent SQL injection
   const dataQuery = `
     SELECT 
       item_id, item_name, item_type, item_category, item_price, 
@@ -186,8 +167,7 @@ router.get("/menu", async (req, res) => {
       item_description_long
     FROM menu 
     ORDER BY ${pool.escapeId(sortBy)} ${
-    // Use pool.escapeId
-    sortOrder.toUpperCase() === "DESC" ? "DESC" : "ASC" // Ensure sortOrder is sanitized
+    sortOrder.toUpperCase() === "DESC" ? "DESC" : "ASC"
   }
     LIMIT ? 
     OFFSET ?`;
@@ -214,10 +194,7 @@ router.get("/menu", async (req, res) => {
     });
   } catch (err) {
     console.error("Error fetching menu items for management:", err);
-    // It's generally better to render an error page or send a JSON error
-    // than redirecting with query parameters for errors, but following existing pattern.
     res.status(500).render("admin/errorAdmin", {
-      // Render an error page
       adminName: req.cookies.cookuname,
       error: "Could not load menu items due to a server error.",
       page: "error",
@@ -250,10 +227,8 @@ const addFoodValidationRules = [
     .isInt({ min: 0 })
     .withMessage("Calories must be a non-negative integer."),
   body("item_price")
-    .isFloat({ min: 0 }) // Changed precision
-    .withMessage(
-      "Price must be a non-negative number." // Simplified message
-    ),
+    .isFloat({ min: 0 })
+    .withMessage("Price must be a non-negative number."),
   body("item_description_long")
     .optional({ checkFalsy: true })
     .trim()
@@ -261,14 +236,13 @@ const addFoodValidationRules = [
 ];
 
 router.post("/addFood", addFoodValidationRules, async (req, res) => {
-  const pool = req.app.get("dbConnection"); // <--- ADD THIS LINE
+  const pool = req.app.get("dbConnection");
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const errorMessages = errors
       .array()
       .map((err) => err.msg)
       .join(", ");
-    // Consider flashing old input as well if you want to repopulate the form
     return res.redirect(
       "/admin/menu?error=" +
         encodeURIComponent(`Validation failed: ${errorMessages}`)
@@ -288,7 +262,7 @@ router.post("/addFood", addFoodValidationRules, async (req, res) => {
   let imageBuffer = null;
   let imageMimeType = null;
 
-  const MAX_IMG_SIZE = 5 * 1024 * 1024; // 5MB
+  const MAX_IMG_SIZE = 5 * 1024 * 1024;
   const ALLOWED_IMG_TYPES = [
     "image/jpeg",
     "image/png",
@@ -300,7 +274,6 @@ router.post("/addFood", addFoodValidationRules, async (req, res) => {
     const foodImage = req.files.item_img;
 
     if (foodImage.size === 0) {
-      // Check if file is empty
       return res.redirect(
         "/admin/menu?error=" + encodeURIComponent("Food image cannot be empty.")
       );
@@ -332,10 +305,9 @@ router.post("/addFood", addFoodValidationRules, async (req, res) => {
     "INSERT INTO menu (item_name, item_type, item_category, item_serving, item_calories, item_price, item_description_long, item_img_blob, item_img_mimetype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
   try {
-    await pool.promise().query(
-      // Changed to await pool.promise().query
-      query,
-      [
+    await pool
+      .promise()
+      .query(query, [
         item_name,
         item_type,
         item_category,
@@ -345,8 +317,7 @@ router.post("/addFood", addFoodValidationRules, async (req, res) => {
         item_description_long || null,
         imageBuffer,
         imageMimeType,
-      ]
-    );
+      ]);
     res.redirect(
       "/admin/menu?message=" +
         encodeURIComponent("Food item added successfully!")
@@ -367,7 +338,6 @@ router.post("/addFood", addFoodValidationRules, async (req, res) => {
   }
 });
 
-// API Endpoint to Fetch Item Data for Editing
 router.get("/api/food/:itemId", async (req, res) => {
   const pool = req.app.get("dbConnection");
   const itemId = req.params.itemId;
@@ -376,7 +346,6 @@ router.get("/api/food/:itemId", async (req, res) => {
   try {
     const [results] = await pool.promise().query(query, [itemId]);
     if (results.length === 0) {
-      // Ensure a message is sent when item is not found
       return res
         .status(404)
         .json({ success: false, message: "Item not found." });
@@ -384,7 +353,6 @@ router.get("/api/food/:itemId", async (req, res) => {
     res.json({ success: true, item: results[0] });
   } catch (err) {
     console.error("Error fetching food item for API:", err);
-    // Ensure a message is sent on database error
     res.status(500).json({
       success: false,
       message: "Database error occurred while fetching item details.",
@@ -417,10 +385,8 @@ const editFoodValidationRules = [
     .isInt({ min: 0 })
     .withMessage("Calories must be a non-negative integer."),
   body("item_price")
-    .isFloat({ min: 0 }) // Changed precision
-    .withMessage(
-      "Price must be a non-negative number." // Simplified message
-    ),
+    .isFloat({ min: 0 })
+    .withMessage("Price must be a non-negative number."),
   body("item_description_long")
     .optional({ checkFalsy: true })
     .trim()
@@ -428,7 +394,7 @@ const editFoodValidationRules = [
 ];
 
 router.post("/editFood/:itemId", editFoodValidationRules, async (req, res) => {
-  const pool = req.app.get("dbConnection"); // <--- ADD THIS LINE
+  const pool = req.app.get("dbConnection");
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const errorMessages = errors
@@ -439,7 +405,7 @@ router.post("/editFood/:itemId", editFoodValidationRules, async (req, res) => {
       `/admin/menu?error=${encodeURIComponent(
         `Validation failed: ${errorMessages}`
       )}&editItemId=${req.params.itemId}`
-    ); // Keep itemId for potential repopulation
+    );
   }
 
   const {
@@ -457,7 +423,7 @@ router.post("/editFood/:itemId", editFoodValidationRules, async (req, res) => {
   let imageMimeType = null;
   let imageChanged = false;
 
-  const MAX_IMG_SIZE = 5 * 1024 * 1024; // 5MB
+  const MAX_IMG_SIZE = 5 * 1024 * 1024;
   const ALLOWED_IMG_TYPES = [
     "image/jpeg",
     "image/png",
@@ -468,7 +434,6 @@ router.post("/editFood/:itemId", editFoodValidationRules, async (req, res) => {
   if (req.files && req.files.item_img && req.files.item_img.data) {
     const foodImage = req.files.item_img;
     if (foodImage.size > 0) {
-      // Check if a new file was actually uploaded
       if (foodImage.size > MAX_IMG_SIZE) {
         return res.redirect(
           `/admin/menu?error=${encodeURIComponent(
@@ -523,7 +488,7 @@ router.post("/editFood/:itemId", editFoodValidationRules, async (req, res) => {
   }
 
   try {
-    await pool.promise().query(query, queryParams); // Changed to await pool.promise().query
+    await pool.promise().query(query, queryParams);
     res.redirect(
       "/admin/menu?message=" +
         encodeURIComponent("Food item updated successfully!")
@@ -545,15 +510,13 @@ router.post("/editFood/:itemId", editFoodValidationRules, async (req, res) => {
   }
 });
 
-// Adapted POST /admin/deleteFood/:itemId
 router.post("/deleteFood/:itemId", async (req, res) => {
-  // Changed to async
-  const pool = req.app.get("dbConnection"); // Changed to pool
+  const pool = req.app.get("dbConnection");
   const itemId = req.params.itemId;
   const query = "DELETE FROM menu WHERE item_id = ?";
 
   try {
-    const [result] = await pool.promise().query(query, [itemId]); // Changed to await pool.promise().query
+    const [result] = await pool.promise().query(query, [itemId]);
     if (result.affectedRows > 0) {
       res.redirect(
         "/admin/menu?message=" +
@@ -573,8 +536,6 @@ router.post("/deleteFood/:itemId", async (req, res) => {
   }
 });
 
-// --- Order Management ---
-// Combined route for viewing orders.
 router.get("/ordersManagement", async (req, res) => {
   const connection = req.app.get("dbConnection");
   const adminName = req.cookies.cookuname;
@@ -586,7 +547,7 @@ router.get("/ordersManagement", async (req, res) => {
     "Dispatched",
     "Delivered",
     "Cancelled",
-  ]; // Add "" for 'All'
+  ];
   const ALLOWED_PAYMENT_STATUSES = [
     "",
     "Unpaid",
@@ -594,32 +555,27 @@ router.get("/ordersManagement", async (req, res) => {
     "Failed",
     "Pending Payment",
     "Refunded",
-  ]; // Add "" for 'All'
+  ];
 
-  // Filters
   let order_status_filter = req.query.order_status_filter || "";
   if (!ALLOWED_ORDER_STATUSES.includes(order_status_filter)) {
-    // console.warn(`Invalid order_status_filter received: ${req.query.order_status_filter}`); // Optional: log invalid attempts
-    order_status_filter = ""; // Default to 'All' or handle as an error
+    order_status_filter = "";
   }
 
   let payment_status_filter = req.query.payment_status_filter || "";
   if (!ALLOWED_PAYMENT_STATUSES.includes(payment_status_filter)) {
-    // console.warn(`Invalid payment_status_filter received: ${req.query.payment_status_filter}`);
-    payment_status_filter = ""; // Default to 'All'
+    payment_status_filter = "";
   }
 
   const search_user_filter = req.query.search_user_filter || "";
-  // Future: date_from_filter, date_to_filter
 
-  // Pagination
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10; // Default orders per page
+  const limit = parseInt(req.query.limit) || 10;
   const offset = (page - 1) * limit;
 
   let whereClauses = [];
-  let queryParams = []; // For the main data query
-  let countQueryParams = []; // For the count query
+  let queryParams = [];
+  let countQueryParams = [];
 
   if (order_status_filter) {
     whereClauses.push("o.order_status = ?");
@@ -633,13 +589,11 @@ router.get("/ordersManagement", async (req, res) => {
   }
   if (search_user_filter) {
     if (!isNaN(parseInt(search_user_filter))) {
-      // if it's a number, could be user_id
       whereClauses.push("(u.user_name LIKE ? OR o.user_id = ?)");
       const searchTerm = `%${search_user_filter}%`;
       queryParams.push(searchTerm, parseInt(search_user_filter));
       countQueryParams.push(searchTerm, parseInt(search_user_filter));
     } else {
-      // otherwise, search by name only
       whereClauses.push("u.user_name LIKE ?");
       const searchTerm = `%${search_user_filter}%`;
       queryParams.push(searchTerm);
@@ -651,7 +605,6 @@ router.get("/ordersManagement", async (req, res) => {
     whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
   try {
-    // Step 1: Get total count of orders matching filters
     const countQuery = `
       SELECT COUNT(o.order_id) AS totalOrders
       FROM orders o
@@ -664,10 +617,9 @@ router.get("/ordersManagement", async (req, res) => {
     const totalOrders = countResult[0].totalOrders;
     const totalPages = Math.ceil(totalOrders / limit);
 
-    const currentPage = page > totalPages && totalPages > 0 ? totalPages : page; // Adjust if page is out of bounds
+    const currentPage = page > totalPages && totalPages > 0 ? totalPages : page;
     const currentOffset = (currentPage - 1) * limit;
 
-    // Step 2: Fetch paginated and filtered orders with user details
     const ordersQuery = `
       SELECT o.*, u.user_name
       FROM orders o
@@ -681,7 +633,6 @@ router.get("/ordersManagement", async (req, res) => {
       .promise()
       .query(ordersQuery, finalQueryParams);
 
-    // Step 3: For each order, fetch its items
     const ordersWithItems = [];
     if (orders && orders.length > 0) {
       for (const order of orders) {
@@ -702,7 +653,7 @@ router.get("/ordersManagement", async (req, res) => {
       orders: ordersWithItems,
       message: req.query.message || null,
       error: req.query.error || null,
-      page: "orders", // For sidebar active state
+      page: "orders",
       currentPage: currentPage,
       totalPages: totalPages,
       limit: limit,
@@ -722,16 +673,14 @@ router.get("/ordersManagement", async (req, res) => {
   }
 });
 
-// Route for admin to set order to Processing
 router.post("/order/set-processing/:order_id", async (req, res) => {
-  // Make async
-  const pool = req.app.get("dbConnection"); // Use pool
+  const pool = req.app.get("dbConnection");
   const order_id = req.params.order_id;
 
   const query =
     "UPDATE orders SET order_status = 'Processing' WHERE order_id = ?";
   try {
-    const [result] = await pool.promise().query(query, [order_id]); // Use await
+    const [result] = await pool.promise().query(query, [order_id]);
     if (result.affectedRows > 0) {
       res.redirect(
         "/admin/ordersManagement?message=" +
@@ -751,10 +700,8 @@ router.post("/order/set-processing/:order_id", async (req, res) => {
   }
 });
 
-// Route for admin to set order to Delivered
 router.post("/order/set-delivered-admin/:order_id", async (req, res) => {
-  // Make async
-  const pool = req.app.get("dbConnection"); // Use pool
+  const pool = req.app.get("dbConnection");
   const order_id = req.params.order_id;
   const adminId = req.cookies.cookuid;
 
@@ -765,7 +712,7 @@ router.post("/order/set-delivered-admin/:order_id", async (req, res) => {
 
   let transactionConnection;
   try {
-    transactionConnection = await pool.promise().getConnection(); // Changed to use pool.promise().getConnection()
+    transactionConnection = await pool.promise().getConnection();
     await transactionConnection.beginTransaction();
 
     const [updateResult] = await transactionConnection.query(
@@ -810,7 +757,6 @@ router.post("/order/set-delivered-admin/:order_id", async (req, res) => {
   }
 });
 
-// NEW ROUTE: Admin to set order to Dispatched
 router.post("/order/set-dispatched/:order_id", async (req, res) => {
   const pool = req.app.get("dbConnection");
   const order_id = req.params.order_id;
@@ -823,7 +769,7 @@ router.post("/order/set-dispatched/:order_id", async (req, res) => {
 
   let transactionConnection;
   try {
-    transactionConnection = await pool.promise().getConnection(); // Changed to use pool.promise().getConnection()
+    transactionConnection = await pool.promise().getConnection();
     await transactionConnection.beginTransaction();
 
     const [updateResult] = await transactionConnection.query(
@@ -854,7 +800,6 @@ router.post("/order/set-dispatched/:order_id", async (req, res) => {
       try {
         await transactionConnection.rollback();
       } catch (rollbackError) {
-        // Log rollback error but proceed to inform user of the main error
         console.error(
           `Error rolling back transaction for order ${order_id} dispatch:`,
           rollbackError
@@ -866,7 +811,7 @@ router.post("/order/set-dispatched/:order_id", async (req, res) => {
       "/admin/ordersManagement?error=" +
         encodeURIComponent(
           `Database error setting order #${order_id} to Dispatched. Please try again.`
-        ) // User-friendly message
+        )
     );
   } finally {
     if (transactionConnection) {
@@ -876,14 +821,13 @@ router.post("/order/set-dispatched/:order_id", async (req, res) => {
 });
 
 router.post("/order/mark-paid/:order_id", async (req, res) => {
-  // Make async
-  const pool = req.app.get("dbConnection"); // Use pool
+  const pool = req.app.get("dbConnection");
   const order_id = req.params.order_id;
 
   const query =
     "UPDATE orders SET payment_status = 'Paid' WHERE order_id = ? AND (payment_status = 'Unpaid' OR payment_status = 'Failed')";
   try {
-    const [result] = await pool.promise().query(query, [order_id]); // Use await
+    const [result] = await pool.promise().query(query, [order_id]);
     if (result.affectedRows > 0) {
       res.redirect(
         "/admin/ordersManagement?message=" +
@@ -906,7 +850,6 @@ router.post("/order/mark-paid/:order_id", async (req, res) => {
   }
 });
 
-// GET /admin/users - Display User Management Page
 router.get("/users", isAdmin, async (req, res) => {
   const connection = req.app.get("dbConnection");
   const page = parseInt(req.query.page) || 1;
@@ -915,16 +858,15 @@ router.get("/users", isAdmin, async (req, res) => {
   const searchName = req.query.search_name || "";
   const searchEmail = req.query.search_email || "";
 
-  // Define allowed sortable columns
   const allowedSortBy = ["user_id", "user_name", "user_email"];
   let sortBy = req.query.sortBy || "user_name";
   if (!allowedSortBy.includes(sortBy)) {
-    sortBy = "user_name"; // Fallback to default
+    sortBy = "user_name";
   }
 
   let sortOrder = req.query.sortOrder || "ASC";
   if (sortOrder.toUpperCase() !== "ASC" && sortOrder.toUpperCase() !== "DESC") {
-    sortOrder = "ASC"; // Fallback to default
+    sortOrder = "ASC";
   }
 
   let whereClauses = [];
@@ -946,7 +888,6 @@ router.get("/users", isAdmin, async (req, res) => {
     whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
   try {
-    // Get total count of users with filters
     const countQuery = `SELECT COUNT(*) AS totalUsers FROM users ${whereCondition}`;
     const [countResult] = await connection
       .promise()
@@ -958,7 +899,6 @@ router.get("/users", isAdmin, async (req, res) => {
       page > totalPages && totalPages > 0 ? totalPages : page < 1 ? 1 : page;
     const currentOffset = (currentPage - 1) * limit;
 
-    // Get users for the current page with filters and sorting
     const usersQuery = `
       SELECT user_id, user_name, user_email, user_mobileno, user_address 
       FROM users 
@@ -996,7 +936,6 @@ router.get("/users", isAdmin, async (req, res) => {
   }
 });
 
-// GET /admin/users/:userId - Fetch user data for editing
 router.get("/users/:userId", isAdmin, async (req, res) => {
   const connection = req.app.get("dbConnection");
   const { userId } = req.params;
@@ -1022,12 +961,10 @@ router.get("/users/:userId", isAdmin, async (req, res) => {
   }
 });
 
-// POST /admin/users/update/:userId - Update user details
 router.post(
   "/users/update/:userId",
   isAdmin,
   [
-    // Basic Validation
     body("user_name")
       .trim()
       .notEmpty()
@@ -1045,7 +982,7 @@ router.post(
       .optional({ checkFalsy: true })
       .trim()
       .isMobilePhone("any", { strictMode: false })
-      .withMessage("Invalid mobile number format."), // Allows empty or valid
+      .withMessage("Invalid mobile number format."),
     body("user_address")
       .optional({ checkFalsy: true })
       .trim()
@@ -1063,7 +1000,6 @@ router.post(
         .array()
         .map((e) => e.msg)
         .join(" ");
-      // Preserve existing query parameters (like search, sort, page) from the form's action URL
       const redirectParams = new URLSearchParams(req.query);
       redirectParams.set("error", `Validation failed: ${errorMessages}`);
       return res.redirect(`/admin/users?${redirectParams.toString()}`);
@@ -1107,11 +1043,6 @@ router.post(
   }
 );
 
-// Make sure this is after router.use(isAdmin); if you want these routes protected.
-
-// --- Promotion Banner Management ---
-
-// GET /admin/banners - Display Banner Management Page
 router.get("/banners", async (req, res) => {
   const connection = req.app.get("dbConnection");
   try {
@@ -1121,9 +1052,8 @@ router.get("/banners", async (req, res) => {
         "SELECT banner_id, alt_text, is_active, sort_order, uploaded_at, updated_at FROM promotion_banners ORDER BY sort_order ASC, uploaded_at DESC"
       );
     res.render("admin/bannerManagement", {
-      // We will create this EJS file later
       adminName: req.cookies.cookuname,
-      page: "banners", // For sidebar active state
+      page: "banners",
       banners: banners,
       message: req.query.message || null,
       error: req.query.error || null,
@@ -1137,7 +1067,6 @@ router.get("/banners", async (req, res) => {
   }
 });
 
-// GET /admin/api/banner/:banner_id - Fetch banner data for editing
 router.get("/api/banner/:banner_id", async (req, res) => {
   const connection = req.app.get("dbConnection");
   const { banner_id } = req.params;
@@ -1170,10 +1099,8 @@ const bannerValidationRules = [
     .optional({ checkFalsy: true })
     .isInt({ min: 0 })
     .withMessage("Sort order must be a non-negative integer."),
-  // is_active is handled by checkbox logic, no specific validator needed unless you want to ensure it's boolean-like
 ];
 
-// POST /admin/banners/upload - Handle new banner upload
 router.post("/banners/upload", bannerValidationRules, async (req, res) => {
   const connection = req.app.get("dbConnection");
   const errors = validationResult(req);
@@ -1188,9 +1115,8 @@ router.post("/banners/upload", bannerValidationRules, async (req, res) => {
     );
   }
 
-  const { alt_text, sort_order, is_active } = req.body; // <--- ADD THIS LINE
+  const { alt_text, sort_order, is_active } = req.body;
 
-  // Check for banner image
   if (!req.files || !req.files.banner_image || !req.files.banner_image.data) {
     return res.redirect(
       "/admin/banners?error=" + encodeURIComponent("Banner image is required.")
@@ -1201,8 +1127,7 @@ router.post("/banners/upload", bannerValidationRules, async (req, res) => {
   const imageBuffer = bannerImage.data;
   const imageMimeType = bannerImage.mimetype;
 
-  // Basic validation (example: size and type)
-  const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+  const MAX_SIZE = 5 * 1024 * 1024;
   const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
   if (bannerImage.size > MAX_SIZE) {
@@ -1221,13 +1146,15 @@ router.post("/banners/upload", bannerValidationRules, async (req, res) => {
   try {
     const query =
       "INSERT INTO promotion_banners (image_blob, image_mimetype, alt_text, sort_order, is_active) VALUES (?, ?, ?, ?, ?)";
-    await connection.promise().query(query, [
-      imageBuffer,
-      imageMimeType,
-      alt_text || null, // Now alt_text will be defined
-      parseInt(sort_order) || 0, // Now sort_order will be defined
-      is_active === "on" || is_active === "true" ? 1 : 0, // Now is_active will be defined
-    ]);
+    await connection
+      .promise()
+      .query(query, [
+        imageBuffer,
+        imageMimeType,
+        alt_text || null,
+        parseInt(sort_order) || 0,
+        is_active === "on" || is_active === "true" ? 1 : 0,
+      ]);
     res.redirect(
       "/admin/banners?message=" +
         encodeURIComponent("Banner uploaded successfully!")
@@ -1247,7 +1174,6 @@ router.post("/banners/upload", bannerValidationRules, async (req, res) => {
   }
 });
 
-// POST /admin/banners/edit/:banner_id - Handle banner update
 router.post(
   "/banners/edit/:banner_id",
   bannerValidationRules,
@@ -1278,12 +1204,10 @@ router.post(
       req.files.banner_image_edit.data
     ) {
       const bannerImage = req.files.banner_image_edit;
-      // Basic validation (example: size and type)
-      const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+      const MAX_SIZE = 5 * 1024 * 1024;
       const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
       if (bannerImage.size > 0) {
-        // Process only if a file is actually uploaded
         if (bannerImage.size > MAX_SIZE) {
           return res.redirect(
             "/admin/banners?error=" +
@@ -1351,12 +1275,10 @@ router.post(
   }
 );
 
-// POST /admin/banners/toggle-active/:banner_id - Toggle active status
 router.post("/banners/toggle-active/:banner_id", async (req, res) => {
   const connection = req.app.get("dbConnection");
   const { banner_id } = req.params;
   try {
-    // First, get the current status
     const [currentStatusRows] = await connection
       .promise()
       .query("SELECT is_active FROM promotion_banners WHERE banner_id = ?", [
@@ -1369,7 +1291,7 @@ router.post("/banners/toggle-active/:banner_id", async (req, res) => {
       );
     }
 
-    const newStatus = !currentStatusRows[0].is_active; // Toggle the status
+    const newStatus = !currentStatusRows[0].is_active;
 
     await connection
       .promise()
@@ -1389,7 +1311,6 @@ router.post("/banners/toggle-active/:banner_id", async (req, res) => {
   }
 });
 
-// POST /admin/banners/delete/:banner_id - Delete a banner
 router.post("/banners/delete/:banner_id", async (req, res) => {
   const connection = req.app.get("dbConnection");
   const { banner_id } = req.params;
@@ -1416,7 +1337,6 @@ router.post("/banners/delete/:banner_id", async (req, res) => {
   }
 });
 
-// Mark an order as Cancelled
 router.post("/order/set-cancelled/:order_id", async (req, res) => {
   const { order_id } = req.params;
   const connection = req.app.get("dbConnection");
@@ -1424,12 +1344,13 @@ router.post("/order/set-cancelled/:order_id", async (req, res) => {
     "/admin/ordersManagement" +
     (req.headers.referer ? "?" + req.headers.referer.split("?")[1] : "");
   try {
-    const [updateResult] = await connection.promise().query(
-      "UPDATE orders SET order_status = 'Cancelled' WHERE order_id = ? AND order_status NOT IN ('Delivered', 'Cancelled')", // Added state check
-      [order_id]
-    );
+    const [updateResult] = await connection
+      .promise()
+      .query(
+        "UPDATE orders SET order_status = 'Cancelled' WHERE order_id = ? AND order_status NOT IN ('Delivered', 'Cancelled')",
+        [order_id]
+      );
     if (updateResult.affectedRows > 0) {
-      // Use query parameter for success message
       return res.redirect(
         redirectUrl.includes("?")
           ? `${redirectUrl}&message=${encodeURIComponent(
@@ -1440,7 +1361,6 @@ router.post("/order/set-cancelled/:order_id", async (req, res) => {
             )}`
       );
     } else {
-      // Use query parameter for error message
       return res.redirect(
         redirectUrl.includes("?")
           ? `${redirectUrl}&error=${encodeURIComponent(
@@ -1453,7 +1373,6 @@ router.post("/order/set-cancelled/:order_id", async (req, res) => {
     }
   } catch (error) {
     console.error("Error marking order as Cancelled:", error);
-    // Use query parameter for error message
     return res.redirect(
       redirectUrl.includes("?")
         ? `${redirectUrl}&error=${encodeURIComponent(
@@ -1466,7 +1385,6 @@ router.post("/order/set-cancelled/:order_id", async (req, res) => {
   }
 });
 
-// Mark an order's payment as Refunded
 router.post("/order/mark-refunded/:order_id", async (req, res) => {
   const { order_id } = req.params;
   const connection = req.app.get("dbConnection");
@@ -1480,7 +1398,6 @@ router.post("/order/mark-refunded/:order_id", async (req, res) => {
         order_id,
       ]);
     if (orderRows.length === 0) {
-      // Use query parameter for error message
       return res.redirect(
         redirectUrl.includes("?")
           ? `${redirectUrl}&error=${encodeURIComponent(
@@ -1492,12 +1409,13 @@ router.post("/order/mark-refunded/:order_id", async (req, res) => {
       );
     }
 
-    const [updateResult] = await connection.promise().query(
-      "UPDATE orders SET payment_status = 'Refunded' WHERE order_id = ? AND order_status = 'Cancelled' AND payment_status = 'Paid'", // Added state checks
-      [order_id]
-    );
+    const [updateResult] = await connection
+      .promise()
+      .query(
+        "UPDATE orders SET payment_status = 'Refunded' WHERE order_id = ? AND order_status = 'Cancelled' AND payment_status = 'Paid'",
+        [order_id]
+      );
     if (updateResult.affectedRows > 0) {
-      // Use query parameter for success message
       return res.redirect(
         redirectUrl.includes("?")
           ? `${redirectUrl}&message=${encodeURIComponent(
@@ -1508,7 +1426,6 @@ router.post("/order/mark-refunded/:order_id", async (req, res) => {
             )}`
       );
     } else {
-      // Use query parameter for error message
       return res.redirect(
         redirectUrl.includes("?")
           ? `${redirectUrl}&error=${encodeURIComponent(
@@ -1521,7 +1438,6 @@ router.post("/order/mark-refunded/:order_id", async (req, res) => {
     }
   } catch (error) {
     console.error("Error marking order payment as Refunded:", error);
-    // Use query parameter for error message
     return res.redirect(
       redirectUrl.includes("?")
         ? `${redirectUrl}&error=${encodeURIComponent(
@@ -1534,7 +1450,6 @@ router.post("/order/mark-refunded/:order_id", async (req, res) => {
   }
 });
 
-// NEW ROUTE: Admin converts a failed PayPal order to COD
 router.post("/order/convert-to-cod/:order_id", async (req, res) => {
   const { order_id } = req.params;
   const connection = req.app.get("dbConnection");
@@ -1543,7 +1458,6 @@ router.post("/order/convert-to-cod/:order_id", async (req, res) => {
     (req.headers.referer ? "?" + req.headers.referer.split("?")[1] : "");
 
   try {
-    // First, verify the order's current payment status and method
     const [orderRows] = await connection
       .promise()
       .query(
@@ -1570,7 +1484,6 @@ router.post("/order/convert-to-cod/:order_id", async (req, res) => {
       currentPaymentStatus === "Failed" &&
       currentPaymentMethod === "PayPal"
     ) {
-      // Update payment_status to "Pending Payment" and payment_method to "COD"
       const [updateResult] = await connection
         .promise()
         .query(

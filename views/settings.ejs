@@ -6,15 +6,10 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Settings - PizzazzPizza</title>
-  <!-- icons  -->
   <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
-  <!-- bootstrap  -->
   <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
-  <!-- swiper slider  -->
   <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css" />
-  <!-- fancy box  -->
   <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css" />
-  <!-- custom css  -->
   <link rel="stylesheet" href="/stylesheets/style.css" />
   <style>
     .settings-container .nav-pills .nav-link {
@@ -119,7 +114,6 @@
 
               <div class="col-md-9">
                 <div class="tab-content" id="v-pills-tabContent">
-                  <!-- My Profile Tab -->
                   <div class="tab-pane fade show active" id="v-pills-profile" role="tabpanel" aria-labelledby="v-pills-profile-tab">
                     <h4 class="h4-title mb-4">Profile Information</h4>
                     <% if (userData) { %>
@@ -157,7 +151,6 @@
                     </div>
                   </div>
 
-                  <!-- Change Password Tab -->
                   <div class="tab-pane fade" id="v-pills-password" role="tabpanel" aria-labelledby="v-pills-password-tab">
                     <h4 class="h4-title mb-4">Change Password</h4>
                     <form action="/password" method="post">
@@ -168,7 +161,6 @@
                     </form>
                   </div>
 
-                  <!-- Email Subscriptions Tab -->
                   <div class="tab-pane fade" id="v-pills-subscriptions" role="tabpanel" aria-labelledby="v-pills-subscriptions-tab">
                     <h4 class="h4-title mb-4">Email Subscriptions</h4>
                     <p class="mb-4">Manage your email subscription preferences here.</p>
@@ -208,7 +200,6 @@
   </div>
 
   <script>
-    // Password confirmation script
     const passwordForm = document.querySelector('form[action="/password"]');
     if (passwordForm) {
       passwordForm.addEventListener("submit", function(event) {
@@ -229,9 +220,8 @@
       });
     }
 
-    // Logic to activate tab based on URL hash
     document.addEventListener('DOMContentLoaded', function() {
-      let activeTabId = 'v-pills-profile-tab'; // Default
+      let activeTabId = 'v-pills-profile-tab';
 
       if (window.location.hash) {
         const hashTabId = window.location.hash.substring(1) + "-tab";
@@ -240,13 +230,11 @@
           activeTabId = hashTabId;
         }
       } else {
-        // Fallback to query parameters if no hash (though hash is preferred from backend redirects)
         const urlParams = new URLSearchParams(window.location.search);
-        const errorParam = urlParams.get('error'); // These are less likely now with flash
-        const successParam = urlParams.get('success'); // These are less likely now with flash
+        const errorParam = urlParams.get('error');
+        const successParam = urlParams.get('success');
 
         if (errorParam || successParam) {
-          // Simplified: if any error/success, and it mentions password, go to password tab
           if ((errorParam && errorParam.toLowerCase().includes('password')) ||
             (successParam && successParam.toLowerCase().includes('password'))) {
             activeTabId = 'v-pills-password-tab';
@@ -254,10 +242,8 @@
             (successParam && successParam.toLowerCase().includes('subscription'))) {
             activeTabId = 'v-pills-subscriptions-tab';
           }
-          // Default to profile for other messages or if no specific keyword match
         }
       }
-
 
       const activeTabElement = document.getElementById(activeTabId);
       if (activeTabElement) {
@@ -269,37 +255,24 @@
       tabTriggers.forEach(tabTrigger => {
         tabTrigger.addEventListener('shown.bs.tab', function(event) {
           window.dispatchEvent(new Event('resize'));
-          // Update URL hash without adding to history
           history.replaceState(null, null, ' ' + event.target.getAttribute('data-bs-target'));
         });
       });
     });
   </script>
 
-  <!-- jquery  -->
   <script src="/javascripts/jquery-3.5.1.min.js"></script>
-  <!-- bootstrap -->
   <script src="/javascripts/bootstrap.min.js"></script>
   <script src="/javascripts/popper.min.js"></script>
-  <!-- fontawesome  -->
   <script src="/javascripts/font-awesome.min.js"></script>
-  <!-- swiper slider  -->
   <script src="/javascripts/swiper-bundle.min.js"></script>
-  <!-- mixitup -- filter  -->
   <script src="/javascripts/jquery.mixitup.min.js"></script>
-  <!-- fancy box  -->
   <script src="/javascripts/jquery.fancybox.min.js"></script>
-  <!-- parallax  -->
   <script src="/javascripts/parallax.min.js"></script>
-  <!-- gsap  -->
   <script src="/javascripts/gsap.min.js"></script>
-  <!-- scroll trigger  -->
   <script src="/javascripts/ScrollTrigger.min.js"></script>
-  <!-- scroll to plugin  -->
   <script src="/javascripts/ScrollToPlugin.min.js"></script>
-  <!-- smooth scroll  -->
   <script src="/javascripts/smooth-scroll.js"></script>
-  <!-- custom js  -->
   <script src="/javascripts/main.js"></script>
   <script src="/javascripts/cart.js"></script>
 </body>

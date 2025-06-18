@@ -38,7 +38,6 @@
     }
 
     .table th a {
-      /* Style for sortable headers */
       color: inherit;
       text-decoration: none;
     }
@@ -48,7 +47,6 @@
     }
 
     .table th .sort-icon {
-      /* For sort arrows */
       margin-left: 5px;
       font-size: 0.8em;
     }
@@ -214,7 +212,6 @@
     </div>
   </div>
 
-  <!-- Add Food Modal -->
   <div class="modal fade" id="addFoodModal" tabindex="-1" role="dialog" aria-labelledby="addFoodModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
@@ -268,13 +265,10 @@
     </div>
   </div>
 
-  <!-- Edit Food Modal -->
   <div class="modal fade" id="editFoodModal" tabindex="-1" role="dialog" aria-labelledby="editFoodModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <form id="editFoodForm" method="POST" enctype="multipart/form-data">
-          <!-- Add enctype here -->
-          <!-- Action will be set by JS -->
           <div class="modal-header">
             <h5 class="modal-title" id="editFoodModalLabel">Edit Food Item</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -282,7 +276,7 @@
             </button>
           </div>
           <div class="modal-body">
-            <input type="hidden" id="edit_item_id" name="item_id"> <!-- Keep this if your JS uses it for form action -->
+            <input type="hidden" id="edit_item_id" name="item_id">
             <div class="form-group">
               <label for="edit_item_name">Name</label>
               <input type="text" class="form-control" id="edit_item_name" name="item_name" required minlength="2" maxlength="100">
@@ -309,7 +303,6 @@
             </div>
             <div class="form-group">
               <label for="edit_item_img">New Image (Optional)</label>
-              <!-- Changed from text input to file input. Name is item_img -->
               <input type="file" class="form-control-file" id="edit_item_img" name="item_img" accept="image/png, image/jpeg, image/jpg, image/webp">
               <small class="form-text text-muted">Upload a new image to replace the current one. If no file is chosen, the current image will be kept.</small>
             </div>
@@ -333,16 +326,14 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Handle Edit Button Click
       const editButtons = document.querySelectorAll('.edit-btn');
-      const editFoodModal = $('#editFoodModal'); // jQuery selector for Bootstrap modal
+      const editFoodModal = $('#editFoodModal');
       const editForm = document.getElementById('editFoodForm');
 
       editButtons.forEach(button => {
         button.addEventListener('click', function() {
           const itemId = this.dataset.id;
 
-          // Fetch item data from API
           fetch(`/admin/api/food/${itemId}`)
             .then(response => response.json())
             .then(data => {
@@ -371,7 +362,6 @@
         });
       });
 
-      // Clear query parameters from URL after displaying messages to prevent re-showing on refresh
       if (window.history.replaceState) {
         const url = new URL(window.location.href);
         if (url.searchParams.has('message') || url.searchParams.has('error')) {

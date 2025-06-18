@@ -3,17 +3,14 @@ const router = express.Router();
 const isAdmin = require("../middleware/isAdmin.js");
 const statisticsService = require("../services/statisticsService");
 
-// Apply isAdmin middleware to all routes in this file
 router.use(isAdmin);
 
-// GET /admin/sales/dashboard
 router.get("/dashboard", async (req, res) => {
   try {
     const dbConnection = req.app.get("dbConnection");
-    // The actual data fetched from the service is in a variable also named salesData
     const salesDataFromService = await statisticsService.getSalesComparisonData(
       dbConnection,
-      req.query.date // Pass the date from query to fetch specific day's data
+      req.query.date
     );
 
     let displayDate;
@@ -39,16 +36,15 @@ router.get("/dashboard", async (req, res) => {
       formattedDateForQuery = statisticsService.getFormattedDate(recordDate);
     } else {
       const today = new Date();
-      displayDate = "No data for this date"; // Or "Latest available data"
-      // Default date picker to today if no specific data is found or queried
+      displayDate = "No data for this date";
       formattedDateForQuery = statisticsService.getFormattedDate(today);
     }
 
     res.render("admin/salesDashboard", {
       title: "Sales Dashboard",
       adminName: req.cookies.cookuname,
-      page: "salesDashboard", // Ensure this matches sidebar logic
-      data: salesDataFromService, // CHANGED salesData to data
+      page: "salesDashboard",
+      data: salesDataFromService,
       currentDate: displayDate,
       currentDateQuery: formattedDateForQuery,
       message: req.query.message || null,
@@ -60,8 +56,8 @@ router.get("/dashboard", async (req, res) => {
       title: "Server Error",
       adminName: req.cookies.cookuname,
       message: "Could not load sales dashboard data.",
-      error: error, // Pass the actual error object for more details if needed
-      page: "error", // For sidebar active state on error page
+      error: error,
+      page: "error",
     });
   }
 });

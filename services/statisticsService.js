@@ -1,11 +1,5 @@
-/**
- * Fetches and processes live, real-time data for the current day's activity.
- * This is used by the existing /admin/statistics/dashboard.
- * @param {object} connection - Database connection object.
- */
 async function getLiveDashboardData(connection) {
   try {
-    // 1. Total Sales and Orders (excluding Cancelled)
     const [ordersSummary] = await connection
       .promise()
       .query(
@@ -15,13 +9,11 @@ async function getLiveDashboardData(connection) {
     const totalOrders = parseInt(ordersSummary[0]?.totalOrders) || 0;
     const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
-    // 2. User Statistics
     const [userStatsQuery] = await connection
       .promise()
       .query("SELECT COUNT(user_id) AS totalUsers FROM users");
     const totalUsers = parseInt(userStatsQuery[0]?.totalUsers) || 0;
 
-    // Fetch new users today
     const [newUsersTodayQuery] = await connection
       .promise()
       .query(
@@ -29,7 +21,6 @@ async function getLiveDashboardData(connection) {
       );
     const newUsersToday = parseInt(newUsersTodayQuery[0]?.newUsers) || 0;
 
-    // Unprocessed Orders (Pending)
     const [unprocessedOrdersQuery] = await connection
       .promise()
       .query(
@@ -38,7 +29,6 @@ async function getLiveDashboardData(connection) {
     const unprocessedOrders =
       parseInt(unprocessedOrdersQuery[0]?.unprocessedOrders) || 0;
 
-    // 3. Order Status Counts
     const [orderStatusRows] = await connection
       .promise()
       .query(
@@ -49,7 +39,6 @@ async function getLiveDashboardData(connection) {
       orderStatusCounts[row.order_status] = row.count;
     });
 
-    // 4. Payment Status Counts
     const [paymentStatusRows] = await connection
       .promise()
       .query(
@@ -60,24 +49,16 @@ async function getLiveDashboardData(connection) {
       paymentStatusCounts[row.payment_status] = row.count;
     });
 
-    // 5. Revenue Trends (Daily for the current week - Monday to Sunday)
-    const [revenueTrendRows] = await connection.promise().query(
-      `SELECT 
-         DATE_FORMAT(order_date, '%Y-%m-%d') AS date, 
-         SUM(total_amount) AS daily_revenue
-       FROM orders
-       WHERE 
-         order_status != 'Cancelled' AND 
-         order_date >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY) AND 
-         order_date <= DATE_ADD(CURDATE(), INTERVAL (6 - WEEKDAY(CURDATE())) DAY) 
-       GROUP BY date
-       ORDER BY date ASC` // Changed GROUP BY
-    );
+    const [revenueTrendRows] = await connection
+      .promise()
+      .query(
+        "SELECT DATE_FORMAT(order_date, '%Y-%m-%d') AS date, SUM(total_amount) AS daily_revenue FROM orders WHERE order_status != 'Cancelled' AND order_date >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY) AND order_date <= DATE_ADD(CURDATE(), INTERVAL (6 - WEEKDAY(CURDATE())) DAY) GROUP BY date ORDER BY date ASC"
+      );
 
     const currentWeekLabels = [];
     const todayForWeek = new Date();
-    const dayOfWeek = todayForWeek.getDay(); // Sunday - 0, Monday - 1, ..., Saturday - 6
-    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Calculate difference to get to Monday
+    const dayOfWeek = todayForWeek.getDay();
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
 
     const firstDayOfWeek = new Date(
       new Date().setDate(new Date().getDate() + diffToMonday)
@@ -89,14 +70,12 @@ async function getLiveDashboardData(connection) {
       day.setDate(firstDayOfWeek.getDate() + i);
       currentWeekLabels.push(
         day.toLocaleDateString("en-US", { weekday: "short" })
-      ); // e.g., Mon, Tue
+      );
     }
 
     const weeklyRevenueData = Array(7).fill(0);
     revenueTrendRows.forEach((row) => {
       const orderDate = new Date(row.date);
-      // Calculate the difference in days from the first day of the week
-      // Ensure timezone consistency or use UTC dates if issues arise
       const dayIndex = Math.floor(
         (orderDate - firstDayOfWeek) / (1000 * 60 * 60 * 24)
       );
@@ -110,37 +89,21 @@ async function getLiveDashboardData(connection) {
       data: weeklyRevenueData,
     };
 
-    // 6. Best Sellers (Top 5 by quantity sold - overall)
-    const [bestSellerRows] = await connection.promise().query(
-      `SELECT 
-         m.item_name, 
-         SUM(oi.quantity) AS total_quantity_sold
-       FROM order_items oi
-       JOIN menu m ON oi.item_id = m.item_id
-       JOIN orders o ON oi.order_id = o.order_id
-       WHERE o.order_status != 'Cancelled'
-       GROUP BY m.item_name
-       ORDER BY total_quantity_sold DESC
-       LIMIT 5`
-    );
+    const [bestSellerRows] = await connection
+      .promise()
+      .query(
+        "SELECT m.item_name, SUM(oi.quantity) AS total_quantity_sold FROM order_items oi JOIN menu m ON oi.item_id = m.item_id JOIN orders o ON oi.order_id = o.order_id WHERE o.order_status != 'Cancelled' GROUP BY m.item_name ORDER BY total_quantity_sold DESC LIMIT 5"
+      );
     const bestSellers = bestSellerRows.map((row) => ({
       name: row.item_name,
       quantity: row.total_quantity_sold,
     }));
 
-    // 7. Menu Performance (Overall - Orders and Revenue per item)
-    const [menuPerformanceRows] = await connection.promise().query(
-      `SELECT 
-         m.item_name, 
-         COUNT(DISTINCT oi.order_id) AS total_orders_containing_item,
-         SUM(oi.subtotal) AS total_revenue_from_item
-       FROM order_items oi
-       JOIN menu m ON oi.item_id = m.item_id
-       JOIN orders o ON oi.order_id = o.order_id
-       WHERE o.order_status != 'Cancelled'
-       GROUP BY m.item_name
-       ORDER BY total_revenue_from_item DESC`
-    );
+    const [menuPerformanceRows] = await connection
+      .promise()
+      .query(
+        "SELECT m.item_name, COUNT(DISTINCT oi.order_id) AS total_orders_containing_item, SUM(oi.subtotal) AS total_revenue_from_item FROM order_items oi JOIN menu m ON oi.item_id = m.item_id JOIN orders o ON oi.order_id = o.order_id WHERE o.order_status != 'Cancelled' GROUP BY m.item_name ORDER BY total_revenue_from_item DESC"
+      );
     const menuPerformance = menuPerformanceRows.map((row) => ({
       name: row.item_name,
       orders: row.total_orders_containing_item,
@@ -162,11 +125,10 @@ async function getLiveDashboardData(connection) {
     };
   } catch (error) {
     console.error("Error in getLiveDashboardData:", error);
-    throw error; // Re-throw to be caught by the route handler
+    throw error;
   }
 }
 
-// --- Date Helper Functions ---
 function getFormattedDate(dateObj) {
   const year = dateObj.getFullYear();
   const month = (dateObj.getMonth() + 1).toString().padStart(2, "0");
@@ -183,20 +145,13 @@ function getLastDayOfMonth(dateObj) {
 }
 
 function getFirstDayOfWeek(dateObj, startDay = 1) {
-  // 0 for Sunday, 1 for Monday
   const date = new Date(dateObj);
   const day = date.getDay();
   const diff =
-    date.getDate() - day + (day === 0 && startDay === 1 ? -6 : startDay); // Adjust if week starts on Monday and current day is Sunday
+    date.getDate() - day + (day === 0 && startDay === 1 ? -6 : startDay);
   return new Date(date.setDate(diff));
 }
 
-/**
- * Calculates and stores daily snapshots for both admin_dashboard_snapshots
- * and sales_dashboard_comparisons tables.
- * This is intended to be run by a scheduler (e.g., node-cron) for the PREVIOUS full day.
- * @param {object} pool - Database pool object from mysql2/promise.
- */
 async function calculateAndStoreDailySnapshots(pool) {
   console.log("Starting daily snapshot calculation...");
   const today = new Date();
@@ -206,10 +161,9 @@ async function calculateAndStoreDailySnapshots(pool) {
 
   let transactionConnection;
   try {
-    transactionConnection = await pool.getConnection(); // Get connection directly from the promise-enabled pool
+    transactionConnection = await pool.getConnection();
     await transactionConnection.beginTransaction();
 
-    // --- Part 1: Calculate and store data for `admin_dashboard_snapshots` ---
     const [dailySummary] = await transactionConnection.query(
       `SELECT
         SUM(CASE WHEN order_status != 'Cancelled' THEN total_amount ELSE 0 END) AS totalSales,
@@ -255,7 +209,7 @@ async function calculateAndStoreDailySnapshots(pool) {
       yesterdayPaymentStatusCounts[row.payment_status] = row.count;
     });
 
-    const firstDayOfSnapshotWeek = getFirstDayOfWeek(new Date(snapshotDate), 1); // Monday as start
+    const firstDayOfSnapshotWeek = getFirstDayOfWeek(new Date(snapshotDate), 1);
     const lastDayOfSnapshotWeek = new Date(firstDayOfSnapshotWeek);
     lastDayOfSnapshotWeek.setDate(firstDayOfSnapshotWeek.getDate() + 6);
 
@@ -263,8 +217,7 @@ async function calculateAndStoreDailySnapshots(pool) {
       `SELECT DATE_FORMAT(order_date, '%Y-%m-%d') AS date, SUM(total_amount) AS daily_revenue
        FROM orders
        WHERE order_status != 'Cancelled' AND DATE(order_date) BETWEEN ? AND ?
-       GROUP BY date ORDER BY date ASC`, // Changed GROUP BY to use the alias 'date'
-      // Alternatively, use: GROUP BY DATE_FORMAT(order_date, '%Y-%m-%d')
+       GROUP BY date ORDER BY date ASC`,
       [
         getFormattedDate(firstDayOfSnapshotWeek),
         getFormattedDate(lastDayOfSnapshotWeek),
@@ -332,15 +285,10 @@ async function calculateAndStoreDailySnapshots(pool) {
     );
     console.log(`Admin dashboard snapshot for ${snapshotDate} stored.`);
 
-    // --- Part 2: Calculate and store data for `sales_dashboard_comparisons` ---
-    // All calculations are relative to `snapshotDate`.
-
-    // KPIs for `snapshotDate` (already calculated as yesterdayTotalSales, etc.)
     const kpi_today_sales = yesterdayTotalSales;
     const kpi_today_orders = yesterdayTotalOrders;
     const kpi_today_aov = yesterdayAverageOrderValue;
 
-    // KPIs for "Same Day Last Week"
     const sameDayLastWeek = new Date(yesterday);
     sameDayLastWeek.setDate(yesterday.getDate() - 7);
     const sameDayLastWeekStr = getFormattedDate(sameDayLastWeek);
@@ -359,7 +307,6 @@ async function calculateAndStoreDailySnapshots(pool) {
         ? kpi_sameday_lastweek_sales / kpi_sameday_lastweek_orders
         : 0;
 
-    // KPIs for "Month-to-Date (MTD)" as of `snapshotDate`
     const firstDayOfCurrentMonth = getFirstDayOfMonth(new Date(snapshotDate));
     const [mtdSummary] = await transactionConnection.query(
       `SELECT SUM(total_amount) AS totalSales, COUNT(order_id) AS totalOrders
@@ -370,10 +317,9 @@ async function calculateAndStoreDailySnapshots(pool) {
     const kpi_mtd_orders = parseInt(mtdSummary[0]?.totalOrders) || 0;
     const kpi_mtd_aov = kpi_mtd_orders > 0 ? kpi_mtd_sales / kpi_mtd_orders : 0;
 
-    // KPIs for "Last Full Month"
     const firstDayOfLastMonth = getFirstDayOfMonth(
       new Date(new Date(snapshotDate).setDate(0))
-    ); // SetDate(0) goes to last day of prev month
+    );
     const lastDayOfLastMonth = getLastDayOfMonth(new Date(firstDayOfLastMonth));
 
     const [lastFullMonthSummary] = await transactionConnection.query(
@@ -393,12 +339,10 @@ async function calculateAndStoreDailySnapshots(pool) {
         ? kpi_last_full_month_sales / kpi_last_full_month_orders
         : 0;
 
-    // Chart Data
-    // Monthly Sales Trend: Current MTD (up to snapshotDate)
     const [currentMtdDailyRows] = await transactionConnection.query(
       `SELECT DATE_FORMAT(order_date, '%Y-%m-%d') AS date, SUM(total_amount) AS sales
        FROM orders WHERE order_status != 'Cancelled' AND DATE(order_date) BETWEEN ? AND ?
-       GROUP BY date ORDER BY date ASC`, // Changed GROUP BY
+       GROUP BY date ORDER BY date ASC`,
       [getFormattedDate(firstDayOfCurrentMonth), snapshotDate]
     );
     const chart_monthly_current_mtd_daily_sales_json = JSON.stringify(
@@ -408,11 +352,10 @@ async function calculateAndStoreDailySnapshots(pool) {
       }))
     );
 
-    // Monthly Sales Trend: Previous Full Month
     const [prevFullMonthDailyRows] = await transactionConnection.query(
       `SELECT DATE_FORMAT(order_date, '%Y-%m-%d') AS date, SUM(total_amount) AS sales
        FROM orders WHERE order_status != 'Cancelled' AND DATE(order_date) BETWEEN ? AND ?
-       GROUP BY date ORDER BY date ASC`, // Changed GROUP BY
+       GROUP BY date ORDER BY date ASC`,
       [
         getFormattedDate(firstDayOfLastMonth),
         getFormattedDate(lastDayOfLastMonth),
@@ -425,8 +368,6 @@ async function calculateAndStoreDailySnapshots(pool) {
       }))
     );
 
-    // Weekly Sales Performance: Current Week (week of snapshotDate)
-    // firstDayOfSnapshotWeek and lastDayOfSnapshotWeek already defined above
     const [currentWeekDailyRows] = await transactionConnection.query(
       `SELECT DATE_FORMAT(order_date, '%a') AS dayOfWeekName, DATE_FORMAT(order_date, '%w') AS dayOfWeekNum, SUM(total_amount) AS sales
        FROM orders WHERE order_status != 'Cancelled' AND DATE(order_date) BETWEEN ? AND ?
@@ -495,14 +436,9 @@ async function calculateAndStoreDailySnapshots(pool) {
   }
 }
 
-/**
- * Fetches and processes live, real-time data for the current day's activity.
- * This is used by the existing /admin/statistics/dashboard.
- * @param {object} pool - Database pool object from mysql2/promise.
- */
 async function getLiveDashboardData(pool) {
   try {
-    const promisePool = pool.promise(); // This is correct for a standard mysql2 pool
+    const promisePool = pool.promise();
 
     const [ordersSummary] = await promisePool.query(
       "SELECT SUM(total_amount) AS totalSales, COUNT(order_id) AS totalOrders FROM orders WHERE order_status != 'Cancelled'"
@@ -544,16 +480,7 @@ async function getLiveDashboardData(pool) {
     });
 
     const [revenueTrendRows] = await promisePool.query(
-      `SELECT 
-         DATE_FORMAT(order_date, '%Y-%m-%d') AS date, 
-         SUM(total_amount) AS daily_revenue
-       FROM orders
-       WHERE 
-         order_status != 'Cancelled' AND 
-         order_date >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY) AND 
-         order_date <= DATE_ADD(CURDATE(), INTERVAL (6 - WEEKDAY(CURDATE())) DAY) 
-       GROUP BY date
-       ORDER BY date ASC` // Changed GROUP BY
+      "SELECT DATE_FORMAT(order_date, '%Y-%m-%d') AS date, SUM(total_amount) AS daily_revenue FROM orders WHERE order_status != 'Cancelled' AND order_date >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY) AND order_date <= DATE_ADD(CURDATE(), INTERVAL (6 - WEEKDAY(CURDATE())) DAY) GROUP BY date ORDER BY date ASC"
     );
     const currentWeekLabels = [];
     const todayForWeek = new Date();
@@ -589,9 +516,7 @@ async function getLiveDashboardData(pool) {
     };
 
     const [bestSellerRows] = await promisePool.query(
-      `SELECT m.item_name, SUM(oi.quantity) AS total_quantity_sold
-       FROM order_items oi JOIN menu m ON oi.item_id = m.item_id JOIN orders o ON oi.order_id = o.order_id
-       WHERE o.order_status != 'Cancelled' GROUP BY m.item_name ORDER BY total_quantity_sold DESC LIMIT 5`
+      "SELECT m.item_name, SUM(oi.quantity) AS total_quantity_sold FROM order_items oi JOIN menu m ON oi.item_id = m.item_id JOIN orders o ON oi.order_id = o.order_id WHERE o.order_status != 'Cancelled' GROUP BY m.item_name ORDER BY total_quantity_sold DESC LIMIT 5"
     );
     const bestSellers = bestSellerRows.map((row) => ({
       name: row.item_name,
@@ -599,9 +524,7 @@ async function getLiveDashboardData(pool) {
     }));
 
     const [menuPerformanceRows] = await promisePool.query(
-      `SELECT m.item_name, COUNT(DISTINCT oi.order_id) AS total_orders_containing_item, SUM(oi.subtotal) AS total_revenue_from_item
-       FROM order_items oi JOIN menu m ON oi.item_id = m.item_id JOIN orders o ON oi.order_id = o.order_id
-       WHERE o.order_status != 'Cancelled' GROUP BY m.item_name ORDER BY total_revenue_from_item DESC`
+      "SELECT m.item_name, COUNT(DISTINCT oi.order_id) AS total_orders_containing_item, SUM(oi.subtotal) AS total_revenue_from_item FROM order_items oi JOIN menu m ON oi.item_id = m.item_id JOIN orders o ON oi.order_id = o.order_id WHERE o.order_status != 'Cancelled' GROUP BY m.item_name ORDER BY total_revenue_from_item DESC"
     );
     const menuPerformance = menuPerformanceRows.map((row) => ({
       name: row.item_name,
@@ -628,12 +551,6 @@ async function getLiveDashboardData(pool) {
   }
 }
 
-/**
- * Fetches sales comparison data from the sales_dashboard_comparisons table.
- * @param {object} pool - Database pool object from mysql2/promise.
- * @param {string|null} date - Optional date string (YYYY-MM-DD) to fetch data for a specific day.
- *                              If null, fetches the latest record.
- */
 async function getSalesComparisonData(pool, date = null) {
   try {
     const promisePool = pool.promise();
@@ -660,20 +577,21 @@ async function getSalesComparisonData(pool, date = null) {
       ];
 
       fieldsToParse.forEach((field) => {
-        if (typeof data[field] === 'string' && data[field].trim()) {
+        if (typeof data[field] === "string" && data[field].trim()) {
           try {
             data[field] = JSON.parse(data[field]);
           } catch (e) {
             console.error(`Error parsing JSON for field ${field}:`, e.message);
             data[field] = null;
           }
-        } 
-        else if (data[field] instanceof Buffer) {
+        } else if (data[field] instanceof Buffer) {
           try {
             const jsonStr = data[field].toString();
             data[field] = JSON.parse(jsonStr);
           } catch (e) {
-            console.error(`Error parsing Buffer to JSON for field ${field}:`, e.message);
+            console.error(
+              `Error parsing Buffer to JSON for field ${field}: ${e.message}`
+            );
             data[field] = null;
           }
         }
@@ -691,7 +609,6 @@ module.exports = {
   getLiveDashboardData,
   calculateAndStoreDailySnapshots,
   getSalesComparisonData,
-
   getFormattedDate,
   getFirstDayOfMonth,
   getLastDayOfMonth,

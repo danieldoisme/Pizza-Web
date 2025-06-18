@@ -55,7 +55,6 @@
 </div>
 
 <style>
-  /* Add some basic styling for the submenu and toggle */
   .admin-sidebar .sidebar-menu li.has-submenu>a {
     display: flex;
     justify-content: space-between;
@@ -65,24 +64,17 @@
   .admin-sidebar .sidebar-menu .submenu {
     list-style: none;
     padding-left: 20px;
-    /* Indent submenu items */
-    /* display: none; */
-    /* Initially hidden, controlled by JS or inline style */
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease-out;
   }
 
   .admin-sidebar .sidebar-menu .submenu.open {
-    /* display: block; */
-    /* Show when open class is added */
     max-height: 500px;
-    /* Adjust as needed to fit content */
   }
 
   .admin-sidebar .sidebar-menu .submenu a {
     padding-left: 25px;
-    /* Further indent text of submenu items */
     font-size: 0.9em;
   }
 
@@ -102,81 +94,54 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const menuToggles = document.querySelectorAll('.admin-sidebar .menu-toggle');
-    const dashboardSubmenuStateKey = 'dashboardSubmenuState'; // localStorage key
+    const dashboardSubmenuStateKey = 'dashboardSubmenuState';
 
     menuToggles.forEach(toggle => {
-      // Assuming this script primarily targets the "Dashboard" submenu,
-      // as it's the only one with class "has-submenu" in the provided HTML.
-      // If other submenus are added, this logic would apply to them individually
-      // and might need distinct localStorage keys.
-
       const parentLi = toggle.parentElement;
       const submenu = toggle.nextElementSibling;
-
       if (!submenu || !parentLi.classList.contains('has-submenu')) {
         return;
       }
-
       const applyState = (isOpen, useTransition = false) => {
         if (isOpen) {
           parentLi.classList.add('open');
           submenu.classList.add('open');
-          submenu.style.display = 'block'; // Ensure display is block for scrollHeight
-
-          // Use a timeout to allow display:block to take effect before measuring scrollHeight
+          submenu.style.display = 'block';
           setTimeout(() => {
             const currentScrollHeight = submenu.scrollHeight;
             if (useTransition) {
-              submenu.style.maxHeight = (currentScrollHeight > 0 ? currentScrollHeight : 500) + "px"; // Fallback to 500px
+              submenu.style.maxHeight = (currentScrollHeight > 0 ? currentScrollHeight : 500) + "px";
             } else {
-              // No transition on initial load if already open
               submenu.style.maxHeight = (currentScrollHeight > 0 ? currentScrollHeight : 500) + "px";
             }
-            // console.log('Applied OPEN state. maxHeight:', submenu.style.maxHeight);
-          }, useTransition ? 0 : 50); // Shorter delay for click, longer for initial load
+          }, useTransition ? 0 : 50);
         } else {
           if (useTransition) {
             submenu.style.maxHeight = '0';
           } else {
-            // No transition on initial load if closed
             submenu.style.maxHeight = '0';
           }
           parentLi.classList.remove('open');
           submenu.classList.remove('open');
-          // Note: display:none could be set after transition, but max-height:0 and overflow:hidden usually suffice.
-          // console.log('Applied CLOSED state. maxHeight:', submenu.style.maxHeight);
         }
       };
-
-      // Initialize state from localStorage or EJS default
       const savedState = localStorage.getItem(dashboardSubmenuStateKey);
-
       if (savedState === 'open') {
-        // console.log('localStorage: open');
-        applyState(true, false); // Open without transition on load
+        applyState(true, false);
       } else if (savedState === 'closed') {
-        // console.log('localStorage: closed');
-        applyState(false, false); // Close without transition on load
+        applyState(false, false);
       } else {
-        // No saved state, use EJS default (based on inline style for display)
         const isEjsOpen = submenu.style.display === 'block';
-        // console.log('localStorage: none. EJS open:', isEjsOpen);
-        applyState(isEjsOpen, false); // Apply EJS state without transition
-        // Optionally, save this default state to localStorage
-        // localStorage.setItem(dashboardSubmenuStateKey, isEjsOpen ? 'open' : 'closed');
+        applyState(isEjsOpen, false);
       }
-
-      // Click event listener for toggling
       toggle.addEventListener('click', function(event) {
         event.preventDefault();
         const currentlyOpen = submenu.classList.contains('open');
-        // console.log('Toggle CLICK. Currently open:', currentlyOpen);
-
-        if (currentlyOpen) { // If currently open, then close it
-          applyState(false, true); // Close with transition
+        if (currentlyOpen) {
+          applyState(false, true);
           localStorage.setItem(dashboardSubmenuStateKey, 'closed');
-        } else { // If currently closed, then open it
-          applyState(true, true); // Open with transition
+        } else {
+          applyState(true, true);
           localStorage.setItem(dashboardSubmenuStateKey, 'open');
         }
       });

@@ -6,15 +6,10 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Cart - PizzazzPizza</title>
-  <!-- icons  -->
   <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
-  <!-- bootstrap  -->
   <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
-  <!-- swiper slider  -->
   <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css" />
-  <!-- fancy box  -->
   <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css" />
-  <!-- custom css  -->
   <link rel="stylesheet" href="/stylesheets/style.css" />
   <style>
     table,
@@ -121,17 +116,16 @@
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       const cartCounter = document.getElementById("cart-number-count");
-      // 'count' is passed from server to cart.ejs; ensure it's a number for display
       if (cartCounter && typeof count !== 'undefined') {
         cartCounter.innerHTML = parseInt(count) || 0;
       }
-      updatePageTotals(); // Initial call to ensure totals are correct based on rendered items
+      updatePageTotals();
     });
 
     function updatePageTotals() {
       let grandTotal = 0;
       let totalQuantity = 0;
-      const itemRows = document.querySelectorAll("#cart-items-container tr"); // Only select rows within the tbody
+      const itemRows = document.querySelectorAll("#cart-items-container tr");
 
       itemRows.forEach(row => {
         const priceText = row.querySelector(".item-price")?.dataset.price;
@@ -157,20 +151,19 @@
         grandTotalDisplayElement.textContent = grandTotal.toFixed(2);
       }
 
-      // Update header cart count as well, reflecting changes on this page
       const cartCounter = document.getElementById("cart-number-count");
       if (cartCounter) {
         cartCounter.innerHTML = totalQuantity;
       }
-      localStorage.setItem('item_count', totalQuantity); // Keep localStorage sync'd
+      localStorage.setItem('item_count', totalQuantity);
 
       const cartContentWrapper = document.getElementById('cart-content-wrapper');
       const cartForm = document.getElementById('cartForm');
-      const emptyCartMessageContainer = document.querySelector("#cart-items-container.text-center"); // More specific selector for empty message
+      const emptyCartMessageContainer = document.querySelector("#cart-items-container.text-center");
 
       if (itemRows.length === 0 || totalQuantity === 0) {
-        if (cartForm) cartForm.style.display = 'none'; // Hide form including table and checkout button
-        if (cartContentWrapper && !emptyCartMessageContainer) { // Check if empty message isn't already there
+        if (cartForm) cartForm.style.display = 'none';
+        if (cartContentWrapper && !emptyCartMessageContainer) {
           cartContentWrapper.innerHTML = '<div class="text-center" style="padding: 20px;"><p style="font-size: 1.2em; margin-bottom: 15px;">Your cart is currently empty.</p><img src="/images/empty-plate.jpg" alt="Empty Cart" style="max-width: 200px; margin-bottom: 20px; border-radius: 10px;"><br><a href="/homepage" class="btn btn-primary" style="background-color: #ff8243; border-color: #ff8243; padding: 10px 25px;">Continue Shopping</a></div>';
         } else if (emptyCartMessageContainer) {
           emptyCartMessageContainer.style.display = 'block';
@@ -203,7 +196,7 @@
           if (data.success && typeof data.newItemCount !== 'undefined') {
             const rowElement = document.getElementById(rowId);
             if (rowElement) rowElement.remove();
-            updatePageTotals(); // This will update grand total and header count
+            updatePageTotals();
           } else {
             alert('Failed to remove item: ' + (data.message || 'Unknown error'));
           }
@@ -223,16 +216,12 @@
 
       if (isNaN(newQuantity) || newQuantity < minQuantity) {
         alert(`Invalid quantity. Quantity must be at least ${minQuantity}.`);
-        inputElement.value = minQuantity; // Reset to min if invalid
+        inputElement.value = minQuantity;
         newQuantity = minQuantity;
-        // updatePageTotals(); // updateQuantity will call this
-        // return; // Proceed to update with min value
       } else if (newQuantity > maxQuantity) {
         alert(`Sorry, you can order a maximum of ${maxQuantity} units for this item at a time.`);
-        inputElement.value = maxQuantity; // Reset to max if exceeded
+        inputElement.value = maxQuantity;
         newQuantity = maxQuantity;
-        // updatePageTotals(); // updateQuantity will call this
-        // return; // Proceed to update with max value
       }
 
       updateQuantity(itemId, newQuantity, itemPrice, inputElement);
@@ -251,42 +240,35 @@
         })
         .then(response => {
           if (!response.ok) {
-            // If server responds with an error, try to parse JSON for a message
             return response.json().then(errData => {
               throw {
                 status: response.status,
                 data: errData
-              }; // Throw an object to be caught
+              };
             }).catch(() => {
               throw {
                 status: response.status,
                 data: {
                   message: "Failed to update quantity. Server error."
                 }
-              }; // Fallback error
+              };
             });
           }
           return response.json();
         })
         .then(data => {
           if (data.success && typeof data.newItemCount !== 'undefined') {
-            // Server successfully updated quantity
             const subtotalEl = document.getElementById(`subtotal-${itemId}`);
             if (subtotalEl) {
               subtotalEl.textContent = '$' + (itemPrice * newQuantity).toFixed(2);
             }
-            updatePageTotals(); // This will update grand total and header count
+            updatePageTotals();
           } else {
-            // Server indicated failure, or unexpected response
             alert('Failed to update quantity: ' + (data.message || 'Unknown server error'));
-            // Revert quantity in input if server provides current valid quantity
             if (inputElement && typeof data.currentQuantityInCart !== 'undefined') {
               inputElement.value = data.currentQuantityInCart;
-            } else if (inputElement) {
-              // As a fallback, if server doesn't give current quantity, maybe just refresh totals
-              // or ideally, you'd have the old value stored to revert to.
             }
-            updatePageTotals(); // Refresh totals anyway
+            updatePageTotals();
           }
         })
         .catch(errorObj => {
@@ -296,8 +278,6 @@
             alertMessage = errorObj.data.message;
           }
           alert(alertMessage);
-          // Attempt to revert input value or refresh from server if possible
-          // For now, just ensure totals are updated based on current (possibly failed) state
           if (inputElement && typeof errorObj?.data?.currentQuantityInCart !== 'undefined') {
             inputElement.value = errorObj.data.currentQuantityInCart;
           }
@@ -305,30 +285,18 @@
         });
     }
   </script>
-  <!-- jquery  -->
   <script src="/javascripts/jquery-3.5.1.min.js"></script>
-  <!-- bootstrap -->
   <script src="/javascripts/bootstrap.min.js"></script>
   <script src="/javascripts/popper.min.js"></script>
-  <!-- fontawesome  -->
   <script src="/javascripts/font-awesome.min.js"></script>
-  <!-- swiper slider  -->
   <script src="/javascripts/swiper-bundle.min.js"></script>
-  <!-- mixitup -- filter  -->
   <script src="/javascripts/jquery.mixitup.min.js"></script>
-  <!-- fancy box  -->
   <script src="/javascripts/jquery.fancybox.min.js"></script>
-  <!-- parallax  -->
   <script src="/javascripts/parallax.min.js"></script>
-  <!-- gsap  -->
   <script src="/javascripts/gsap.min.js"></script>
-  <!-- scroll trigger  -->
   <script src="/javascripts/ScrollTrigger.min.js"></script>
-  <!-- scroll to plugin  -->
   <script src="/javascripts/ScrollToPlugin.min.js"></script>
-  <!-- smooth scroll  -->
   <script src="/javascripts/smooth-scroll.js"></script>
-  <!-- custom js  -->
   <script src="/javascripts/main.js"></script>
 </body>
 

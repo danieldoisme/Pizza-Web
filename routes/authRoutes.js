@@ -2,19 +2,16 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
-const crypto = require("crypto"); // Ensure crypto is required if not already
-const { body, validationResult } = require("express-validator"); // Import express-validator
+const crypto = require("crypto");
+const { body, validationResult } = require("express-validator");
 
 const { transporter } = require("./indexRoutes");
 
-// User Sign-up Page
 function renderSignUpPage(req, res) {
   if (req.cookies.cookuid && req.cookies.cookuname) {
     return res.redirect("/homepage");
   }
-  // Get validation errors from res.locals (set by app.js middleware)
-  // and old input from flash messages
-  const validationErrors = res.locals.error; // This should be an array of messages
+  const validationErrors = res.locals.error;
   const oldInput = req.flash("oldInput")[0] || {};
 
   let displayError = null;
@@ -29,19 +26,17 @@ function renderSignUpPage(req, res) {
     typeof validationErrors === "string" &&
     validationErrors.length > 0
   ) {
-    // Fallback if a single string error was flashed for some reason
     displayError = validationErrors;
   }
 
   res.render("signup", {
     pageType: "signup",
-    error: displayError, // Pass the processed error string
-    success: null, // Or handle success messages if needed for this page
+    error: displayError,
+    success: null,
     oldInput: oldInput,
   });
 }
 
-// User Sign-up Logic
 const signUpValidationRules = [
   body("name").notEmpty().withMessage("Name is required.").trim().escape(),
   body("address_line1")
@@ -164,72 +159,57 @@ async function signUpUser(req, res) {
   }
 }
 
-// User Sign-in Page
 function renderSignInPage(req, res) {
-  // Check if user is already logged in, if so, redirect to homepage
   if (req.cookies.cookuid && req.cookies.cookuname) {
     return res.redirect("/homepage");
   }
   const signupSuccess = req.query.signupSuccess === "true";
   const loggedOut = req.query.logged_out === "true";
-  let generalMessage = null; // For messages like signup success, logout success
+  let generalMessage = null;
   if (signupSuccess)
     generalMessage = "Account created successfully! Please sign in.";
-  if (loggedOut) generalMessage = "You have been logged out successfully."; // Changed 'message' to 'generalMessage'
+  if (loggedOut) generalMessage = "You have been logged out successfully.";
 
-  // Messages from forgot/reset password flows (passed via query parameters)
   const resetFlowMessage = req.query.message;
   const resetFlowError = req.query.error;
 
-  // Validation errors are expected to be in res.locals.error, set by app.js middleware
-  // from req.flash('error'), which is typically an array from express-validator
   const validationErrors = res.locals.error;
 
   let displayError = null;
   if (resetFlowError) {
-    // Priority to errors from reset flow query params
     displayError = resetFlowError;
   } else if (
     validationErrors &&
     Array.isArray(validationErrors) &&
     validationErrors.length > 0
   ) {
-    displayError = validationErrors.join(", "); // Join array of validation messages
+    displayError = validationErrors.join(", ");
   } else if (
     validationErrors &&
     typeof validationErrors === "string" &&
     validationErrors.length > 0
   ) {
-    // Fallback if a single string was flashed to res.locals.error for some reason
     displayError = validationErrors;
   }
 
   let displaySuccess = null;
   if (resetFlowMessage) {
-    // Priority to success messages from reset flow query params
     displaySuccess = resetFlowMessage;
   } else if (generalMessage) {
     displaySuccess = generalMessage;
   }
-  // You could also consider checking res.locals.success here if you flash general success messages
-  // that aren't handled by query parameters:
-  // else if (res.locals.success && res.locals.success.length > 0) {
-  //   displaySuccess = Array.isArray(res.locals.success) ? res.locals.success.join(", ") : res.locals.success;
-  // }
 
   res.render("signin", {
     pageType: "signin",
     error: displayError,
     success: displaySuccess,
-    oldInput: req.flash("oldInput")[0] || {}, // 'oldInput' uses a distinct flash key, so it's fine
+    oldInput: req.flash("oldInput")[0] || {},
   });
 }
 
-// User Sign-in Logic
 async function signInUser(req, res) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    // Store errors and old input in flash messages and redirect
     req.flash(
       "error",
       errors.array().map((err) => err.msg)
@@ -308,7 +288,6 @@ async function signInUser(req, res) {
   });
 }
 
-// Logout
 function logout(req, res) {
   res.clearCookie("cookuid");
   res.clearCookie("cookuname");
@@ -317,20 +296,15 @@ function logout(req, res) {
   res.redirect("/signin?logged_out=true");
 }
 
-// GET route for forgot password page
 router.get("/forgot-password", (req, res) => {
-  const queryError = req.query.error; // Specific error passed in URL query
-  const queryMessage = req.query.message; // Specific message passed in URL query
-
-  // Flashed messages from redirects (via app.js middleware)
+  const queryError = req.query.error;
+  const queryMessage = req.query.message;
   const flashedValidationErrors = res.locals.error;
   const flashedSuccessMessage = res.locals.success;
-
   const oldInput = req.flash("oldInput")[0] || {};
 
   let displayError = null;
   if (queryError) {
-    // Priority to query parameter errors
     displayError = queryError;
   } else if (flashedValidationErrors && flashedValidationErrors.length > 0) {
     displayError = Array.isArray(flashedValidationErrors)
@@ -340,7 +314,6 @@ router.get("/forgot-password", (req, res) => {
 
   let displayMessage = null;
   if (queryMessage) {
-    // Priority to query parameter messages
     displayMessage = queryMessage;
   } else if (flashedSuccessMessage && flashedSuccessMessage.length > 0) {
     displayMessage = Array.isArray(flashedSuccessMessage)
@@ -356,7 +329,6 @@ router.get("/forgot-password", (req, res) => {
   });
 });
 
-// Validation rules for forgot password
 const forgotPasswordValidationRules = [
   body("email")
     .isEmail()
@@ -364,7 +336,6 @@ const forgotPasswordValidationRules = [
     .normalizeEmail(),
 ];
 
-// POST route to handle forgot password form submission
 router.post(
   "/forgot-password",
   forgotPasswordValidationRules,
@@ -396,13 +367,10 @@ router.post(
             return res.redirect("/forgot-password");
           }
 
-          // Always show a generic message to prevent email enumeration
-          // irrespective of whether the user was found or email sending succeeds/fails.
-          // The actual email sending happens if the user is found.
           if (results.length > 0) {
             const userAccount = results[0];
             const token = crypto.randomBytes(32).toString("hex");
-            const expiresAt = new Date(Date.now() + 3600000); // Token expires in 1 hour
+            const expiresAt = new Date(Date.now() + 3600000);
 
             connection.query(
               "INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)",
@@ -410,7 +378,6 @@ router.post(
               async (tokenErr) => {
                 if (tokenErr) {
                   console.error("Error saving password reset token:", tokenErr);
-                  // Still show generic message to user
                   req.flash(
                     "success",
                     "If an account with that email exists, a password reset link has been sent."
@@ -442,7 +409,6 @@ router.post(
                     "Error sending password reset email:",
                     mailError
                   );
-                  // Optionally, delete the token if email sending fails
                   connection.query(
                     "DELETE FROM password_reset_tokens WHERE token = ?",
                     [token],
@@ -455,7 +421,6 @@ router.post(
                     }
                   );
                 }
-                // Always show the generic success message after attempting to send
                 req.flash(
                   "success",
                   "If an account with that email exists, a password reset link has been sent."
@@ -464,7 +429,6 @@ router.post(
               }
             );
           } else {
-            // User not found, still show generic message
             req.flash(
               "success",
               "If an account with that email exists, a password reset link has been sent."
@@ -481,14 +445,9 @@ router.post(
   }
 );
 
-// GET route to display the reset password form
 router.get("/reset-password", async (req, res) => {
   const { token } = req.query;
-
-  // Flashed messages from redirects (e.g., if another part of the app redirects here with an error)
-  // Note: If POST /reset-password fails validation and re-renders, it passes 'error' directly.
   const flashedError = res.locals.error;
-  // const flashedSuccess = res.locals.success; // Less common for this GET route to have success flashed to it
 
   let displayError = null;
   if (flashedError && flashedError.length > 0) {
@@ -496,12 +455,10 @@ router.get("/reset-password", async (req, res) => {
       ? flashedError.join(", ")
       : flashedError;
   }
-  // If POST /reset-password re-renders, it will pass an 'error' variable in render options,
-  // which will override this if not null. The EJS template will use whatever 'error' is passed.
 
   if (!token) {
     req.flash("error", "Invalid or missing reset token.");
-    return res.redirect("/forgot-password"); // This flash will be handled by GET /forgot-password
+    return res.redirect("/forgot-password");
   }
 
   const connection = req.app.get("dbConnection");
@@ -522,12 +479,11 @@ router.get("/reset-password", async (req, res) => {
           );
           return res.redirect("/forgot-password");
         }
-        // Token is valid, render the reset password page
         res.render("reset-password", {
           pageType: "reset-password",
           token: token,
-          error: displayError, // Use error from flashed messages if any (will be overridden if POST re-rendered with its own error)
-          message: null, // Or res.locals.success if applicable
+          error: displayError,
+          message: null,
         });
       }
     );
@@ -538,7 +494,6 @@ router.get("/reset-password", async (req, res) => {
   }
 });
 
-// Validation rules for reset password
 const resetPasswordValidationRules = [
   body("token").notEmpty().withMessage("Token is missing."),
   body("new_password")
@@ -560,7 +515,6 @@ const resetPasswordValidationRules = [
   }),
 ];
 
-// POST route to handle the actual password reset
 router.post(
   "/reset-password",
   resetPasswordValidationRules,
@@ -570,12 +524,10 @@ router.post(
 
     if (!errors.isEmpty()) {
       const errorMessages = errors.array().map((err) => err.msg);
-      // Re-render directly, passing the errors.
-      // The 'error' variable in reset-password.ejs will use this.
       return res.render("reset-password", {
         pageType: "reset-password",
         token: token,
-        error: errorMessages.join(", "), // Pass the processed errors directly
+        error: errorMessages.join(", "),
         message: null,
       });
     }
@@ -593,8 +545,6 @@ router.post(
 
       if (results.length === 0) {
         await actualConnection.rollback();
-        // Flash error and redirect to GET /forgot-password.
-        // The GET /forgot-password handler will pick up this flashed error via res.locals.error.
         req.flash(
           "error",
           "Invalid or expired token. Please request a new password reset."
@@ -620,11 +570,10 @@ router.post(
         "success",
         "Password has been reset successfully. Please sign in."
       );
-      res.redirect("/signin"); // This flash will be handled by GET /signin
+      res.redirect("/signin");
     } catch (error) {
       if (actualConnection) await actualConnection.rollback();
       console.error("Server error on POST /reset-password:", error);
-      // Re-render directly with an error message.
       return res.render("reset-password", {
         pageType: "reset-password",
         token: token,
@@ -637,9 +586,8 @@ router.post(
   }
 );
 
-// Define Auth Routes
 router.get("/signup", renderSignUpPage);
-router.post("/signup", signUpValidationRules, signUpUser); // Added validation rules
+router.post("/signup", signUpValidationRules, signUpUser);
 router.get("/signin", renderSignInPage);
 router.post(
   "/signin",
@@ -651,7 +599,7 @@ router.post(
     body("password")
       .notEmpty()
       .withMessage("Password cannot be empty.")
-      .isLength({ min: 8 }) // Changed from 6 to 8
+      .isLength({ min: 8 })
       .withMessage("Password must be at least 8 characters long."),
   ],
   signInUser

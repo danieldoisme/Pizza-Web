@@ -21,63 +21,45 @@
     }
 
     .table {
-      /* Add this rule */
       table-layout: fixed;
       width: 100%;
-      /* Ensure table takes full available width */
     }
 
     .table td:nth-child(3),
-    /* Email column */
     .table td:nth-child(5) {
-      /* Address column */
       word-break: break-word;
       overflow-wrap: break-word;
-      /* for better browser compatibility */
     }
 
     .table th:nth-child(1),
-    /* ID column */
     .table td:nth-child(1) {
       width: 8%;
-      /* Example width, adjust as needed */
     }
 
     .table th:nth-child(2),
-    /* Name column */
     .table td:nth-child(2) {
       width: 20%;
-      /* Example width */
     }
 
     .table th:nth-child(3),
-    /* Email column */
     .table td:nth-child(3) {
       width: 25%;
-      /* Example width */
     }
 
     .table th:nth-child(4),
-    /* Mobile No. column */
     .table td:nth-child(4) {
       width: 15%;
-      /* Example width */
     }
 
     .table th:nth-child(5),
-    /* Address column */
     .table td:nth-child(5) {
       width: 22%;
-      /* Example width */
     }
 
     .table th:nth-child(6),
-    /* Actions column */
     .table td:nth-child(6) {
       width: 10%;
-      /* Example width, adjust for buttons */
       white-space: nowrap;
-      /* Keep action buttons on one line if possible */
     }
 
     .action-buttons .btn {
@@ -158,9 +140,6 @@
             </div>
             <% } %>
 
-            <!-- Search/Filter Form will go here in Phase 2 -->
-
-            <!-- Search/Filter Form -->
             <div class="mb-4 card">
               <div class="card-body">
                 <h5 class="card-title">Filter Users</h5>
@@ -191,7 +170,7 @@
                     <%   const currentParams = new URLSearchParams(req.query); %>
                     <%   currentParams.set('sortBy', col); %>
                     <%   currentParams.set('sortOrder', newSortOrder); %>
-                    <%   currentParams.delete('page'); // Reset to page 1 on sort change %>
+                    <%   currentParams.delete('page'); %>
                     <th>
                       <a href="/admin/users?<%= currentParams.toString() %>">
                         <%= display %>
@@ -240,7 +219,7 @@
               <ul class="pagination">
                 <% 
                   const baseParamsSearch = new URLSearchParams(req.query); 
-                  baseParamsSearch.delete('page'); // Remove page to build base for pagination links
+                  baseParamsSearch.delete('page'); 
                 %>
 
                 <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
@@ -272,7 +251,6 @@
     </div>
   </div>
 
-  <!-- Edit User Modal -->
   <div class="modal fade" id="editUserModal" tabindex="-1" role="dialog" aria-labelledby="editUserModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
       <div class="modal-content">
@@ -283,7 +261,6 @@
           </button>
         </div>
         <form id="editUserForm" method="POST">
-          <!-- Action will be set by JS -->
           <div class="modal-body">
             <input type="hidden" id="editUserId" name="userId">
             <div class="form-group">
@@ -317,7 +294,6 @@
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   <script src="/javascripts/main.js"></script>
   <script>
-    // Clear query parameters from URL after displaying messages
     if (window.history.replaceState) {
       const url = new URL(window.location.href);
       if (url.searchParams.has('message') || url.searchParams.has('error')) {
@@ -329,10 +305,9 @@
       }
     }
 
-    // Edit User Modal Logic
     document.addEventListener('DOMContentLoaded', function() {
       const editUserButtons = document.querySelectorAll('.edit-user-btn');
-      const editUserModal = $('#editUserModal'); // jQuery selector for Bootstrap modal
+      const editUserModal = $('#editUserModal');
       const editUserForm = document.getElementById('editUserForm');
       const editUserIdField = document.getElementById('editUserId');
       const editUserNameField = document.getElementById('editUserName');
@@ -344,7 +319,6 @@
         button.addEventListener('click', function() {
           const userId = this.dataset.id;
 
-          // Fetch user data
           fetch(`/admin/users/${userId}`)
             .then(response => response.json())
             .then(data => {
@@ -356,7 +330,6 @@
                 editUserMobileField.value = user.user_mobileno || '';
                 editUserAddressField.value = user.user_address || '';
 
-                // Preserve current query params (search, sort, page) in form action
                 const currentQueryParams = new URLSearchParams(window.location.search).toString();
                 editUserForm.action = `/admin/users/update/${user.user_id}${currentQueryParams ? '?' + currentQueryParams : ''}`;
 

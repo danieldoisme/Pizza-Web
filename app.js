@@ -9,7 +9,7 @@ const cron = require("node-cron");
 const statisticsService = require("./services/statisticsService");
 const session = require("express-session");
 const flash = require("connect-flash");
-const http = require('http');
+const http = require("http");
 const { Server } = require("socket.io");
 
 // Initialize Express App
@@ -38,7 +38,7 @@ app.use(cookieParser());
 app.use(fileUpload());
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "132132132133",
+    secret: process.env.SESSION_SECRET || "",
     resave: false,
     saveUninitialized: true,
     cookie: {
@@ -121,16 +121,16 @@ cron.schedule(
 
 console.log("Daily statistics snapshot job scheduled.");
 
-io.on('connection', (socket) => {
-  console.log('Một admin đã kết nối vào dashboard');
-  socket.on('disconnect', () => {
-    console.log('Admin đã ngắt kết nối');
+io.on("connection", (socket) => {
+  console.log("An admin has connected to the dashboard");
+  socket.on("disconnect", () => {
+    console.log("Admin has disconnected");
   });
 });
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Server đang chạy tại http://localhost:${PORT}`);
+  console.log(`Server is running at http://localhost:${PORT}`);
 });
-app.set('io', io);
+app.set("io", io);
 
 module.exports = app;

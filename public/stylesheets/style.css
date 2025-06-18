@@ -1,7 +1,4 @@
 @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap");
-/* font-family: 'Playfair Display', serif;
-font-family: 'Poppins', sans-serif; */
-
 body {
   font-family: "Poppins", sans-serif;
   text-rendering: optimizeLegibility !important;
@@ -29,7 +26,6 @@ img {
   display: none !important;
 }
 
-/* Banner and Header Section Starts */
 .site-header {
   position: fixed;
   padding: 30px 0;
@@ -602,9 +598,7 @@ input * {
     left: 15px;
   }
 }
-/* Banner and Header Section Ends */
 
-/* About Section starts */
 @media screen and (min-width: 992px) {
   #viewport {
     overflow: hidden;
@@ -790,7 +784,6 @@ p {
   color: white;
   box-shadow: inset 4px 4px 8px #c48000, inset -4px -4px 8px #ffae00;
 }
-/* About Section Ends */
 
 .section {
   padding-top: 100px;
@@ -826,7 +819,6 @@ p {
   display: block;
 }
 
-/* Scroll Bar Design Starts */
 ::-webkit-scrollbar {
   width: 5px;
 }
@@ -843,13 +835,11 @@ p {
 ::-webkit-scrollbar-thumb:hover {
   background: #f16620;
 }
-/* Scroll Bar Design Ends */
 
 .main-content-top-padding {
   padding-top: 80px;
 }
 
-/* Menu Card Design Starts */
 .repeat-img {
   background-size: contain;
   background-repeat: repeat;
@@ -1066,9 +1056,7 @@ p {
   box-shadow: inset 4px 4px 8px #b86228, inset -4px -4px 8px #e09900;
   color: #f0f0f0;
 }
-/* Menu Card Design Ends*/
 
-/* Checkout Page Styles Start */
 .checkout-section .h2-title {
   font-size: 38px;
   line-height: 48px;
@@ -1155,7 +1143,6 @@ p {
 .paypal-button-container {
   text-align: center;
 }
-/* Checkout Page Styles End */
 
 .xxl-title {
   text-transform: capitalize;
@@ -1232,7 +1219,6 @@ p {
   background-size: cover;
 }
 
-/* Team Section Design Starts */
 .team-slider {
   position: relative;
 }
@@ -1301,9 +1287,7 @@ p {
 .social-icon ul li a:hover i {
   color: #ffffff !important;
 }
-/* Team Section Design Ends */
 
-/* Testimonial Section Design Starts */
 .testimonials-img {
   position: relative;
 }
@@ -1404,7 +1388,6 @@ p {
     width: 0;
   }
 }
-/* Testimonial Section Design Ends */
 
 .sec-btn.primary-btn {
   background: linear-gradient(145deg, #e26a2c, #ff8243);
@@ -1417,7 +1400,6 @@ p {
   background: linear-gradient(145deg, #0c0c21, #0e0e28);
 }
 
-/* Footer */
 .top-footer,
 .bottom-footer {
   border-top: 1px solid rgb(204 204 204 / 40%);
@@ -1507,13 +1489,11 @@ p {
   color: #0d0d25;
 }
 
-/* Settings Page Responsiveness */
 .settings-container .form-input {
   width: 100%;
   max-width: 450px;
 }
 
-/* Ensure sections stack on smaller screens */
 @media (max-width: 767px) {
   .settings-container > .row > section {
     margin-bottom: 100px;
@@ -1533,7 +1513,6 @@ p {
   }
 }
 
-/* Responsiveness */
 @media (min-width: 2100px) {
   .container {
     max-width: 1400px;
@@ -1839,7 +1818,6 @@ p {
     flex-direction: column;
   }
 
-  /* Allow body to scroll in mobile admin view */
   body.admin-active.body-fixed,
   body.admin-active {
     position: static !important;
@@ -1848,7 +1826,6 @@ p {
     overflow-y: auto !important;
   }
 
-  /* Ensure viewport and js-scroll-content are static in mobile admin view */
   body.admin-active .admin-main-content #viewport,
   body.admin-active .admin-main-content #js-scroll-content {
     position: static !important;
@@ -1934,7 +1911,6 @@ p {
   }
 }
 
-/* Admin Sidebar Styles */
 .admin-layout {
   display: flex;
 }
@@ -2015,7 +1991,6 @@ p {
   text-align: center;
 }
 
-/* Add hover state for logout button */
 .sidebar-logout a:hover {
   background-color: #e67330;
   color: #fff !important;
@@ -2030,12 +2005,10 @@ p {
   height: 100vh;
 }
 
-/* Adjustments for body when admin sidebar is active */
 body.admin-active {
   overflow: hidden;
 }
 
-/* Responsive adjustments for admin sidebar */
 @media (max-width: 767px) {
   .admin-sidebar {
     width: 100%;
@@ -2054,7 +2027,6 @@ body.admin-active {
   }
 }
 
-/* Desktop Admin View: Overrides for #viewport and #js-scroll-content */
 @media screen and (min-width: 992px) {
   body.admin-active .admin-main-content #viewport {
     position: static !important;
@@ -2074,7 +2046,6 @@ body.admin-active {
   color: orange !important;
 }
 
-/* --- Promotion Banner Slider Styles --- */
 .promotion-banner-section {
   padding-top: 0px;
   padding-bottom: 60px;
@@ -2094,7 +2065,6 @@ body.admin-active {
   border-radius: 15px;
 }
 
-/* Styling for Swiper Pagination for Promotion Banner */
 .promotion-banner-slider .swiper-pagination {
   padding: 10px 20px;
   display: inline-block;
@@ -2127,4 +2097,3 @@ body.admin-active {
   width: 30px;
   opacity: 1;
 }
-/* --- End Promotion Banner Slider Styles --- */

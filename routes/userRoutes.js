@@ -1,13 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const bcrypt = require("bcrypt"); // Import bcrypt
-const saltRounds = 10; // Define salt rounds
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
 const crypto = require("crypto");
-const { transporter } = require("./indexRoutes"); // Added import for transporter
-const { body, validationResult } = require("express-validator"); // Import express-validator
+const { transporter } = require("./indexRoutes");
+const { body, validationResult } = require("express-validator");
 
-// Middleware to check if user is authenticated
-// This should be the same as the one in app.js or imported from a shared middleware file
 function isAuthenticated(req, res, next) {
   if (req.cookies.cookuid && req.cookies.cookuname) {
     return next();
@@ -15,11 +13,9 @@ function isAuthenticated(req, res, next) {
   res.redirect("/signin");
 }
 
-// Handler for rendering the settings page
 async function renderSettingsPage(req, res) {
   const userId = req.cookies.cookuid;
   if (!userId) {
-    // This should ideally be caught by isAuthenticated, but as a safeguard
     req.flash("error", "Please sign in to view settings.");
     return res.redirect("/signin");
   }
@@ -30,7 +26,7 @@ async function renderSettingsPage(req, res) {
       .query("SELECT * FROM users WHERE user_id = ?", [userId]);
     if (userDataResults.length === 0) {
       req.flash("error", "User not found.");
-      return res.redirect("/homepage"); // Or perhaps to signin if user context is lost
+      return res.redirect("/homepage");
     }
     const userData = userDataResults[0];
 
@@ -46,15 +42,12 @@ async function renderSettingsPage(req, res) {
       promotionSubscription = subscriptionResults[0];
     }
 
-    // Use res.locals which are populated by your app.js middleware from req.flash()
-    const flashedErrorMessages = res.locals.error; // Already an array or string from app.js
-    const flashedSuccessMessages = res.locals.success; // Already an array or string from app.js
-    const oldInput = req.flash("oldInput")[0] || {}; // 'oldInput' uses a distinct flash key, so direct req.flash is fine
+    const flashedErrorMessages = res.locals.error;
+    const flashedSuccessMessages = res.locals.success;
+    const oldInput = req.flash("oldInput")[0] || {};
 
     let displayError = null;
     if (flashedErrorMessages && flashedErrorMessages.length > 0) {
-      // If app.js middleware gives an array (e.g., from express-validator), join it.
-      // If it's already a string, use it as is.
       displayError = Array.isArray(flashedErrorMessages)
         ? flashedErrorMessages.join(", ")
         : flashedErrorMessages;
@@ -71,7 +64,7 @@ async function renderSettingsPage(req, res) {
       pageType: "settings",
       username: req.cookies.cookuname,
       userid: userId,
-      item_count: req.cookies.item_count || 0, // Ensure item_count is available
+      item_count: req.cookies.item_count || 0,
       userData: userData,
       promotionSubscription: promotionSubscription,
       error: displayError,
@@ -81,11 +74,10 @@ async function renderSettingsPage(req, res) {
   } catch (error) {
     console.error("Error fetching user data for settings:", error);
     req.flash("error", "Could not load your settings page. Please try again.");
-    res.redirect("/homepage"); // Or a more appropriate error page/redirect
+    res.redirect("/homepage");
   }
 }
 
-// Validation rules for contact update
 const contactValidationRules = [
   body("mobileno")
     .notEmpty()
@@ -96,13 +88,11 @@ const contactValidationRules = [
     .escape(),
 ];
 
-// Handler for updating user contact (mobile number)
 async function updateContact(req, res) {
   const errors = validationResult(req);
   const userId = req.cookies.cookuid;
 
   if (!userId) {
-    // Should be caught by isAuthenticated, but good for direct calls if any
     req.flash("error", "Authentication required.");
     return res.redirect("/signin");
   }
@@ -136,7 +126,6 @@ async function updateContact(req, res) {
   }
 }
 
-// Validation rules for address update
 const addressValidationRules = [
   body("address_line1")
     .notEmpty()
@@ -164,7 +153,6 @@ const addressValidationRules = [
     .escape(),
 ];
 
-// Handler for updating user address
 async function updateAddress(req, res) {
   const errors = validationResult(req);
   const userId = req.cookies.cookuid;
@@ -216,7 +204,6 @@ async function updateAddress(req, res) {
   }
 }
 
-// Validation rules for password update
 const passwordValidationRules = [
   body("old_password").notEmpty().withMessage("Old password is required."),
   body("new_password")
@@ -238,7 +225,6 @@ const passwordValidationRules = [
   }),
 ];
 
-// Handler for updating user password
 async function updatePassword(req, res) {
   const errors = validationResult(req);
   const userId = req.cookies.cookuid;
@@ -253,7 +239,6 @@ async function updatePassword(req, res) {
       "error",
       errors.array().map((err) => err.msg)
     );
-    // Do not flash password fields back
     return res.redirect("/settings");
   }
 
@@ -296,10 +281,9 @@ async function updatePassword(req, res) {
   }
 }
 
-// Handler for rendering the "My Orders" page
 async function renderMyOrdersPage(req, res) {
   const userId = req.cookies.cookuid;
-  const itemCount = res.locals.item_count || 0; // Use res.locals set by global middleware
+  const itemCount = res.locals.item_count || 0;
   const connection = req.app.get("dbConnection");
 
   if (!userId) {
@@ -307,7 +291,6 @@ async function renderMyOrdersPage(req, res) {
   }
 
   try {
-    // 1. Fetch user details
     const userDetailsQuery =
       "SELECT user_id, user_name, user_email, user_address, user_mobileno FROM users WHERE user_id = ?";
     connection.query(userDetailsQuery, [userId], (userErr, userResults) => {
@@ -316,19 +299,17 @@ async function renderMyOrdersPage(req, res) {
           "Error fetching user details for orders page or user not found:",
           userErr
         );
-        // Redirect or render with an error, ensuring all expected template variables are present
         return res.status(userErr ? 500 : 404).render("orders", {
           pageType: "orders",
           item_count: itemCount,
           orders: [],
-          userDetails: null, // Pass null or an empty object for userDetails
+          userDetails: null,
           error: "Could not load your details at this time.",
         });
       }
 
       const currentUserDetails = userResults[0];
 
-      // 2. Fetch orders
       const ordersQuery = `
         SELECT 
           o.order_id, 
@@ -352,7 +333,7 @@ async function renderMyOrdersPage(req, res) {
             pageType: "orders",
             item_count: itemCount,
             orders: [],
-            userDetails: currentUserDetails, // Pass fetched userDetails even if orders fail
+            userDetails: currentUserDetails,
             error: "Could not retrieve your orders at this time.",
           });
         }
@@ -367,7 +348,6 @@ async function renderMyOrdersPage(req, res) {
           });
         }
 
-        // 3. For each order, fetch its items
         const ordersWithItems = [];
         for (const order of orders) {
           const orderItemsQuery = `
@@ -382,7 +362,6 @@ async function renderMyOrdersPage(req, res) {
             WHERE oi.order_id = ?
           `;
           try {
-            // Promisify connection.query for use with async/await
             const items = await new Promise((resolve, reject) => {
               connection.query(
                 orderItemsQuery,
@@ -401,7 +380,6 @@ async function renderMyOrdersPage(req, res) {
               `Error fetching items for order ${order.order_id}:`,
               itemFetchError
             );
-            // Add order even if items fail to load, with empty items array or an error flag
             ordersWithItems.push({
               ...order,
               items: [],
@@ -414,7 +392,7 @@ async function renderMyOrdersPage(req, res) {
           pageType: "orders",
           item_count: itemCount,
           orders: ordersWithItems,
-          userDetails: currentUserDetails, // Pass the fetched user details
+          userDetails: currentUserDetails,
           error: null,
         });
       });
@@ -431,24 +409,18 @@ async function renderMyOrdersPage(req, res) {
   }
 }
 
-// REVISED Handler for User to Mark Order as Delivered/Received
 async function setOrderDeliveredUser(req, res) {
-  const orderId = req.params.order_id; // Consistent naming with existing
+  const orderId = req.params.order_id;
   const userId = req.cookies.cookuid;
   const connection = req.app.get("dbConnection");
-  // console.log( // Original console.log can be kept if desired for debugging
-  //   `setOrderDeliveredUser called for order ID: ${orderId} by user ID: ${userId}`
-  // );
 
   if (!userId) {
-    // Consistent redirect for authentication failure
     return res.redirect(
       "/signin?error=" + encodeURIComponent("Authentication required.")
     );
   }
 
   try {
-    // Verify the order belongs to the user and is in 'Dispatched' state
     const [orderRows] = await connection
       .promise()
       .query(
@@ -468,14 +440,14 @@ async function setOrderDeliveredUser(req, res) {
     const currentStatus = orderRows[0].order_status;
 
     if (currentStatus === "Dispatched") {
-      // Update the order status to "Delivered" and set delivery_date
-      const [updateOrderResult] = await connection.promise().query(
-        "UPDATE orders SET order_status = 'Delivered', delivery_date = CURRENT_TIMESTAMP WHERE order_id = ? AND user_id = ?", // Using CURRENT_TIMESTAMP from existing
-        [orderId, userId]
-      );
+      const [updateOrderResult] = await connection
+        .promise()
+        .query(
+          "UPDATE orders SET order_status = 'Delivered', delivery_date = CURRENT_TIMESTAMP WHERE order_id = ? AND user_id = ?",
+          [orderId, userId]
+        );
 
       if (updateOrderResult.affectedRows > 0) {
-        // Update dispatch_status in order_dispatch table (from existing logic)
         try {
           const [dispatchUpdateResult] = await connection
             .promise()
@@ -484,7 +456,6 @@ async function setOrderDeliveredUser(req, res) {
               [orderId]
             );
           if (dispatchUpdateResult.affectedRows === 0) {
-            // Log if order_dispatch wasn't updated, but don't treat as a primary failure if order was updated
             console.warn(
               `Order_dispatch table not updated for order ID: ${orderId}, though order was marked delivered.`
             );
@@ -494,14 +465,12 @@ async function setOrderDeliveredUser(req, res) {
             "Error updating order_dispatch status for user-delivered order:",
             dispatchErr
           );
-          // Log error, but proceed with success message for the main order update
         }
         return res.redirect(
           "/orders?success=" +
             encodeURIComponent(`Order #${orderId} has been marked as Received.`)
-        ); // Using 'success' for consistency
+        );
       } else {
-        // This case implies the order wasn't updated, perhaps already delivered or an issue.
         return res.redirect(
           "/orders?error=" +
             encodeURIComponent(
@@ -528,13 +497,12 @@ async function setOrderDeliveredUser(req, res) {
   }
 }
 
-// New route to update promotion subscription from settings
 router.post(
   "/settings/update-promotion-subscription",
   isAuthenticated,
   async (req, res) => {
     const userId = req.cookies.cookuid;
-    const { subscribe_promotions } = req.body; // 'on' or undefined
+    const { subscribe_promotions } = req.body;
     const shouldBeSubscribed = subscribe_promotions === "on";
     const connection = req.app.get("dbConnection");
 
@@ -547,12 +515,14 @@ router.post(
         return res.redirect("/settings");
       }
       const userEmail = userDataResults[0].user_email;
-      const unsubscribeToken = crypto.randomBytes(32).toString("hex"); // Token for new subscriptions/re-subscriptions
+      const unsubscribeToken = crypto.randomBytes(32).toString("hex");
 
-      const [existingSubscriptions] = await connection.promise().query(
-        "SELECT subscription_id, is_subscribed FROM email_subscriptions WHERE email = ?", // Fetch is_subscribed
-        [userEmail]
-      );
+      const [existingSubscriptions] = await connection
+        .promise()
+        .query(
+          "SELECT subscription_id, is_subscribed FROM email_subscriptions WHERE email = ?",
+          [userEmail]
+        );
 
       if (existingSubscriptions.length > 0) {
         const subscription = existingSubscriptions[0];
@@ -560,21 +530,19 @@ router.post(
         const wasPreviouslySubscribed = subscription.is_subscribed;
 
         if (shouldBeSubscribed) {
-          // User wants to be subscribed
           await connection
             .promise()
             .query(
               "UPDATE email_subscriptions SET is_subscribed = 1, user_id = ?, unsubscribed_at = NULL, unsubscribe_token = ?, subscribed_at = IF(? = 0, NOW(), subscribed_at) WHERE subscription_id = ?",
               [
                 userId,
-                unsubscribeToken, // New token for active subscription
-                wasPreviouslySubscribed, // Check if it's a re-subscription
+                unsubscribeToken,
+                wasPreviouslySubscribed,
                 subscriptionId,
               ]
             );
 
           if (!wasPreviouslySubscribed) {
-            // This was a re-subscription, send "Welcome Back" email
             const mailOptionsResubscribe = {
               from: `"PizzazzPizza" <${process.env.GMAIL_USER}>`,
               to: userEmail,
@@ -598,14 +566,14 @@ router.post(
             }
           }
         } else {
-          // User wants to be unsubscribed
-          await connection.promise().query(
-            "UPDATE email_subscriptions SET is_subscribed = 0, unsubscribed_at = NOW(), unsubscribe_token = NULL WHERE subscription_id = ?", // Set token to NULL
-            [subscriptionId]
-          );
+          await connection
+            .promise()
+            .query(
+              "UPDATE email_subscriptions SET is_subscribed = 0, unsubscribed_at = NOW(), unsubscribe_token = NULL WHERE subscription_id = ?",
+              [subscriptionId]
+            );
         }
       } else if (shouldBeSubscribed) {
-        // Create new subscription if user wants to subscribe and doesn't have one
         await connection
           .promise()
           .query(
@@ -613,7 +581,6 @@ router.post(
             [userEmail, userId, unsubscribeToken]
           );
 
-        // Send confirmation email for new subscription
         const mailOptions = {
           from: `"PizzazzPizza" <${process.env.GMAIL_USER}>`,
           to: userEmail,
@@ -650,7 +617,6 @@ router.post(
   }
 );
 
-// Define routes for user settings
 router.get("/settings", isAuthenticated, renderSettingsPage);
 router.post("/contact", isAuthenticated, contactValidationRules, updateContact);
 router.post("/address", isAuthenticated, addressValidationRules, updateAddress);
@@ -661,31 +627,26 @@ router.post(
   updatePassword
 );
 
-// Define route for "My Orders"
 router.get("/orders", isAuthenticated, renderMyOrdersPage);
 
-// Define route for marking order as delivered
 router.post(
   "/order/mark-delivered/:order_id",
   isAuthenticated,
-  setOrderDeliveredUser // This now points to the revised async function
+  setOrderDeliveredUser
 );
 
-// NEW ROUTE: User cancels an order
 router.post("/order/cancel/:order_id", isAuthenticated, async (req, res) => {
   const { order_id } = req.params;
-  const userId = req.cookies.cookuid; // Get user_id from cookie
+  const userId = req.cookies.cookuid;
   const connection = req.app.get("dbConnection");
 
   if (!userId) {
-    // This should ideally be caught by isAuthenticated, but as a safeguard:
     return res.redirect(
       "/signin?error=" + encodeURIComponent("Authentication required.")
     );
   }
 
   try {
-    // First, verify the order belongs to the user and is in a cancellable state
     const [orderRows] = await connection
       .promise()
       .query(
@@ -705,7 +666,6 @@ router.post("/order/cancel/:order_id", isAuthenticated, async (req, res) => {
     const currentStatus = orderRows[0].order_status;
 
     if (currentStatus === "Pending" || currentStatus === "Processing") {
-      // Update the order status to "Cancelled"
       const [updateResult] = await connection
         .promise()
         .query(
@@ -721,7 +681,6 @@ router.post("/order/cancel/:order_id", isAuthenticated, async (req, res) => {
             )
         );
       } else {
-        // This case should ideally not be reached if the select query worked
         return res.redirect(
           "/orders?error=" +
             encodeURIComponent("Failed to cancel the order. Please try again.")

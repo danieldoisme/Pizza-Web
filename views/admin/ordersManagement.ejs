@@ -6,15 +6,10 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Orders Management - PizzazzPizza</title>
-  <!-- icons  -->
   <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
-  <!-- bootstrap  -->
   <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
-  <!-- swiper slider  -->
   <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css" />
-  <!-- fancy box  -->
   <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css" />
-  <!-- custom css  -->
   <link rel="stylesheet" href="/stylesheets/style.css" />
   <style>
     table,
@@ -55,7 +50,6 @@
                     </div>
                   </div>
 
-                  <!-- Filter Form -->
                   <div class="filters-container" style="background-color: #f0f0f0; padding: 20px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     <form method="GET" action="/admin/ordersManagement" class="row g-3 align-items-center">
                       <div class="col-md-3">
@@ -99,7 +93,6 @@
                       </div>
                     </form>
                   </div>
-                  <!-- End Filter Form -->
 
                   <% if (orders.length === 0) { %>
                   <div class="text-center" style="
@@ -240,7 +233,6 @@
                         </button>
                       </form>
                       <% } %>
-                      <%# Updated condition and action for marking as paid %>
                       <% if ((order.payment_status === 'Unpaid' || order.payment_status === 'Pending Payment') && ['Pending', 'Processing', 'Dispatched', 'Delivered'].includes(order.order_status)) { %>
                       <form action="/admin/order/mark-paid/<%= order.order_id %>" method="POST" style="margin: 0;">
                         <button type="submit" class="btn btn-sm btn-info">
@@ -249,7 +241,6 @@
                       </form>
                       <% } %>
 
-                      <%# Add Cancel Order Button %>
                       <% if (order.order_status !== 'Delivered' && order.order_status !== 'Cancelled') { %>
                       <form action="/admin/order/set-cancelled/<%= order.order_id %>" method="POST" style="margin: 0;">
                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to cancel this order?');">
@@ -258,7 +249,6 @@
                       </form>
                       <% } %>
 
-                      <%# Add Mark as Refunded Button %>
                       <% if (order.order_status === 'Cancelled' && order.payment_status === 'Paid') { %>
                       <form action="/admin/order/mark-refunded/<%= order.order_id %>" method="POST" style="margin: 0;">
                         <button type="submit" class="btn btn-sm btn-secondary" onclick="return confirm('Are you sure you have processed the refund and want to mark this order as Refunded?');">
@@ -267,7 +257,6 @@
                       </form>
                       <% } %>
 
-                      <%# NEW: Add Convert to COD Button %>
                       <% if (order.payment_status === 'Failed' && order.payment_method === 'PayPal') { %>
                       <form action="/admin/order/convert-to-cod/<%= order.order_id %>" method="POST" style="margin: 0;">
                         <button type="submit" class="btn btn-sm btn-info" onclick="return confirm('Are you sure you want to convert this order to Cash on Delivery (Pending Payment)?');">
@@ -365,7 +354,6 @@
                   </div>
                   <% }); %> <% } %>
 
-                  <!-- Pagination Controls -->
                   <% if (totalPages > 0) { %>
                   <%
                       function buildQueryString(filters, pageNum, currentLimit) {
@@ -381,12 +369,10 @@
                   <div class="pagination-container" style="margin-top: 30px; padding-bottom: 20px; text-align: center;">
                     <nav aria-label="Orders navigation">
                       <ul class="pagination justify-content-center">
-                        <!-- Previous Button -->
                         <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
                           <a class="page-link" href="/admin/ordersManagement?<%= buildQueryString(currentFilters, currentPage - 1, limit) %>">Previous</a>
                         </li>
 
-                        <%# Page Numbers Logic %>
                         <%
                             const maxPagesToShow = 5; 
                             let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
@@ -420,7 +406,6 @@
                         </li>
                         <% } %>
 
-                        <!-- Next Button -->
                         <li class="page-item <%= currentPage >= totalPages ? 'disabled' : '' %>">
                           <a class="page-link" href="/admin/ordersManagement?<%= buildQueryString(currentFilters, currentPage + 1, limit) %>">Next</a>
                         </li>
@@ -428,7 +413,6 @@
                     </nav>
                   </div>
                   <% } %>
-                  <!-- End Pagination Controls -->
 
                 </div>
               </div>
@@ -439,30 +423,18 @@
     </div>
   </div>
 
-  <!-- jquery  -->
   <script src="/javascripts/jquery-3.5.1.min.js"></script>
-  <!-- bootstrap -->
   <script src="/javascripts/bootstrap.min.js"></script>
   <script src="/javascripts/popper.min.js"></script>
-  <!-- fontawesome  -->
   <script src="/javascripts/font-awesome.min.js"></script>
-  <!-- swiper slider  -->
   <script src="/javascripts/swiper-bundle.min.js"></script>
-  <!-- mixitup -- filter  -->
   <script src="/javascripts/jquery.mixitup.min.js"></script>
-  <!-- fancy box  -->
   <script src="/javascripts/jquery.fancybox.min.js"></script>
-  <!-- parallax  -->
   <script src="/javascripts/parallax.min.js"></script>
-  <!-- gsap  -->
   <script src="/javascripts/gsap.min.js"></script>
-  <!-- scroll trigger  -->
   <script src="/javascripts/ScrollTrigger.min.js"></script>
-  <!-- scroll to plugin  -->
   <script src="/javascripts/ScrollToPlugin.min.js"></script>
-  <!-- smooth scroll  -->
   <script src="/javascripts/smooth-scroll.js"></script>
-  <!-- custom js  -->
   <script src="/javascripts/main.js"></script>
 </body>
 

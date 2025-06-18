@@ -1,13 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const { body, validationResult } = require("express-validator"); // Import express-validator
-const statisticsService = require('../services/statisticsService');
+const { body, validationResult } = require("express-validator");
+const statisticsService = require("../services/statisticsService");
 const isAuthenticated = require("../middleware/isAuthenticated");
 
-// Render Checkout Page
 async function renderCheckoutPage(req, res) {
   const user_id = req.cookies.cookuid;
-  // res.locals.username and res.locals.userid are available from app.js middleware
   const connection = req.app.get("dbConnection");
 
   try {
@@ -29,7 +27,7 @@ async function renderCheckoutPage(req, res) {
             name: res.locals.username,
             id: res.locals.userid,
             address: null,
-          }, // Pass a default user object
+          },
           pageType: "checkout",
         });
       }
@@ -55,7 +53,6 @@ async function renderCheckoutPage(req, res) {
       );
       const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
-      // Fetch user's address from the users table
       const addressQuery =
         "SELECT user_address FROM users WHERE user_id = ? LIMIT 1";
       connection.query(
@@ -65,23 +62,21 @@ async function renderCheckoutPage(req, res) {
           let userDbAddress = null;
           if (addressErr) {
             console.error("Error fetching user address:", addressErr);
-            // Potentially render with an error or proceed without address
           } else if (addressResults && addressResults.length > 0) {
             userDbAddress = addressResults[0].user_address;
           }
 
-          // Construct the user object for the template
           const userForTemplate = {
-            name: res.locals.username, // Already available via res.locals
-            id: res.locals.userid, // Already available via res.locals
-            address: userDbAddress, // This is the string address or null
+            name: res.locals.username,
+            id: res.locals.userid,
+            address: userDbAddress,
           };
 
           res.render("checkout", {
             items: cartItems,
             total: totalAmount.toFixed(2),
             itemCount: itemCount,
-            user: userForTemplate, // Pass the structured user object
+            user: userForTemplate,
             pageType: "checkout",
             error: null,
           });
@@ -95,13 +90,12 @@ async function renderCheckoutPage(req, res) {
       items: [],
       total: 0,
       itemCount: 0,
-      user: { name: res.locals.username, id: res.locals.userid, address: null }, // Pass a default user object
+      user: { name: res.locals.username, id: res.locals.userid, address: null },
       pageType: "checkout",
     });
   }
 }
 
-// Process Payment
 const processPaymentValidationRules = [
   body("paymentMethod")
     .trim()
@@ -112,7 +106,7 @@ const processPaymentValidationRules = [
     .trim()
     .isIn(["existing", "new"])
     .withMessage("Invalid address option."),
-  body("address") // Existing address
+  body("address")
     .if(body("addressOption").equals("existing"))
     .trim()
     .notEmpty()
@@ -157,13 +151,13 @@ const processPaymentValidationRules = [
     .withMessage("Country is required for a new address.")
     .isLength({ max: 50 })
     .withMessage("New country name is too long (max 50 chars)."),
-  body("paymentId") // PayPal Order ID
+  body("paymentId")
     .optional({ checkFalsy: true })
     .trim()
     .isString()
     .isLength({ max: 100 })
     .withMessage("PayPal Payment ID seems invalid."),
-  body("status") // PayPal status
+  body("status")
     .optional({ checkFalsy: true })
     .trim()
     .isString()
@@ -197,18 +191,18 @@ async function processPayment(req, res) {
   const user_id = req.cookies.cookuid;
   const {
     paymentMethod,
-    addressOption, // Used by validators, available here
-    address, // For existing address selection (validated and trimmed)
-    new_address_line1, // New address fields start here (validated and trimmed)
+    addressOption,
+    address,
+    new_address_line1,
     new_address_line2,
     new_city,
     new_state,
     new_postal_code,
-    new_country, // New address fields end here (validated and trimmed)
-    paymentId, // PayPal Order ID (validated and trimmed)
-    status, // PayPal status e.g. 'COMPLETED' (validated and trimmed)
-    paypalShippingAddress, // Address from PayPal (validated and trimmed)
-    notes, // Optional notes from customer (validated and trimmed)
+    new_country,
+    paymentId,
+    status,
+    paypalShippingAddress,
+    notes,
   } = req.body;
   const connection = req.app.get("dbConnection");
 
@@ -248,7 +242,6 @@ async function processPayment(req, res) {
       let finalAddressString = "";
 
       if (paymentMethod === "COD") {
-        // Check if 'new' address option was selected and validated fields are present
         if (
           addressOption === "new" &&
           new_address_line1 &&
@@ -268,7 +261,6 @@ async function processPayment(req, res) {
             .filter((part) => part && part.trim() !== "")
             .join(", ")
             .substring(0, 255);
-          // Check if 'existing' address option was selected and validated 'address' is present
         } else if (
           addressOption === "existing" &&
           address &&
@@ -276,11 +268,6 @@ async function processPayment(req, res) {
         ) {
           finalAddressString = address.trim().substring(0, 255);
         } else {
-          // This case should ideally be caught by client-side validation or if addressOption is missing/invalid
-          // For COD, an address (either new or existing) must be validly provided if selected.
-          // If addressOption was not 'new' or 'existing' but COD is chosen, it's an issue.
-          // Or if addressOption was 'new' but required fields were empty (should be caught by validator).
-          // Or if addressOption was 'existing' but 'address' was empty (should be caught by validator).
           console.error(
             "COD order: Valid delivery address details not found after validation. AddressOption:",
             addressOption,
@@ -296,7 +283,6 @@ async function processPayment(req, res) {
       } else if (paymentMethod === "PayPal") {
         if (paypalShippingAddress && paypalShippingAddress.trim() !== "") {
           finalAddressString = paypalShippingAddress.trim().substring(0, 255);
-          // Fallback to new address from form if PayPal didn't provide one and 'new' was selected
         } else if (
           addressOption === "new" &&
           new_address_line1 &&
@@ -316,7 +302,6 @@ async function processPayment(req, res) {
             .filter((part) => part && part.trim() !== "")
             .join(", ")
             .substring(0, 255);
-          // Fallback to existing address from form
         } else if (
           addressOption === "existing" &&
           address &&
@@ -328,11 +313,8 @@ async function processPayment(req, res) {
             "PayPal order: Shipping address not determined from PayPal or form. AddressOption:",
             addressOption
           );
-          // Depending on business logic, an address might still be required.
-          // If finalAddressString remains empty, it will be stored as such.
         }
       } else {
-        // This case should be caught by the paymentMethod validator
         console.error(
           "Invalid payment method after validation:",
           paymentMethod
@@ -342,16 +324,15 @@ async function processPayment(req, res) {
           .json({ success: false, message: "Invalid payment method." });
       }
 
-      // Ensure finalAddressString is not undefined if it's going into the DB
       if (finalAddressString === undefined) finalAddressString = "";
 
       const orderStatus = "Pending";
       const paymentStatusDb =
         paymentMethod === "PayPal" && status === "COMPLETED"
           ? "Paid"
-          : paymentMethod === "PayPal" // If PayPal and not COMPLETED
-          ? "Failed" // Set to "Failed"
-          : "Unpaid"; // Default for COD or other non-PayPal scenarios
+          : paymentMethod === "PayPal"
+          ? "Failed"
+          : "Unpaid";
 
       const orderInsertQuery = `
         INSERT INTO orders (user_id, total_amount, payment_method, shipping_address, order_status, payment_status, notes) 
@@ -363,7 +344,7 @@ async function processPayment(req, res) {
           user_id,
           totalAmountFromDB,
           paymentMethod,
-          finalAddressString, // Use the determined address
+          finalAddressString,
           orderStatus,
           paymentStatusDb,
           notes || null,
@@ -400,32 +381,42 @@ async function processPayment(req, res) {
 
               const clearCartQuery =
                 "DELETE FROM user_cart_items WHERE user_id = ?";
-              connection.query(clearCartQuery, [user_id],async (clearCartErr) => {
-                if (clearCartErr) {
-                  console.error(
-                    "Error clearing cart after order:",
-                    clearCartErr
-                  );
-                }
-                res.cookie("item_count", 0, { httpOnly: false });
+              connection.query(
+                clearCartQuery,
+                [user_id],
+                async (clearCartErr) => {
+                  if (clearCartErr) {
+                    console.error(
+                      "Error clearing cart after order:",
+                      clearCartErr
+                    );
+                  }
+                  res.cookie("item_count", 0, { httpOnly: false });
 
-                try {
-                  const io = req.app.get('io');
-                  const dbPool = req.app.get('dbConnection');
-                  const fullDashboardData = await statisticsService.getLiveDashboardData(dbPool);
-                  io.emit('dashboard_update', fullDashboardData);
-                  console.log('Socket event "dashboard_update" với dữ liệu đầy đủ đã được phát đi.');
-                } catch (statsError) {
-                  console.error("Lỗi khi phát sự kiện cập nhật dashboard:", statsError);
-                }
+                  try {
+                    const io = req.app.get("io");
+                    const dbPool = req.app.get("dbConnection");
+                    const fullDashboardData =
+                      await statisticsService.getLiveDashboardData(dbPool);
+                    io.emit("dashboard_update", fullDashboardData);
+                    console.log(
+                      'Socket event "dashboard_update" with full data has been emitted.'
+                    );
+                  } catch (statsError) {
+                    console.error(
+                      "Error emitting dashboard update event:",
+                      statsError
+                    );
+                  }
 
-                res.json({
-                  success: true,
-                  message: "Order placed successfully!",
-                  orderId: order_id,
-                  redirectUrl: `/confirmation?orderId=${order_id}`, // Added redirectUrl
-                });
-              });
+                  res.json({
+                    success: true,
+                    message: "Order placed successfully!",
+                    orderId: order_id,
+                    redirectUrl: `/confirmation?orderId=${order_id}`,
+                  });
+                }
+              );
             }
           );
         }
@@ -440,39 +431,29 @@ async function processPayment(req, res) {
   }
 }
 
-// Render Confirmation Page
 function renderConfirmationPage(req, res) {
   const userId = req.cookies.cookuid;
   const userName = req.cookies.cookuname;
-  // item_count is available from res.locals
   const connection = req.app.get("dbConnection");
 
-  // No need to re-validate user here if isAuthenticated middleware is used,
-  // but keeping it if it's a strict requirement from original code.
-  // If user cookies are invalid, isAuthenticated should redirect.
   if (!userId || !userName) {
     return res.redirect("/signin");
   }
 
-  // The order ID should ideally be passed from the processPayment redirect or query parameter
-  const orderId = req.query.orderId; // Example: /confirmation?orderId=123
+  const orderId = req.query.orderId;
 
   if (!orderId) {
-    // If no orderId is present, redirect to homepage or orders page
-    // as the user might have navigated here directly.
     return res.redirect("/homepage");
   }
 
   res.render("confirmation", {
     pageType: "confirmation",
-    orderId: orderId, // Pass orderId to the template
-    // username, userid, item_count are available via res.locals
+    orderId: orderId,
   });
 }
 
-// Checkout and Payment Routes
-router.post("/checkout", isAuthenticated, renderCheckoutPage); // Kept as POST as per original app.js
-router.get("/checkout", isAuthenticated, renderCheckoutPage); // Added GET for direct access
+router.post("/checkout", isAuthenticated, renderCheckoutPage);
+router.get("/checkout", isAuthenticated, renderCheckoutPage);
 router.post(
   "/checkout/process-payment",
   isAuthenticated,

@@ -6,15 +6,10 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Checkout - PizzazzPizza</title>
-  <!-- icons  -->
   <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" />
-  <!-- bootstrap  -->
   <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
-  <!-- swiper slider  -->
   <link rel="stylesheet" href="/stylesheets/swiper-bundle.min.css" />
-  <!-- fancy box  -->
   <link rel="stylesheet" href="/stylesheets/jquery.fancybox.min.css" />
-  <!-- custom css  -->
   <link rel="stylesheet" href="/stylesheets/style.css" />
   <script src="https://www.paypal.com/sdk/js?client-id=AQcmhMz3aSeDL5V6zrSn1BiKmTHriSiCLCOLkZgf-jKv4Tbe4Ajjnntdis7duz7yOG8-bslEoaCWh7rR&currency=USD"></script>
 </head>
@@ -38,7 +33,6 @@
             </div>
 
             <div class="row justify-content-center">
-              <!-- COD Option -->
               <div class="col-lg-7 mb-4">
                 <div class="checkout-card">
                   <div class="checkout-card-header">
@@ -157,7 +151,6 @@
                 </div>
               </div>
 
-              <!-- Online Payment Options -->
               <div class="col-lg-4">
                 <div class="checkout-card">
                   <div class="checkout-card-header">
@@ -167,7 +160,6 @@
                     <p>Complete your purchase securely with PayPal.</p>
 
                     <div class="paypal-button-container mb-3" id="paypal-button-container">
-                      <!-- PayPal buttons will be inserted here -->
                     </div>
 
                     <div class="mt-2">
@@ -187,42 +179,27 @@
     </div>
   </div>
 
-  <!-- jquery  -->
   <script src="/javascripts/jquery-3.5.1.min.js"></script>
-  <!-- bootstrap -->
   <script src="/javascripts/bootstrap.min.js"></script>
   <script src="/javascripts/popper.min.js"></script>
-  <!-- fontawesome  -->
   <script src="/javascripts/font-awesome.min.js"></script>
-  <!-- swiper slider  -->
   <script src="/javascripts/swiper-bundle.min.js"></script>
-  <!-- mixitup -- filter  -->
   <script src="/javascripts/jquery.mixitup.min.js"></script>
-  <!-- fancy box  -->
   <script src="/javascripts/jquery.fancybox.min.js"></script>
-  <!-- parallax  -->
   <script src="/javascripts/parallax.min.js"></script>
-  <!-- gsap  -->
   <script src="/javascripts/gsap.min.js"></script>
-  <!-- scroll trigger  -->
   <script src="/javascripts/ScrollTrigger.min.js"></script>
-  <!-- scroll to plugin  -->
   <script src="/javascripts/ScrollToPlugin.min.js"></script>
-  <!-- smooth scroll  -->
   <script src="/javascripts/smooth-scroll.js"></script>
-  <!-- custom js  -->
   <script src="/javascripts/main.js"></script>
   <script src="/javascripts/cart.js"></script>
   <script>
-    // Calculate total amount based on the items passed from the server
     const checkoutItems = '<%- JSON.stringify(items || []) %>';
     const calculateTotal = () => {
-      // Ensure checkoutItems is an array before reducing
       if (!Array.isArray(checkoutItems)) return 0;
       return checkoutItems.reduce((total, item) => total + (item.subtotal || 0), 0);
     };
 
-    // Single DOMContentLoaded event handler for all initialization
     document.addEventListener('DOMContentLoaded', function() {
       const existingAddressRadio = document.getElementById('existingAddress');
       const newAddressRadio = document.getElementById('newAddress');
@@ -233,9 +210,8 @@
       const newPostalCode = document.getElementById('new_postal_code');
       const newCountry = document.getElementById('new_country');
       const codForm = document.getElementById('cod-form');
-      const scrollContentElement = document.getElementById('js-scroll-content'); // Get the scrollable element
+      const scrollContentElement = document.getElementById('js-scroll-content');
 
-      // Function to update address form visibility and required attributes
       function updateAddressFormVisibility() {
         if (newAddressForm && newAddressRadio && existingAddressRadio && newAddressLine1 && newCity && newPostalCode && newCountry) {
           if (newAddressRadio.checked) {
@@ -255,12 +231,9 @@
         }
       }
 
-      // Setup address toggle functionality
-      if (newAddressForm && (existingAddressRadio || newAddressRadio)) { // Ensure form and at least one radio exist
-        // Set initial visibility based on checked state on page load
+      if (newAddressForm && (existingAddressRadio || newAddressRadio)) {
         updateAddressFormVisibility();
 
-        // Add event listeners if radios exist
         if (existingAddressRadio) {
           existingAddressRadio.addEventListener('change', updateAddressFormVisibility);
         }
@@ -268,10 +241,8 @@
           newAddressRadio.addEventListener('change', updateAddressFormVisibility);
         }
 
-        // Update form before submission logic (ensure elements exist)
         if (codForm && newAddressRadio && userExistingAddress) {
           codForm.addEventListener('submit', function(e) {
-            // Client-side validation for new address if selected
             if (newAddressRadio.checked) {
               let missingFields = [];
               if (!newAddressLine1 || newAddressLine1.value.trim() === '') missingFields.push('Street Address');
@@ -280,13 +251,13 @@
               if (!newCountry || newCountry.value.trim() === '') missingFields.push('Country');
 
               if (missingFields.length > 0) {
-                e.preventDefault(); // Prevent submission
+                e.preventDefault();
                 alert('Please fill in all required new address fields: ' + missingFields.join(', ') + '.');
-                return; // Stop submission
+                return;
               }
             }
 
-            e.preventDefault(); // Prevent default form submission to handle with fetch
+            e.preventDefault();
 
             const formData = new FormData(codForm);
             const action = codForm.action;
@@ -323,27 +294,22 @@
         console.warn("Address toggle functionality cannot be initialized - elements missing.");
       }
 
-      // Initialize PayPal button
       const paypalContainer = document.getElementById('paypal-button-container');
       if (paypalContainer) {
         if (typeof paypal !== 'undefined') {
           paypal.Buttons({
             onClick: function(data, actions) {
-              // Called when the buyer clicks a PayPal button (PayPal, Pay Later, Venmo, or Card fields)
               console.log('PayPal button clicked (funding source: ' + data.fundingSource + '), dispatching resize.');
               window.dispatchEvent(new Event('resize'));
-              // You can use this to perform validations before PayPal's own flow starts.
-              // If validation fails: return actions.reject();
-              return actions.resolve(); // If validation passes
+              return actions.resolve();
             },
             createOrder: function(data, actions) {
-              window.dispatchEvent(new Event('resize')); // Also keep here for initial order creation
+              window.dispatchEvent(new Event('resize'));
               const currentItems = JSON.parse('<%- JSON.stringify(items || []) %>');
               const total = currentItems.reduce((sum, item) => sum + (item.subtotal || 0), 0);
 
               if (total <= 0) {
                 alert('Your cart is empty or has no value.');
-                // Disable button or return a rejected promise
                 return Promise.reject(new Error('Cart is empty'));
               }
 
@@ -352,38 +318,34 @@
               return actions.order.create({
                 purchase_units: [{
                   amount: {
-                    value: total.toFixed(2) // Use calculated total, ensure 2 decimal places
+                    value: total.toFixed(2)
                   }
                 }]
               });
             },
 
-            // Handle the successful payment
             onApprove: function(data, actions) {
               return actions.order.capture().then(function(orderData) {
                 console.log('PayPal Capture result:', orderData);
                 const formData = new FormData();
 
-                // --- START: Extract and add PayPal shipping address ---
                 let paypalShippingAddress = null;
                 if (orderData.purchase_units && orderData.purchase_units[0] && orderData.purchase_units[0].shipping) {
                   const shipping = orderData.purchase_units[0].shipping;
                   const address = shipping.address;
-                  // Construct a single address string (adjust format as needed)
                   const addressParts = [
-                    shipping.name ? shipping.name.full_name : '', // Include recipient name if available
+                    shipping.name ? shipping.name.full_name : '',
                     address.address_line_1,
                     address.address_line_2,
-                    address.admin_area_2, // City
-                    address.admin_area_1, // State/Region
+                    address.admin_area_2,
+                    address.admin_area_1,
                     address.postal_code,
                     address.country_code
                   ];
-                  paypalShippingAddress = addressParts.filter(part => part).join(', '); // Filter out empty parts and join
+                  paypalShippingAddress = addressParts.filter(part => part).join(', ');
                   console.log("PayPal provided shipping address:", paypalShippingAddress);
                   formData.append('paypalShippingAddress', paypalShippingAddress);
                 } else {
-                  // If no address from PayPal, check the address selected/entered on the page
                   const selectedAddressOption = document.querySelector('input[name="addressOption"]:checked');
                   if (selectedAddressOption && selectedAddressOption.value === 'existing') {
                     const existingAddrInput = document.getElementById('userExistingAddress');
@@ -391,7 +353,6 @@
                       formData.append('address', existingAddrInput.value.trim());
                     }
                   } else if (selectedAddressOption && selectedAddressOption.value === 'new') {
-                    // Append individual new address fields
                     const new_address_line1_val = document.getElementById('new_address_line1') ? document.getElementById('new_address_line1').value.trim() : '';
                     const new_address_line2_val = document.getElementById('new_address_line2') ? document.getElementById('new_address_line2').value.trim() : '';
                     const new_city_val = document.getElementById('new_city') ? document.getElementById('new_city').value.trim() : '';
@@ -412,15 +373,11 @@
                     }
                   }
                 }
-                // --- END: Extract and add PayPal shipping address ---
 
                 formData.append('paymentMethod', 'PayPal');
+                formData.append('paymentId', orderData.id);
+                formData.append('status', orderData.status);
 
-                // Add paymentId and status from PayPal's response
-                formData.append('paymentId', orderData.id); // PayPal Order ID
-                formData.append('status', orderData.status); // PayPal Order Status (e.g., "COMPLETED")
-
-                // Add items, quantities, and prices from the checkoutItems array
                 const currentItems = JSON.parse('<%- JSON.stringify(items || []) %>');
                 currentItems.forEach(item => {
                   formData.append('itemid[]', item.item_id);
@@ -428,7 +385,6 @@
                   formData.append('subprice[]', item.subtotal);
                 });
 
-                // Display loading indicator or disable buttons here
                 document.body.style.cursor = 'wait';
                 if (paypalContainer) paypalContainer.style.opacity = '0.5';
 
@@ -481,7 +437,6 @@
               window.dispatchEvent(new Event('resize'));
             }
           }).render('#paypal-button-container').then(() => {
-            // After buttons are rendered, set up MutationObserver for dynamic content changes
             if (paypalContainer) {
               let debounceTimeout;
               const observer = new MutationObserver((mutationsList, obs) => {
@@ -489,20 +444,18 @@
                 debounceTimeout = setTimeout(() => {
                   console.log('Mutation observed in PayPal container (debounced), dispatching resize.');
                   window.dispatchEvent(new Event('resize'));
-                }, 150); // Debounce to avoid excessive calls
+                }, 150);
               });
               observer.observe(paypalContainer, {
-                childList: true, // Observe direct children additions/removals
-                subtree: true, // Observe all descendants
-                attributes: true // Observe attribute changes (e.g., style, class)
+                childList: true,
+                subtree: true,
+                attributes: true
               });
-              // This observer will run until the page is unloaded.
             }
           }).catch(err => {
             console.error("Failed to render PayPal Buttons:", err);
             paypalContainer.innerHTML = "<p class='text-danger'>Could not load PayPal buttons. Please try refreshing the page or use Cash on Delivery.</p>";
           }).finally(() => {
-            // Initial resize after render attempt
             window.dispatchEvent(new Event('resize'));
           });
         } else {

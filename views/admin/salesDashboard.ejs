@@ -10,7 +10,6 @@
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/stylesheets/style.css">
   <style>
-    /* Reusing styles from statisticDashboard.ejs - ensure these are loaded or defined */
     .admin-main-content .section {
       padding-top: 20px;
       padding-bottom: 20px;
@@ -53,12 +52,10 @@
 
     @media (min-width: 992px) {
       .dashboard-grid.kpi-focused {
-        /* For 3-column KPI layout */
         grid-template-columns: repeat(3, 1fr);
       }
 
       .dashboard-grid.charts-focused {
-        /* For 2-column chart layout */
         grid-template-columns: repeat(2, 1fr);
       }
     }
@@ -77,7 +74,6 @@
 
     .kpi-card h2,
     .chart-card h2 {
-      /* Title of the metric/chart */
       margin-top: 0;
       font-size: 0.9em;
       color: #6c757d;
@@ -95,14 +91,12 @@
       font-size: 1.8em;
       font-weight: 600;
       color: #007bff;
-      /* Blue for current value */
       display: block;
     }
 
     .kpi-card .comparison-value {
       font-size: 0.9em;
       color: #6c757d;
-      /* Grey for comparison text */
       display: block;
       margin-top: 3px;
     }
@@ -116,12 +110,10 @@
 
     .percentage-change.positive {
       color: #28a745;
-      /* Green for positive change */
     }
 
     .percentage-change.negative {
       color: #dc3545;
-      /* Red for negative change */
     }
 
     .chart-card {
@@ -129,10 +121,10 @@
       height: auto;
       max-height: 450px;
       position: relative;
+      padding-bottom: 40px;
     }
 
     .chart-card h2 {
-      /* Chart titles */
       color: #343a40;
       font-size: 1.0em;
       border-bottom: 1px solid #e9ecef;
@@ -175,7 +167,6 @@
             </div>
 
             <% if (data) { %>
-            <!-- KPIs Section -->
             <h2 style="color: #343a40; margin-bottom: 15px; font-size: 1.3em;">Today vs. Same Day Last Week</h2>
             <div class="dashboard-grid kpi-focused">
               <div class="kpi-card">
@@ -232,7 +223,6 @@
               </div>
             </div>
 
-            <!-- Charts Section -->
             <div class="dashboard-grid charts-focused" style="margin-top: 30px;">
               <div class="chart-card">
                 <h2>Monthly Sales Trend Comparison</h2>
@@ -263,17 +253,15 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
   <script>
-    // Use the 'data' variable passed from the server
     const serverData = <%- JSON.stringify(data || null) %>;
 
-    // Chart.js defaults for light theme
     const chartTextColor = '#555';
     const chartGridColor = 'rgba(0, 0, 0, 0.08)';
     const chartTitleColor = '#333';
 
     function calculatePercentageChange(current, previous) {
       if (previous === 0) {
-        return current > 0 ? ' (+∞%)' : ' (N/A)'; // Avoid division by zero
+        return current > 0 ? ' (+∞%)' : ' (N/A)';
       }
       const change = ((current - previous) / previous) * 100;
       const sign = change >= 0 ? '+' : '';
@@ -282,7 +270,7 @@
 
     function setPercentageChangeText(elementId, current, previous) {
       const element = document.getElementById(elementId);
-      if (element && typeof current === 'number' && typeof previous === 'number') { // Add checks
+      if (element && typeof current === 'number' && typeof previous === 'number') {
         const changeText = calculatePercentageChange(current, previous);
         element.textContent = changeText;
         if (current > previous) {
@@ -290,7 +278,7 @@
         } else if (current < previous) {
           element.className = 'percentage-change negative';
         } else {
-          element.className = 'percentage-change'; // No change
+          element.className = 'percentage-change';
         }
       } else if (element) {
         element.textContent = ' (N/A)';
@@ -312,13 +300,13 @@
       }, (_, i) => (i + 1).toString());
 
       const processDailyData = (dailyArray) => {
-        const dataPoints = Array(31).fill(0); // Thay null bằng 0
+        const dataPoints = Array(31).fill(0);
         if (dailyArray && Array.isArray(dailyArray)) {
           dailyArray.forEach(item => {
-            if (item && item.date) { // Kiểm tra xem item có tồn tại và có thuộc tính date không
+            if (item && item.date) {
               const dayOfMonth = new Date(item.date).getUTCDate();
               if (dayOfMonth >= 1 && dayOfMonth <= 31) {
-                dataPoints[dayOfMonth - 1] = parseFloat(item.sales) || 0; // Đảm bảo đúng kiểu số
+                dataPoints[dayOfMonth - 1] = parseFloat(item.sales) || 0;
               }
             }
           });
@@ -474,7 +462,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      if (serverData) { // Use serverData here
+      if (serverData) {
         setPercentageChangeText('salesPctChange', serverData.kpi_today_sales, serverData.kpi_sameday_lastweek_sales);
         setPercentageChangeText('ordersPctChange', serverData.kpi_today_orders, serverData.kpi_sameday_lastweek_orders);
         setPercentageChangeText('aovPctChange', serverData.kpi_today_aov, serverData.kpi_sameday_lastweek_aov);

@@ -25,66 +25,46 @@
     }
 
     .table {
-      /* Add this rule */
       table-layout: fixed;
       width: 100%;
-      /* Ensure table takes full available width */
     }
 
     .table td:nth-child(3),
-    /* Alt Text column */
     .table td:nth-child(2) img {
-      /* Image column, ensure image doesn't overflow */
       word-break: break-word;
       overflow-wrap: break-word;
-      /* for better browser compatibility */
     }
 
     .table th:nth-child(1),
-    /* ID column */
     .table td:nth-child(1) {
       width: 5%;
-      /* Example width, adjust as needed */
     }
 
     .table th:nth-child(2),
-    /* Image column */
     .table td:nth-child(2) {
       width: 20%;
-      /* Example width */
     }
 
     .table th:nth-child(3),
-    /* Alt Text column */
     .table td:nth-child(3) {
       width: 12%;
-      /* Example width */
     }
 
     .table th:nth-child(4),
-    /* Sort Order column */
     .table td:nth-child(4) {
       width: 8%;
-      /* Example width */
     }
 
     .table th:nth-child(5),
-    /* Active column */
     .table td:nth-child(5) {
       width: 8%;
-      /* Example width */
     }
 
-    /* Uploaded At, Updated At can take remaining space or be set explicitly */
     .table th:nth-child(8),
-    /* Actions column */
     .table td:nth-child(8) {
       width: 25%;
-      /* Example width, adjust for buttons */
       white-space: nowrap;
-      /* Keep action buttons on one line if possible */
     }
-
 
     .action-buttons .btn,
     .action-buttons form {
@@ -105,24 +85,16 @@
 
     .form-check-input {
       width: 1.1em;
-      /* Explicitly set width */
       height: 1.1em;
-      /* Explicitly set height */
       margin-left: 0;
-      /* Override Bootstrap's negative margin */
       margin-right: 0.4em;
-      /* Space between checkbox and label */
       vertical-align: middle;
-      /* Align with label text */
       position: relative;
-      /* Override Bootstrap's absolute positioning */
       top: -0.05em;
-      /* Fine-tune vertical alignment */
     }
 
     .form-check-label {
       margin-left: 0;
-      /* Spacing is now handled by input's margin-right */
     }
   </style>
 </head>
@@ -215,7 +187,6 @@
     </div>
   </div>
 
-  <!-- Add Banner Modal -->
   <div class="modal fade" id="addBannerModal" tabindex="-1" role="dialog" aria-labelledby="addBannerModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
@@ -253,12 +224,10 @@
     </div>
   </div>
 
-  <!-- Edit Banner Modal -->
   <div class="modal fade" id="editBannerModal" tabindex="-1" role="dialog" aria-labelledby="editBannerModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <form id="editBannerForm" method="POST" enctype="multipart/form-data">
-          <!-- Action will be set by JS -->
           <div class="modal-header">
             <h5 class="modal-title" id="editBannerModalLabel">Edit Banner</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -302,7 +271,6 @@
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   <script src="/javascripts/main.js"></script>
   <script>
-    // Clear query parameters from URL after displaying messages
     if (window.history.replaceState) {
       const url = new URL(window.location.href);
       if (url.searchParams.has('message') || url.searchParams.has('error')) {
@@ -314,10 +282,9 @@
       }
     }
 
-    // Edit Banner Modal Logic
     document.addEventListener('DOMContentLoaded', function() {
       const editBannerButtons = document.querySelectorAll('.edit-banner-btn');
-      const editBannerModal = $('#editBannerModal'); // jQuery selector for Bootstrap modal
+      const editBannerModal = $('#editBannerModal');
       const editBannerForm = document.getElementById('editBannerForm');
 
       const editAltTextField = document.getElementById('edit_alt_text');
@@ -329,10 +296,8 @@
         button.addEventListener('click', function() {
           const bannerId = this.dataset.id;
 
-          // Set the form action
           editBannerForm.action = `/admin/banners/edit/${bannerId}`;
 
-          // Fetch banner data
           fetch(`/admin/api/banner/${bannerId}`)
             .then(response => response.json())
             .then(data => {

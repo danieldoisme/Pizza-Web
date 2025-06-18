@@ -1,119 +1,40 @@
 const express = require("express");
 const router = express.Router();
-const nodemailer = require("nodemailer"); // Require nodemailer
-const crypto = require("crypto"); // Add crypto for token generation
-const { body, validationResult } = require("express-validator"); // Import express-validator
+const nodemailer = require("nodemailer");
+const crypto = require("crypto");
+const { body, validationResult } = require("express-validator");
 
-// --- Nodemailer Transporter Setup ---
-// Ensure you have GMAIL_USER and GMAIL_APP_PASSWORD set in your .env file
-// and that dotenv is configured in your app.js
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.GMAIL_USER, // Loaded from .env
-    pass: process.env.GMAIL_APP_PASSWORD, // Loaded from .env (Use a Gmail App Password)
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
   },
 });
 
-// Helper function for email validation (can be removed if using express-validator exclusively)
-// function isValidEmail(email) {
-//   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-//   return emailRegex.test(email);
-// }
-
-// Route for the main landing page (index)
 router.get("/", (req, res) => {
   res.render("index", {
     pageType: "index",
     subscription_message: req.query.subscription_message || null,
     subscription_error: req.query.subscription_error || null,
-    // username, userid, isAdmin, item_count are available via res.locals
   });
 });
 
-// Route for the Contact Us Page
 router.get("/contact", (req, res) => {
   res.render("contact", {
     pageType: "contact",
-    success_msg: req.query.success_msg, // Changed from 'success' to avoid conflict
-    error_msg: req.query.error_msg, // Changed from 'error' to avoid conflict
-    errors: [], // To hold validation errors
+    success_msg: req.query.success_msg,
+    error_msg: req.query.error_msg,
+    errors: [],
     formData: {},
   });
 });
 
-// Route for the FAQs Page
 router.get("/faqs", (req, res) => {
   res.render("faqs", {
     pageType: "faqs",
   });
 });
-
-// Handle Contact Form Submission
-// async function handleContactForm(req, res) { // This function will be replaced by the route handler below
-//   const { name, email, subject, message } = req.body;
-
-//   // Basic Validation
-//   if (!name || !email || !message) {
-//     return res.render("contact", {
-//       pageType: "contact",
-//       error: "Please fill in all required fields (Name, Email, Message).",
-//       formData: req.body,
-//     });
-//   }
-
-//   // Email Format Validation
-//   if (!isValidEmail(email)) {
-//     return res.render("contact", {
-//       pageType: "contact",
-//       error: "Please enter a valid email address.",
-//       formData: req.body,
-//     });
-//   }
-
-//   const mailOptions = {
-//     from: `"${name}" <${email}>`, // Show sender's name and email
-//     to: process.env.RESTAURANT_CONTACT_EMAIL, // Your restaurant's contact email from .env
-//     replyTo: email,
-//     subject: `New Contact Form Message: ${subject || "(No Subject)"}`,
-//     html: `
-//       <p>You have received a new message from your website contact form:</p>
-//       <p><strong>Name:</strong> ${name}</p>
-//       <p><strong>Email:</strong> ${email}</p>
-//       <p><strong>Subject:</strong> ${subject || "N/A"}</p>
-//       <p><strong>Message:</strong></p>
-//       <p>${message.replace(/\n/g, "<br>")}</p>
-//     `,
-//     text: `
-//       You have received a new message from your website contact form:\n
-//       Name: ${name}\n
-//       Email: ${email}\n
-//       Subject: ${subject || "N/A"}\n
-//       Message:\n
-//       ${message}
-//     `,
-//   };
-
-//   try {
-//     await transporter.sendMail(mailOptions);
-//     console.log("Contact form email sent successfully from:", email);
-//     res.render("contact", {
-//       pageType: "contact",
-//       success: "Thank you for your message! We will get back to you soon.",
-//       formData: {}, // Clear form data on success
-//     });
-//   } catch (error) {
-//     console.error("Error sending contact form email:", error);
-//     // Log the detailed error for server-side debugging
-//     // Be cautious about exposing too much detail to the client
-//     res.render("contact", {
-//       pageType: "contact",
-//       error:
-//         "Sorry, there was an error sending your message. Please try again later.",
-//       formData: req.body, // Keep form data on error
-//     });
-//   }
-// }
 
 router.post(
   "/contact/send",
@@ -125,7 +46,7 @@ router.post(
       .withMessage("Please enter a valid email address.")
       .normalizeEmail()
       .escape(),
-    body("subject").trim().escape(), // Subject is optional, so no notEmpty()
+    body("subject").trim().escape(),
     body("message")
       .trim()
       .notEmpty()
@@ -139,18 +60,17 @@ router.post(
     if (!errors.isEmpty()) {
       return res.render("contact", {
         pageType: "contact",
-        errors: errors.array(), // Pass array of errors
-        error_msg: "Please correct the errors below.", // General error message
-        formData: req.body, // Repopulate form with submitted data
+        errors: errors.array(),
+        error_msg: "Please correct the errors below.",
+        formData: req.body,
         success_msg: null,
       });
     }
 
-    // If validation passes, proceed to send email
     const mailOptions = {
-      from: `"${name}" <${process.env.GMAIL_USER}>`, // Send from your server email
+      from: `"${name}" <${process.env.GMAIL_USER}>`,
       to: process.env.RESTAURANT_CONTACT_EMAIL,
-      replyTo: email, // Set reply-to as the sender's email
+      replyTo: email,
       subject: `New Contact Form Message: ${subject || "(No Subject)"}`,
       html: `
         <p>You have received a new message from your website contact form:</p>
@@ -159,7 +79,7 @@ router.post(
         <p><strong>Subject:</strong> ${subject || "N/A"}</p>
         <p><strong>Message:</strong></p>
         <p>${message.replace(/\n/g, "<br>")}</p> 
-      `, // Note: 'message' is already escaped by express-validator. Displaying as HTML.
+      `,
       text: `
         You have received a new message from your website contact form:\n
         Name: ${name}\n
@@ -167,14 +87,12 @@ router.post(
         Subject: ${subject || "N/A"}\n
         Message:\n
         ${message} 
-      `, // Note: 'message' is already escaped.
+      `,
     };
 
     try {
       await transporter.sendMail(mailOptions);
       console.log("Contact form email sent successfully from:", email);
-      // It's better to redirect to the GET route with a success query parameter
-      // to prevent form resubmission on refresh and clear the POST request.
       return res.redirect(
         "/contact?success_msg=" +
           encodeURIComponent(
@@ -195,11 +113,9 @@ router.post(
   }
 );
 
-// New route for handling promotion subscriptions
 router.post(
   "/subscribe-promotions",
   [
-    // Validate and sanitize email
     body("email")
       .trim()
       .isEmail()
@@ -209,7 +125,6 @@ router.post(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      // Construct the error message from validation errors
       const errorMessages = errors
         .array()
         .map((error) => error.msg)
@@ -219,19 +134,10 @@ router.post(
       );
     }
 
-    const { email } = req.body; // Sanitized email from express-validator
+    const { email } = req.body;
     const connection = req.app.get("dbConnection");
 
-    // The isValidEmail check can be removed as express-validator handles it
-    // if (!email || !isValidEmail(email)) {
-    //   return res.redirect(
-    //     "/?subscription_error=" +
-    //       encodeURIComponent("Please enter a valid email address.")
-    //   );
-    // }
-
     try {
-      // Check if user is registered
       let userId = null;
       const [users] = await connection
         .promise()
@@ -242,13 +148,11 @@ router.post(
 
       const unsubscribeToken = crypto.randomBytes(32).toString("hex");
 
-      // Check if email already exists in subscriptions
       const [existingSubscriptions] = await connection
         .promise()
         .query("SELECT * FROM email_subscriptions WHERE email = ?", [email]);
 
       if (existingSubscriptions.length > 0) {
-        // Email exists, update if not currently subscribed
         const sub = existingSubscriptions[0];
         if (!sub.is_subscribed) {
           await connection
@@ -257,7 +161,6 @@ router.post(
               "UPDATE email_subscriptions SET is_subscribed = 1, user_id = ?, subscribed_at = NOW(), unsubscribed_at = NULL, unsubscribe_token = ? WHERE email = ?",
               [userId, unsubscribeToken, email]
             );
-          // Send a "Welcome Back" email
           const mailOptionsResubscribe = {
             from: `"PizzazzPizza" <${process.env.GMAIL_USER}>`,
             to: email,
@@ -276,7 +179,6 @@ router.post(
               `Error sending re-subscription email to ${email}:`,
               emailError
             );
-            // Continue without breaking, as subscription itself was successful
           }
           return res.redirect(
             "/?subscription_message=" +
@@ -289,7 +191,6 @@ router.post(
           );
         }
       } else {
-        // New subscription
         await connection
           .promise()
           .query(
@@ -297,7 +198,6 @@ router.post(
             [email, userId, unsubscribeToken]
           );
 
-        // Send confirmation email (optional for this phase, but good practice)
         const mailOptions = {
           from: `"PizzazzPizza" <${process.env.GMAIL_USER}>`,
           to: email,
@@ -316,7 +216,6 @@ router.post(
             `Error sending subscription confirmation email to ${email}:`,
             emailError
           );
-          // Continue without breaking, as subscription itself was successful
         }
 
         return res.redirect(
@@ -334,7 +233,6 @@ router.post(
   }
 );
 
-// New route for handling unsubscriptions via email link
 router.get("/unsubscribe-promotions", async (req, res) => {
   const { token } = req.query;
   const connection = req.app.get("dbConnection");
@@ -352,7 +250,6 @@ router.get("/unsubscribe-promotions", async (req, res) => {
       );
 
     if (result.affectedRows > 0) {
-      // You can render a simple confirmation page or redirect
       res.send(`
         <div style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
           <h2>Unsubscribed Successfully</h2>
